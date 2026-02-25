@@ -10,7 +10,7 @@ export function AdminLayout() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar salonId={salon?.id} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header salonName={salon?.name} />
         <main className="flex-1 overflow-y-auto p-6">

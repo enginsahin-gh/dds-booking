@@ -11,6 +11,7 @@ import { SchedulePage } from './pages/admin/SchedulePage';
 import { BlocksPage } from './pages/admin/BlocksPage';
 import { SettingsPage } from './pages/admin/SettingsPage';
 import { PaymentSettingsPage } from './pages/admin/PaymentSettingsPage';
+import { CustomersPage } from './pages/admin/CustomersPage';
 import { BookingPage } from './pages/BookingPage';
 import { PaymentReturnPage } from './pages/PaymentReturnPage';
 
@@ -32,6 +33,7 @@ export function App() {
             <Route path="staff/:staffId/schedule" element={<SchedulePage />} />
             <Route path="staff/:staffId/blocks" element={<BlocksPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="customers" element={<CustomersPage />} />
             <Route path="payments" element={<PaymentSettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/admin" replace />} />

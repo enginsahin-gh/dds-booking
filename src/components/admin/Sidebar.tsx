@@ -1,16 +1,64 @@
 import { NavLink } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+
+function useNewBookingsCount(salonId: string | undefined) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!salonId) return;
+
+    // Count today's confirmed bookings as "new" indicator
+    const checkNew = async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { count: c } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('salon_id', salonId)
+        .gte('created_at', today.toISOString())
+        .in('status', ['confirmed', 'pending_payment']);
+      setCount(c || 0);
+    };
+
+    checkNew();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('booking-notifications')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'bookings',
+        filter: `salon_id=eq.${salonId}`,
+      }, () => {
+        checkNew();
+      })
+      .subscribe();
+
+    // Poll every 60s as fallback
+    const interval = setInterval(checkNew, 60000);
+
+    return () => {
+      channel.unsubscribe();
+      clearInterval(interval);
+    };
+  }, [salonId]);
+
+  return count;
+}
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: '📊', end: true },
-  { to: '/admin/bookings', label: 'Boekingen', icon: '📅' },
+  { to: '/admin/bookings', label: 'Boekingen', icon: '📅', badge: true },
+  { to: '/admin/customers', label: 'Klanten', icon: '👤' },
   { to: '/admin/services', label: 'Diensten', icon: '✂️' },
   { to: '/admin/staff', label: 'Medewerkers', icon: '👥' },
   { to: '/admin/payments', label: 'Betalingen', icon: '💳' },
   { to: '/admin/settings', label: 'Instellingen', icon: '⚙️' },
 ];
 
-function NavItems({ onClick }: { onClick?: () => void }) {
+function NavItems({ onClick, badgeCount }: { onClick?: () => void; badgeCount: number }) {
   return (
     <>
       {navItems.map((item) => (
@@ -28,15 +76,21 @@ function NavItems({ onClick }: { onClick?: () => void }) {
           }
         >
           <span>{item.icon}</span>
-          {item.label}
+          <span className="flex-1">{item.label}</span>
+          {item.badge && badgeCount > 0 && (
+            <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+              {badgeCount > 99 ? '99+' : badgeCount}
+            </span>
+          )}
         </NavLink>
       ))}
     </>
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ salonId }: { salonId?: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const badgeCount = useNewBookingsCount(salonId);
 
   return (
     <>
@@ -49,6 +103,11 @@ export function Sidebar() {
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
+        {badgeCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+            {badgeCount > 9 ? '9+' : badgeCount}
+          </span>
+        )}
       </button>
 
       {/* Mobile overlay */}
@@ -65,7 +124,7 @@ export function Sidebar() {
               </button>
             </div>
             <nav className="flex-1 px-3 space-y-1">
-              <NavItems onClick={() => setMobileOpen(false)} />
+              <NavItems onClick={() => setMobileOpen(false)} badgeCount={badgeCount} />
             </nav>
           </aside>
         </div>
@@ -77,7 +136,7 @@ export function Sidebar() {
           <h1 className="text-lg font-bold">De Digitale Stylist</h1>
         </div>
         <nav className="flex-1 px-3 space-y-1">
-          <NavItems />
+          <NavItems badgeCount={badgeCount} />
         </nav>
       </aside>
     </>

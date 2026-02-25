@@ -17,7 +17,7 @@
   for = "/widget.js"
   [headers.values]
     Access-Control-Allow-Origin = "*"
-    Cache-Control = "public, max-age=3600"
+    Cache-Control = "public, max-age=60"
 
 [[headers]]
   for = "/widget.css"

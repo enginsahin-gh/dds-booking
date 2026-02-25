@@ -16,7 +16,10 @@ interface BookingWidgetProps {
   salonSlug: string;
 }
 
-const FUNCTIONS_BASE = import.meta.env.VITE_FUNCTIONS_URL || '';
+// When embedded on external sites, functions must point to the booking server origin
+const FUNCTIONS_BASE = import.meta.env.VITE_FUNCTIONS_URL
+  || (typeof document !== 'undefined' && document.querySelector('script[data-dds-origin]')?.getAttribute('data-dds-origin'))
+  || 'https://dds-booking-widget.netlify.app';
 
 export function BookingWidget({ salonSlug }: BookingWidgetProps) {
   const [step, setStep] = useState<BookingStep>(1);
@@ -61,10 +64,30 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     timezone
   );
 
-  // Load salon data
+  // Payment return state
+  const [paymentReturn, setPaymentReturn] = useState(false);
+  const [paymentReturnStatus, setPaymentReturnStatus] = useState<'loading' | 'paid' | 'failed'>('loading');
+  const [paymentReturnBooking, setPaymentReturnBooking] = useState<{
+    customerName: string;
+    serviceName: string;
+    staffName: string;
+    startAt: string;
+    endAt: string;
+    priceCents: number;
+    paidCents: number;
+    paymentMode: string;
+  } | null>(null);
+
+  // Load salon data + check payment return
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+
+      // Check if returning from Mollie payment
+      const params = new URLSearchParams(window.location.search);
+      const isPaymentReturn = params.get('payment_return') === '1';
+      const returnBookingId = params.get('booking_id');
+
       const { data: salonData, error: salonErr } = await supabase
         .from('salons')
         .select('*')
@@ -84,8 +107,64 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
         supabase.from('staff').select('*').eq('salon_id', salonData.id).eq('is_active', true).order('sort_order'),
       ]);
 
-      setServices(servicesRes.data || []);
-      setStaff(staffRes.data || []);
+      const allServices = servicesRes.data || [];
+      const allStaff = staffRes.data || [];
+      setServices(allServices);
+      setStaff(allStaff);
+
+      // Handle payment return
+      if (isPaymentReturn && returnBookingId) {
+        setPaymentReturn(true);
+        setPaymentReturnStatus('loading');
+
+        // Poll for payment status (webhook might be slightly delayed)
+        let attempts = 0;
+        const checkPayment = async (): Promise<void> => {
+          const { data: booking } = await supabase
+            .from('bookings')
+            .select('*, services:service_id(name, price_cents), staff:staff_id(name)')
+            .eq('id', returnBookingId)
+            .single();
+
+          if (!booking) {
+            setPaymentReturnStatus('failed');
+            return;
+          }
+
+          if (booking.payment_status === 'paid' || booking.status === 'confirmed') {
+            const svc = booking.services as unknown as { name: string; price_cents: number } | null;
+            const stf = booking.staff as unknown as { name: string } | null;
+            setPaymentReturnBooking({
+              customerName: booking.customer_name,
+              serviceName: svc?.name || '',
+              staffName: stf?.name || '',
+              startAt: booking.start_at,
+              endAt: booking.end_at,
+              priceCents: svc?.price_cents || 0,
+              paidCents: booking.amount_paid_cents || 0,
+              paymentMode: booking.payment_type || 'none',
+            });
+            setPaymentReturnStatus('paid');
+            // Clean URL
+            window.history.replaceState({}, '', window.location.pathname);
+          } else if (booking.payment_status === 'failed' || booking.status === 'cancelled') {
+            setPaymentReturnStatus('failed');
+          } else if (attempts < 10) {
+            attempts++;
+            setTimeout(checkPayment, 2000);
+          } else {
+            // After 20 seconds, check one more time if confirmed
+            if (booking.status === 'confirmed') {
+              setPaymentReturnStatus('paid');
+            } else {
+              setPaymentReturnStatus('failed');
+            }
+          }
+        };
+
+        await checkPayment();
+      }
+
       setLoading(false);
     };
 
@@ -281,6 +360,98 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     return (
       <div className="dds-error">
         <p className="dds-error-title">Er zijn momenteel geen diensten beschikbaar</p>
+      </div>
+    );
+  }
+
+  // Payment return view (after Mollie redirect)
+  if (paymentReturn) {
+    if (paymentReturnStatus === 'loading') {
+      return (
+        <div className="dds-spinner" style={{ padding: '40px 0' }}>
+          <div className="dds-spinner-circle" />
+          <p style={{ textAlign: 'center', marginTop: 16, color: 'var(--dds-color-text-muted)', fontSize: '0.9rem' }}>
+            Betaalstatus controleren...
+          </p>
+        </div>
+      );
+    }
+
+    if (paymentReturnStatus === 'paid' && paymentReturnBooking) {
+      const b = paymentReturnBooking;
+      const start = new Date(b.startAt);
+      const end = new Date(b.endAt);
+      const remainingCents = b.priceCents - b.paidCents;
+
+      return (
+        <div className="dds-confirmation">
+          <div className="dds-confirmation-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <h2 className="dds-confirmation-title">Betaling gelukt!</h2>
+          <p className="dds-confirmation-text">
+            Bedankt {b.customerName}! Je afspraak is bevestigd. Je ontvangt een bevestiging per e-mail.
+          </p>
+          <div className="dds-summary-card" style={{ textAlign: 'left' }}>
+            <div className="dds-summary-row">
+              <span className="dds-summary-label">Behandeling</span>
+              <span className="dds-summary-value">{b.serviceName}</span>
+            </div>
+            <div className="dds-summary-row">
+              <span className="dds-summary-label">Medewerker</span>
+              <span className="dds-summary-value">{b.staffName}</span>
+            </div>
+            <div className="dds-summary-row">
+              <span className="dds-summary-label">Datum</span>
+              <span className="dds-summary-value">{start.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: timezone })}</span>
+            </div>
+            <div className="dds-summary-row">
+              <span className="dds-summary-label">Tijd</span>
+              <span className="dds-summary-value">{start.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone })} – {end.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone })}</span>
+            </div>
+            <div className="dds-summary-row">
+              <span className="dds-summary-label">Totaalprijs</span>
+              <span className="dds-summary-value">{formatCents(b.priceCents)}</span>
+            </div>
+            {b.paidCents > 0 && (
+              <>
+                <div className="dds-summary-divider" />
+                <div className="dds-summary-row dds-summary-row--highlight">
+                  <span className="dds-summary-label">{b.paymentMode === 'deposit' ? 'Aanbetaald' : 'Betaald'}</span>
+                  <span className="dds-summary-value dds-summary-value--paid">{formatCents(b.paidCents)}</span>
+                </div>
+                {b.paymentMode === 'deposit' && remainingCents > 0 && (
+                  <div className="dds-summary-row">
+                    <span className="dds-summary-label">Restbedrag in salon</span>
+                    <span className="dds-summary-value">{formatCents(remainingCents)}</span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Payment failed
+    return (
+      <div className="dds-confirmation">
+        <div className="dds-confirmation-icon" style={{ background: '#FEF2F2', color: '#DC2626' }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+        <h2 className="dds-confirmation-title">Betaling niet gelukt</h2>
+        <p className="dds-confirmation-text">
+          De betaling is niet gelukt of verlopen. Probeer opnieuw een afspraak te maken.
+        </p>
+        <button className="dds-btn dds-btn-primary" style={{ marginTop: 16 }} onClick={() => { setPaymentReturn(false); window.history.replaceState({}, '', window.location.pathname); }}>
+          Opnieuw boeken
+        </button>
       </div>
     );
   }

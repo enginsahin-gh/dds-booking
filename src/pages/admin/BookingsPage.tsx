@@ -9,18 +9,22 @@ import { useStaff } from '../../hooks/useStaff';
 import { DateNavigator } from '../../components/admin/DateNavigator';
 import { BookingList } from '../../components/admin/BookingList';
 import { BookingDetailModal } from '../../components/admin/BookingDetailModal';
+import { AgendaView } from '../../components/admin/AgendaView';
+import { CreateBookingModal } from '../../components/admin/CreateBookingModal';
 import { Spinner } from '../../components/ui/Spinner';
 import { useToast } from '../../components/ui/Toast';
 import type { Salon, Booking } from '../../lib/types';
 
-type ViewMode = 'day' | 'week';
+type ViewMode = 'day' | 'week' | 'agenda';
 
 export function BookingsPage() {
   const { salon } = useOutletContext<{ salon: Salon | null }>();
   const { addToast } = useToast();
   const [date, setDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('day');
+  const [viewMode, setViewMode] = useState<ViewMode>('agenda');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createPrefill, setCreatePrefill] = useState<{ staffId?: string; time?: string }>({});
 
   const dateRange = useMemo(() => {
     if (viewMode === 'week') {
@@ -28,6 +32,7 @@ export function BookingsPage() {
       const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
       return { start: startOfDay(weekStart).toISOString(), end: endOfDay(weekEnd).toISOString() };
     }
+    // day and agenda both use single day
     return { start: startOfDay(date).toISOString(), end: endOfDay(date).toISOString() };
   }, [date, viewMode]);
 
@@ -46,10 +51,7 @@ export function BookingsPage() {
 
   const handleNoShow = async (id: string) => {
     try {
-      await supabase
-        .from('bookings')
-        .update({ status: 'no_show' })
-        .eq('id', id);
+      await supabase.from('bookings').update({ status: 'no_show' }).eq('id', id);
       addToast('success', 'No-show geregistreerd');
       refetch();
     } catch {
@@ -57,12 +59,18 @@ export function BookingsPage() {
     }
   };
 
-  const selectedService = selectedBooking
-    ? services.find(s => s.id === selectedBooking.service_id) || null
-    : null;
-  const selectedStaff = selectedBooking
-    ? staff.find(s => s.id === selectedBooking.staff_id) || null
-    : null;
+  const handleSlotClick = (staffId: string, time: string) => {
+    setCreatePrefill({ staffId, time });
+    setShowCreateModal(true);
+  };
+
+  const handleBookingCreated = () => {
+    addToast('success', 'Afspraak aangemaakt');
+    refetch();
+  };
+
+  const selectedService = selectedBooking ? services.find(s => s.id === selectedBooking.service_id) || null : null;
+  const selectedStaff = selectedBooking ? staff.find(s => s.id === selectedBooking.staff_id) || null : null;
 
   // Week view: group bookings by day
   const weekDays = useMemo(() => {
@@ -94,51 +102,47 @@ export function BookingsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Boekingen</h1>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setCreatePrefill({}); setShowCreateModal(true); }}
+            className="px-4 py-1.5 text-sm font-medium bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+          >
+            + Nieuwe afspraak
+          </button>
           <div className="flex rounded-lg border border-gray-200 overflow-hidden">
-            <button
-              className={`px-3 py-1.5 text-sm font-medium transition-colors ${viewMode === 'day' ? 'bg-violet-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-              onClick={() => setViewMode('day')}
-            >
-              Dag
-            </button>
-            <button
-              className={`px-3 py-1.5 text-sm font-medium transition-colors ${viewMode === 'week' ? 'bg-violet-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-              onClick={() => setViewMode('week')}
-            >
-              Week
-            </button>
+            {(['agenda', 'day', 'week'] as ViewMode[]).map(mode => (
+              <button
+                key={mode}
+                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                  viewMode === mode ? 'bg-violet-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+                onClick={() => setViewMode(mode)}
+              >
+                {mode === 'agenda' ? 'Agenda' : mode === 'day' ? 'Lijst' : 'Week'}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Date navigation */}
       <div className="mb-4">
-        {viewMode === 'day' ? (
-          <DateNavigator date={date} onChange={setDate} />
-        ) : (
+        {viewMode === 'week' ? (
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setDate(d => subWeeks(d, 1))}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
-            >
+            <button onClick={() => setDate(d => subWeeks(d, 1))} className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </button>
             <span className="text-sm font-medium text-gray-700">
               {format(startOfWeek(date, { weekStartsOn: 1 }), 'd MMM', { locale: nl })} – {format(endOfWeek(date, { weekStartsOn: 1 }), 'd MMM yyyy', { locale: nl })}
             </span>
-            <button
-              onClick={() => setDate(d => addWeeks(d, 1))}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
-            >
+            <button onClick={() => setDate(d => addWeeks(d, 1))} className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
-            <button
-              onClick={() => setDate(new Date())}
-              className="ml-2 px-3 py-1 text-xs font-medium text-violet-600 bg-violet-50 rounded-lg hover:bg-violet-100"
-            >
+            <button onClick={() => setDate(new Date())} className="ml-2 px-3 py-1 text-xs font-medium text-violet-600 bg-violet-50 rounded-lg hover:bg-violet-100">
               Deze week
             </button>
           </div>
+        ) : (
+          <DateNavigator date={date} onChange={setDate} />
         )}
       </div>
 
@@ -160,21 +164,27 @@ export function BookingsPage() {
 
       {loading ? (
         <Spinner className="py-12" />
+      ) : viewMode === 'agenda' ? (
+        salon && (
+          <AgendaView
+            date={date}
+            bookings={bookings}
+            services={services}
+            staff={staff}
+            timezone={salon.timezone}
+            onSelectBooking={setSelectedBooking}
+            onSlotClick={handleSlotClick}
+            onBookingMoved={() => { addToast('success', 'Afspraak verplaatst'); refetch(); }}
+          />
+        )
       ) : viewMode === 'day' ? (
-        <BookingList
-          bookings={bookings}
-          services={services}
-          staff={staff}
-          onSelect={setSelectedBooking}
-        />
+        <BookingList bookings={bookings} services={services} staff={staff} onSelect={setSelectedBooking} />
       ) : (
-        /* Week view */
         <div className="space-y-4">
           {weekDays.map(day => {
             const key = format(day, 'yyyy-MM-dd');
             const dayBookings = bookingsByDay.get(key) || [];
             const isToday = isSameDay(day, new Date());
-
             return (
               <div key={key}>
                 <div className={`flex items-center gap-2 mb-2 ${isToday ? 'text-violet-700' : 'text-gray-600'}`}>
@@ -184,12 +194,7 @@ export function BookingsPage() {
                   <span className="text-xs text-gray-400">{dayBookings.length} afspraken</span>
                 </div>
                 {dayBookings.length > 0 ? (
-                  <BookingList
-                    bookings={dayBookings}
-                    services={services}
-                    staff={staff}
-                    onSelect={setSelectedBooking}
-                  />
+                  <BookingList bookings={dayBookings} services={services} staff={staff} onSelect={setSelectedBooking} />
                 ) : (
                   <p className="text-xs text-gray-400 py-2 pl-2">Geen afspraken</p>
                 )}
@@ -209,6 +214,21 @@ export function BookingsPage() {
         onCancel={handleCancel}
         onNoShow={handleNoShow}
       />
+
+      {/* Create booking modal */}
+      {salon && (
+        <CreateBookingModal
+          open={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onCreated={handleBookingCreated}
+          salon={salon}
+          services={services}
+          staff={staff}
+          prefillDate={date}
+          prefillStaffId={createPrefill.staffId}
+          prefillTime={createPrefill.time}
+        />
+      )}
     </div>
   );
 }

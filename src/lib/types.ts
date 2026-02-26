@@ -43,9 +43,19 @@ export interface StaffBlock {
   created_at: string;
 }
 
+export interface ServiceCategory {
+  id: string;
+  salon_id: string;
+  name: string;
+  sort_order: number;
+  icon: string | null;
+  created_at: string;
+}
+
 export interface Service {
   id: string;
   salon_id: string;
+  category_id: string | null;
   name: string;
   duration_min: number;
   price_cents: number;

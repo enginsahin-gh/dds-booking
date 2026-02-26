@@ -171,6 +171,71 @@
   white-space: nowrap;
 }
 
+/* Service Categories */
+.dds-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.dds-category {
+  border: 1px solid var(--dds-color-border);
+  border-radius: var(--dds-radius);
+  overflow: hidden;
+  background: var(--dds-color-bg);
+}
+
+.dds-category-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 150ms ease;
+}
+
+.dds-category-header:hover {
+  background: rgba(0,0,0,0.02);
+}
+
+.dds-category-header--static {
+  cursor: default;
+}
+
+.dds-category-name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--dds-color-text);
+  flex: 1;
+}
+
+.dds-category-count {
+  font-size: 0.75rem;
+  color: var(--dds-color-text-muted);
+  background: var(--dds-color-border);
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.dds-category-services {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 8px 10px;
+}
+
+.dds-category-services .dds-service-card {
+  border-width: 1px;
+  padding: 12px 14px;
+}
+
 /* Staff Cards */
 .dds-staff-grid {
   display: grid;

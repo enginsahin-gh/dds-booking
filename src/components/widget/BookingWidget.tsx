@@ -10,7 +10,7 @@ import { CustomerForm } from './CustomerForm';
 import { PaymentStep } from './PaymentStep';
 import { Confirmation } from './Confirmation';
 import { useSlots } from '../../hooks/useSlots';
-import type { Salon, Service, Staff, TimeSlot, BookingStep } from '../../lib/types';
+import type { Salon, Service, ServiceCategory, Staff, TimeSlot, BookingStep } from '../../lib/types';
 
 interface BookingWidgetProps {
   salonSlug: string;
@@ -25,6 +25,7 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
   const [step, setStep] = useState<BookingStep>(1);
   const [salon, setSalon] = useState<Salon | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,14 +103,16 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
 
       setSalon(salonData);
 
-      const [servicesRes, staffRes] = await Promise.all([
+      const [servicesRes, staffRes, categoriesRes] = await Promise.all([
         supabase.from('services').select('*').eq('salon_id', salonData.id).eq('is_active', true).order('sort_order'),
         supabase.from('staff').select('*').eq('salon_id', salonData.id).eq('is_active', true).order('sort_order'),
+        supabase.from('service_categories').select('*').eq('salon_id', salonData.id).order('sort_order'),
       ]);
 
       const allServices = servicesRes.data || [];
       const allStaff = staffRes.data || [];
       setServices(allServices);
+      setCategories(categoriesRes.data || []);
       setStaff(allStaff);
 
       // Handle payment return
@@ -475,6 +478,7 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
       {step === 1 && (
         <ServicePicker
           services={services}
+          categories={categories}
           selectedId={selectedService?.id || null}
           onSelect={handleServiceSelect}
         />

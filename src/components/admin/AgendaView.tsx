@@ -17,8 +17,10 @@ interface Props {
 
 const HOUR_START = 7;
 const HOUR_END = 21;
-const SLOT_HEIGHT = 48; // px per hour
+const SLOT_HEIGHT = 48;
 const MINUTES_PER_SLOT = 15;
+const TIME_COL_W = 48; // px
+const COL_MIN_W = 130; // px per staff column
 
 const STATUS_COLORS: Record<string, string> = {
   confirmed: 'bg-violet-100 border-violet-400 text-violet-900',
@@ -31,11 +33,20 @@ function snapToQuarter(minutes: number): number {
   return Math.round(minutes / MINUTES_PER_SLOT) * MINUTES_PER_SLOT;
 }
 
+function getTimeFromY(e: React.DragEvent | React.MouseEvent, el: Element): string {
+  const rect = el.getBoundingClientRect();
+  const y = e.clientY - rect.top;
+  const snapped = snapToQuarter((y / SLOT_HEIGHT) * 60);
+  const totalMin = HOUR_START * 60 + snapped;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 export function AgendaView({
   date, bookings, services, staff: allStaff, timezone,
   onSelectBooking, onSlotClick, onBookingMoved,
 }: Props) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [dragBooking, setDragBooking] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ staffId: string; time: string } | null>(null);
 
@@ -43,6 +54,7 @@ export function AgendaView({
   const hours = useMemo(() => Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i), []);
   const totalMinutes = (HOUR_END - HOUR_START) * 60;
   const gridHeight = hours.length * SLOT_HEIGHT;
+  const totalGridWidth = TIME_COL_W + activeStaff.length * COL_MIN_W;
 
   const positionedBookings = useMemo(() => {
     return bookings
@@ -54,35 +66,20 @@ export function AgendaView({
         const durationMin = differenceInMinutes(end, start);
         const svc = services.find(s => s.id === b.service_id);
         return {
-          booking: b,
-          staffId: b.staff_id,
+          booking: b, staffId: b.staff_id,
           topPx: (startMin / 60) * SLOT_HEIGHT,
           heightPx: Math.max((durationMin / 60) * SLOT_HEIGHT, 20),
           timeLabel: `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`,
-          serviceName: svc?.name || '',
-          customerName: b.customer_name,
-          startMin,
+          serviceName: svc?.name || '', customerName: b.customer_name, startMin,
         };
       })
       .filter(b => b.startMin >= 0 && b.startMin < totalMinutes);
   }, [bookings, services, timezone, totalMinutes]);
 
-  // Drag handlers
   const handleDragStart = (e: React.DragEvent, bookingId: string) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', bookingId);
     setDragBooking(bookingId);
-  };
-
-  const getTimeFromY = (e: React.DragEvent | React.MouseEvent, el: Element) => {
-    const rect = el.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    const minuteOffset = (y / SLOT_HEIGHT) * 60;
-    const snapped = snapToQuarter(minuteOffset);
-    const totalMin = HOUR_START * 60 + snapped;
-    const h = Math.floor(totalMin / 60);
-    const m = totalMin % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   };
 
   const handleDragOver = (e: React.DragEvent, staffId: string) => {
@@ -95,14 +92,12 @@ export function AgendaView({
     e.preventDefault();
     const bookingId = e.dataTransfer.getData('text/plain');
     if (!bookingId || !dropTarget) return;
-
     const booking = bookings.find(b => b.id === bookingId);
     const svc = booking ? services.find(s => s.id === booking.service_id) : null;
     if (!booking || !svc) return;
 
-    const [hours, minutes] = dropTarget.time.split(':').map(Number);
-    const localDate = set(startOfDay(date), { hours, minutes });
-    const newStart = fromZonedTime(localDate, timezone);
+    const [h, m] = dropTarget.time.split(':').map(Number);
+    const newStart = fromZonedTime(set(startOfDay(date), { hours: h, minutes: m }), timezone);
     const newEnd = addMinutes(newStart, svc.duration_min);
 
     const { data: conflicts } = await supabase
@@ -110,9 +105,7 @@ export function AgendaView({
       .eq('staff_id', staffId).neq('status', 'cancelled').neq('id', bookingId)
       .lt('start_at', newEnd.toISOString()).gt('end_at', newStart.toISOString());
 
-    if (conflicts && conflicts.length > 0) {
-      setDragBooking(null); setDropTarget(null); return;
-    }
+    if (conflicts && conflicts.length > 0) { setDragBooking(null); setDropTarget(null); return; }
 
     await supabase.from('bookings').update({ staff_id: staffId, start_at: newStart.toISOString(), end_at: newEnd.toISOString() }).eq('id', bookingId);
     setDragBooking(null); setDropTarget(null);
@@ -121,8 +114,7 @@ export function AgendaView({
 
   const handleSlotClick = (e: React.MouseEvent, staffId: string) => {
     if ((e.target as HTMLElement).closest('[data-booking]')) return;
-    const time = getTimeFromY(e, e.currentTarget);
-    onSlotClick(staffId, time);
+    onSlotClick(staffId, getTimeFromY(e, e.currentTarget));
   };
 
   // Current time
@@ -132,39 +124,44 @@ export function AgendaView({
   const nowMin = nowLocal.getHours() * 60 + nowLocal.getMinutes() - HOUR_START * 60;
   const showNowLine = isSameDay(date, toZonedTime(now, timezone)) && nowMin >= 0 && nowMin < totalMinutes;
 
-  // Column width: wider on mobile
-  const colMinWidth = activeStaff.length <= 2 ? 160 : 130;
-
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100dvh - 260px)' }}>
-      {/* Sticky header: staff names — sits OUTSIDE scrollable area */}
-      <div className="flex border-b border-gray-200 bg-white flex-shrink-0">
-        <div className="w-12 lg:w-14 flex-shrink-0 border-r border-gray-100" />
-        {activeStaff.map(s => (
-          <div
-            key={s.id}
-            className="px-2 py-2.5 text-center border-r border-gray-100 last:border-r-0 flex-shrink-0"
-            style={{ minWidth: colMinWidth, width: `${100 / activeStaff.length}%` }}
-          >
-            {s.photo_url ? (
-              <img src={s.photo_url} alt="" className="w-7 h-7 rounded-full mx-auto mb-1 object-cover" />
-            ) : (
-              <div className="w-7 h-7 rounded-full mx-auto mb-1 bg-violet-100 text-violet-600 flex items-center justify-center text-xs font-bold">
-                {s.name.charAt(0)}
-              </div>
-            )}
-            <p className="text-[11px] font-medium text-gray-900 truncate">{s.name}</p>
-          </div>
-        ))}
-      </div>
+    <div
+      className="bg-white rounded-xl border border-gray-200 overflow-auto overscroll-none"
+      style={{ maxHeight: 'calc(100dvh - 260px)' }}
+    >
+      {/*
+        Single scroll container for both header and grid.
+        Header uses position:sticky so it stays visible while scrolling vertically,
+        but scrolls horizontally together with the grid.
+      */}
+      <div style={{ minWidth: totalGridWidth }}>
+        {/* Sticky header row */}
+        <div className="flex border-b border-gray-200 bg-white sticky top-0 z-20">
+          <div className="border-r border-gray-100 flex-shrink-0" style={{ width: TIME_COL_W }} />
+          {activeStaff.map(s => (
+            <div
+              key={s.id}
+              className="px-2 py-2.5 text-center border-r border-gray-100 last:border-r-0 flex-shrink-0"
+              style={{ width: COL_MIN_W }}
+            >
+              {s.photo_url ? (
+                <img src={s.photo_url} alt="" className="w-7 h-7 rounded-full mx-auto mb-1 object-cover" />
+              ) : (
+                <div className="w-7 h-7 rounded-full mx-auto mb-1 bg-violet-100 text-violet-600 flex items-center justify-center text-xs font-bold">
+                  {s.name.charAt(0)}
+                </div>
+              )}
+              <p className="text-[11px] font-medium text-gray-900 truncate">{s.name}</p>
+            </div>
+          ))}
+        </div>
 
-      {/* Scrollable grid */}
-      <div className="overflow-auto flex-1 overscroll-none" ref={scrollContainerRef}>
-        <div className="flex relative" style={{ minHeight: gridHeight }}>
+        {/* Grid body */}
+        <div className="flex relative" style={{ height: gridHeight }}>
           {/* Time column */}
-          <div className="w-12 lg:w-14 flex-shrink-0 border-r border-gray-100">
+          <div className="flex-shrink-0 border-r border-gray-100" style={{ width: TIME_COL_W }}>
             {hours.map(h => (
-              <div key={h} className="border-b border-gray-50 text-[10px] lg:text-xs text-gray-400 pr-1.5 text-right" style={{ height: SLOT_HEIGHT }}>
+              <div key={h} className="border-b border-gray-50 text-[10px] text-gray-400 pr-1.5 text-right" style={{ height: SLOT_HEIGHT }}>
                 <span className="relative -top-1.5">{`${String(h).padStart(2, '0')}:00`}</span>
               </div>
             ))}
@@ -177,20 +174,18 @@ export function AgendaView({
               <div
                 key={staffMember.id}
                 className="relative border-r border-gray-100 last:border-r-0 cursor-pointer flex-shrink-0"
-                style={{ height: gridHeight, minWidth: colMinWidth, width: `${100 / activeStaff.length}%` }}
+                style={{ height: gridHeight, width: COL_MIN_W }}
                 onClick={e => handleSlotClick(e, staffMember.id)}
                 onDragOver={e => handleDragOver(e, staffMember.id)}
                 onDragLeave={() => setDropTarget(null)}
                 onDrop={e => handleDrop(e, staffMember.id)}
               >
-                {/* Hour lines */}
                 {hours.map(h => (
                   <div key={h} className="absolute w-full border-b border-gray-50" style={{ top: (h - HOUR_START) * SLOT_HEIGHT, height: SLOT_HEIGHT }}>
                     <div className="absolute w-full border-b border-gray-50/50" style={{ top: SLOT_HEIGHT / 2 }} />
                   </div>
                 ))}
 
-                {/* Drop indicator */}
                 {dropTarget && dropTarget.staffId === staffMember.id && dragBooking && (
                   <div
                     className="absolute left-1 right-1 bg-violet-200/50 border-2 border-dashed border-violet-400 rounded z-10 pointer-events-none"
@@ -201,7 +196,6 @@ export function AgendaView({
                   />
                 )}
 
-                {/* Booking blocks */}
                 {staffBookings.map(({ booking, topPx, heightPx, timeLabel, serviceName, customerName }) => (
                   <div
                     key={booking.id}
@@ -210,27 +204,23 @@ export function AgendaView({
                     onDragStart={e => handleDragStart(e, booking.id)}
                     onDragEnd={() => { setDragBooking(null); setDropTarget(null); }}
                     onClick={e => { e.stopPropagation(); onSelectBooking(booking); }}
-                    className={`absolute left-0.5 right-0.5 lg:left-1 lg:right-1 rounded-md border-l-[3px] px-1.5 lg:px-2 py-0.5 lg:py-1 cursor-grab active:cursor-grabbing overflow-hidden transition-shadow hover:shadow-md z-10 ${
+                    className={`absolute left-0.5 right-0.5 rounded-md border-l-[3px] px-1.5 py-0.5 cursor-grab active:cursor-grabbing overflow-hidden transition-shadow hover:shadow-md z-10 ${
                       STATUS_COLORS[booking.status] || STATUS_COLORS.confirmed
                     } ${dragBooking === booking.id ? 'opacity-40' : ''}`}
                     style={{ top: topPx, height: heightPx }}
                     title={`${customerName}\n${serviceName}\n${timeLabel}`}
                   >
-                    <p className="text-[10px] lg:text-xs font-medium truncate leading-tight">{customerName}</p>
-                    {heightPx > 28 && <p className="text-[9px] lg:text-[10px] opacity-75 truncate">{serviceName}</p>}
-                    {heightPx > 42 && <p className="text-[9px] lg:text-[10px] opacity-60">{timeLabel}</p>}
+                    <p className="text-[10px] font-medium truncate leading-tight">{customerName}</p>
+                    {heightPx > 28 && <p className="text-[9px] opacity-75 truncate">{serviceName}</p>}
+                    {heightPx > 42 && <p className="text-[9px] opacity-60">{timeLabel}</p>}
                   </div>
                 ))}
               </div>
             );
           })}
 
-          {/* Current time line */}
           {showNowLine && (
-            <div
-              className="absolute left-12 lg:left-14 right-0 h-0.5 bg-rose-500 z-30 pointer-events-none"
-              style={{ top: (nowMin / 60) * SLOT_HEIGHT }}
-            >
+            <div className="absolute right-0 h-0.5 bg-rose-500 z-30 pointer-events-none" style={{ top: (nowMin / 60) * SLOT_HEIGHT, left: TIME_COL_W }}>
               <div className="absolute -left-1 -top-1 w-2.5 h-2.5 rounded-full bg-rose-500" />
             </div>
           )}

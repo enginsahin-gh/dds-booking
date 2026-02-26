@@ -35,7 +35,7 @@ export function useBookings(salonId: string | undefined, dateRange?: { start: st
 
     // Send cancellation email
     try {
-      await globalThis.fetch('/.netlify/functions/send-email', {
+      await globalThis.fetch('/api/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'cancellation', bookingId: id, salonId }),

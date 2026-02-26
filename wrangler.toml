@@ -1,0 +1,11 @@
+# DDS Booking API Worker
+name = "dds-booking-api"
+main = "workers/api.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Environment variables are set via `wrangler secret put`
+# SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, MOLLIE_API_KEY, EMAIL_SECRET, etc.
+
+[vars]
+SITE_URL = "https://dds-booking-api.engin-sahin.workers.dev"

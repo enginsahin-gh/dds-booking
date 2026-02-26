@@ -17,7 +17,7 @@ interface BookingWidgetProps {
 }
 
 // When embedded on external sites, functions must point to the booking server origin
-const FUNCTIONS_BASE = import.meta.env.VITE_FUNCTIONS_URL
+const FUNCTIONS_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_FUNCTIONS_URL
   || (typeof document !== 'undefined' && document.querySelector('script[data-dds-origin]')?.getAttribute('data-dds-origin'))
   || 'https://dds-booking-widget.netlify.app';
 
@@ -305,7 +305,7 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     const redirectUrl = `${currentUrl}?payment_return=1&booking_id=${bookingId}`;
 
     try {
-      const res = await fetch(`${FUNCTIONS_BASE}/.netlify/functions/create-payment`, {
+      const res = await fetch(`${FUNCTIONS_BASE}/api/create-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

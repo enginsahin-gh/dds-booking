@@ -51,7 +51,7 @@ export function PaymentReturn() {
 
     const checkStatus = async () => {
       try {
-        const res = await fetch(`/.netlify/functions/payment-status?booking_id=${bookingId}`);
+        const res = await fetch(`/api/payment-status?booking_id=${bookingId}`);
         if (!res.ok) {
           if (res.status === 404) {
             // Payment might not be processed yet — retry a few times

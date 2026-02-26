@@ -220,7 +220,7 @@ export function AgendaView({
           })}
 
           {showNowLine && (
-            <div className="absolute right-0 h-0.5 bg-rose-500 z-30 pointer-events-none" style={{ top: (nowMin / 60) * SLOT_HEIGHT, left: TIME_COL_W }}>
+            <div className="absolute right-0 h-0.5 bg-rose-500 z-[15] pointer-events-none" style={{ top: (nowMin / 60) * SLOT_HEIGHT, left: TIME_COL_W }}>
               <div className="absolute -left-1 -top-1 w-2.5 h-2.5 rounded-full bg-rose-500" />
             </div>
           )}

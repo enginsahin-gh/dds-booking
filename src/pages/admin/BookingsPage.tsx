@@ -32,7 +32,6 @@ export function BookingsPage() {
       const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
       return { start: startOfDay(weekStart).toISOString(), end: endOfDay(weekEnd).toISOString() };
     }
-    // day and agenda both use single day
     return { start: startOfDay(date).toISOString(), end: endOfDay(date).toISOString() };
   }, [date, viewMode]);
 
@@ -41,12 +40,7 @@ export function BookingsPage() {
   const { staff } = useStaff(salon?.id);
 
   const handleCancel = async (id: string) => {
-    try {
-      await cancelBooking(id);
-      addToast('success', 'Afspraak geannuleerd');
-    } catch {
-      addToast('error', 'Annulering mislukt');
-    }
+    try { await cancelBooking(id); addToast('success', 'Afspraak geannuleerd'); } catch { addToast('error', 'Annulering mislukt'); }
   };
 
   const handleNoShow = async (id: string) => {
@@ -54,9 +48,7 @@ export function BookingsPage() {
       await supabase.from('bookings').update({ status: 'no_show' }).eq('id', id);
       addToast('success', 'No-show geregistreerd');
       refetch();
-    } catch {
-      addToast('error', 'Kon no-show niet registreren');
-    }
+    } catch { addToast('error', 'Kon no-show niet registreren'); }
   };
 
   const handleSlotClick = (staffId: string, time: string) => {
@@ -64,15 +56,12 @@ export function BookingsPage() {
     setShowCreateModal(true);
   };
 
-  const handleBookingCreated = () => {
-    addToast('success', 'Afspraak aangemaakt');
-    refetch();
-  };
+  const handleBookingCreated = () => { addToast('success', 'Afspraak aangemaakt'); refetch(); };
 
   const selectedService = selectedBooking ? services.find(s => s.id === selectedBooking.service_id) || null : null;
   const selectedStaff = selectedBooking ? staff.find(s => s.id === selectedBooking.staff_id) || null : null;
 
-  // Week view: group bookings by day
+  // Week view grouping
   const weekDays = useMemo(() => {
     if (viewMode !== 'week') return [];
     const weekStart = startOfWeek(date, { weekStartsOn: 1 });
@@ -92,28 +81,34 @@ export function BookingsPage() {
   // Stats
   const confirmed = bookings.filter(b => b.status === 'confirmed');
   const pendingPayment = bookings.filter(b => b.status === 'pending_payment');
-  const totalRevenue = confirmed.reduce((sum, b) => {
-    const svc = services.find(s => s.id === b.service_id);
-    return sum + (svc?.price_cents || 0);
-  }, 0);
+  const totalRevenue = confirmed.reduce((sum, b) => sum + (services.find(s => s.id === b.service_id)?.price_cents || 0), 0);
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Boekingen</h1>
-        <div className="flex items-center gap-2">
+      {/* Header row */}
+      <div className="flex flex-col gap-3 mb-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Boekingen</h1>
           <button
             onClick={() => { setCreatePrefill({}); setShowCreateModal(true); }}
-            className="px-4 py-1.5 text-sm font-medium bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 lg:px-4 text-sm font-medium bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors shadow-sm"
           >
-            + Nieuwe afspraak
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span className="hidden sm:inline">Nieuwe afspraak</span>
           </button>
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+        </div>
+
+        {/* View toggle + date nav */}
+        <div className="flex items-center justify-between gap-3">
+          {/* View mode */}
+          <div className="flex rounded-xl bg-gray-100 p-0.5">
             {(['agenda', 'day', 'week'] as ViewMode[]).map(mode => (
               <button
                 key={mode}
-                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-                  viewMode === mode ? 'bg-violet-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                className={`px-3 py-1.5 text-xs font-medium rounded-[10px] transition-all ${
+                  viewMode === mode ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                 }`}
                 onClick={() => setViewMode(mode)}
               >
@@ -121,47 +116,44 @@ export function BookingsPage() {
               </button>
             ))}
           </div>
+
+          {/* Date nav */}
+          {viewMode === 'week' ? (
+            <div className="flex items-center gap-2">
+              <button onClick={() => setDate(d => subWeeks(d, 1))} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              </button>
+              <span className="text-xs font-medium text-gray-600 min-w-[120px] text-center">
+                {format(startOfWeek(date, { weekStartsOn: 1 }), 'd MMM', { locale: nl })} – {format(endOfWeek(date, { weekStartsOn: 1 }), 'd MMM', { locale: nl })}
+              </span>
+              <button onClick={() => setDate(d => addWeeks(d, 1))} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+              <button onClick={() => setDate(new Date())} className="px-2 py-1 text-[10px] font-medium text-violet-600 bg-violet-50 rounded-lg">Nu</button>
+            </div>
+          ) : (
+            <DateNavigator date={date} onChange={setDate} />
+          )}
         </div>
       </div>
 
-      {/* Date navigation */}
-      <div className="mb-4">
-        {viewMode === 'week' ? (
-          <div className="flex items-center gap-3">
-            <button onClick={() => setDate(d => subWeeks(d, 1))} className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            </button>
-            <span className="text-sm font-medium text-gray-700">
-              {format(startOfWeek(date, { weekStartsOn: 1 }), 'd MMM', { locale: nl })} – {format(endOfWeek(date, { weekStartsOn: 1 }), 'd MMM yyyy', { locale: nl })}
-            </span>
-            <button onClick={() => setDate(d => addWeeks(d, 1))} className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-            </button>
-            <button onClick={() => setDate(new Date())} className="ml-2 px-3 py-1 text-xs font-medium text-violet-600 bg-violet-50 rounded-lg hover:bg-violet-100">
-              Deze week
-            </button>
-          </div>
-        ) : (
-          <DateNavigator date={date} onChange={setDate} />
-        )}
-      </div>
-
-      {/* Quick stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-          <p className="text-2xl font-bold text-gray-900">{confirmed.length}</p>
-          <p className="text-xs text-gray-500">Bevestigd</p>
+      {/* Quick stats - compact on mobile */}
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="bg-white rounded-xl border border-gray-100 p-2.5 lg:p-3 text-center">
+          <p className="text-lg lg:text-2xl font-bold text-gray-900">{confirmed.length}</p>
+          <p className="text-[10px] lg:text-xs text-gray-500">Bevestigd</p>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-          <p className="text-2xl font-bold text-yellow-600">{pendingPayment.length}</p>
-          <p className="text-xs text-gray-500">Wacht op betaling</p>
+        <div className="bg-white rounded-xl border border-gray-100 p-2.5 lg:p-3 text-center">
+          <p className="text-lg lg:text-2xl font-bold text-amber-600">{pendingPayment.length}</p>
+          <p className="text-[10px] lg:text-xs text-gray-500">Wacht</p>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-          <p className="text-2xl font-bold text-gray-900">€{(totalRevenue / 100).toFixed(0)}</p>
-          <p className="text-xs text-gray-500">Omzet</p>
+        <div className="bg-white rounded-xl border border-gray-100 p-2.5 lg:p-3 text-center">
+          <p className="text-lg lg:text-2xl font-bold text-gray-900">€{(totalRevenue / 100).toFixed(0)}</p>
+          <p className="text-[10px] lg:text-xs text-gray-500">Omzet</p>
         </div>
       </div>
 
+      {/* Content */}
       {loading ? (
         <Spinner className="py-12" />
       ) : viewMode === 'agenda' ? (
@@ -189,9 +181,9 @@ export function BookingsPage() {
               <div key={key}>
                 <div className={`flex items-center gap-2 mb-2 ${isToday ? 'text-violet-700' : 'text-gray-600'}`}>
                   <span className={`text-sm font-semibold ${isToday ? 'bg-violet-600 text-white px-2 py-0.5 rounded-full' : ''}`}>
-                    {format(day, 'EEEE d MMM', { locale: nl })}
+                    {format(day, 'EEE d MMM', { locale: nl })}
                   </span>
-                  <span className="text-xs text-gray-400">{dayBookings.length} afspraken</span>
+                  <span className="text-xs text-gray-400">{dayBookings.length}</span>
                 </div>
                 {dayBookings.length > 0 ? (
                   <BookingList bookings={dayBookings} services={services} staff={staff} onSelect={setSelectedBooking} />
@@ -204,7 +196,6 @@ export function BookingsPage() {
         </div>
       )}
 
-      {/* Detail modal */}
       <BookingDetailModal
         booking={selectedBooking}
         service={selectedService}
@@ -215,7 +206,6 @@ export function BookingsPage() {
         onNoShow={handleNoShow}
       />
 
-      {/* Create booking modal */}
       {salon && (
         <CreateBookingModal
           open={showCreateModal}

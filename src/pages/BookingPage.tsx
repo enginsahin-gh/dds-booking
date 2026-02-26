@@ -1,13 +1,12 @@
-import { useSearchParams, Navigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { BookingWidget } from '../components/widget/BookingWidget';
 
 export function BookingPage() {
   const [params] = useSearchParams();
   const salon = params.get('salon');
 
-  // No salon specified → redirect to demo salon
   if (!salon) {
-    return <Navigate to="/?salon=salon-amara" replace />;
+    return null;
   }
 
   return (

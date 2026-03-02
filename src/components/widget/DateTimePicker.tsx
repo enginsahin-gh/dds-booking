@@ -12,6 +12,8 @@ interface DateTimePickerProps {
   slots: TimeSlot[];
   slotsLoading: boolean;
   timezone: string;
+  workingDays?: Set<number>;
+  maxDate?: Date | null;
 }
 
 export function DateTimePicker({
@@ -22,6 +24,8 @@ export function DateTimePicker({
   slots,
   slotsLoading,
   timezone,
+  workingDays,
+  maxDate,
 }: DateTimePickerProps) {
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
 
@@ -30,21 +34,29 @@ export function DateTimePicker({
       <h2 className="dds-step-title">Kies datum & tijd</h2>
       <p className="dds-step-subtitle">Wanneer wil je langskomen?</p>
 
-      <CalendarGrid
-        selectedDate={selectedDate}
-        onSelectDate={onSelectDate}
-        currentMonth={currentMonth}
-        onChangeMonth={setCurrentMonth}
-      />
+      <div className="dds-datetime-layout">
+        <div className="dds-datetime-calendar">
+          <CalendarGrid
+            selectedDate={selectedDate}
+            onSelectDate={onSelectDate}
+            currentMonth={currentMonth}
+            onChangeMonth={setCurrentMonth}
+            workingDays={workingDays}
+            maxDate={maxDate}
+          />
+        </div>
 
-      <TimeSlotList
-        slots={slots}
-        selectedSlot={selectedSlot}
-        onSelect={onSelectSlot}
-        loading={slotsLoading}
-        timezone={timezone}
-        dateSelected={!!selectedDate}
-      />
+        <div className="dds-datetime-slots">
+          <TimeSlotList
+            slots={slots}
+            selectedSlot={selectedSlot}
+            onSelect={onSelectSlot}
+            loading={slotsLoading}
+            timezone={timezone}
+            dateSelected={!!selectedDate}
+          />
+        </div>
+      </div>
     </div>
   );
 }

@@ -54,7 +54,7 @@ export async function cancelBooking(c: Context<{ Bindings: Env }>) {
   }
 
   // Send cancellation email
-  const siteUrl = c.env.SITE_URL || 'https://dds-booking-widget.netlify.app';
+  const siteUrl = c.env.SITE_URL || 'https://api.bellure.nl';
   c.executionCtx.waitUntil(
     fetch(`${siteUrl}/api/send-email`, {
       method: 'POST',

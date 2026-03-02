@@ -1,12 +1,60 @@
-import type { Staff } from '../../lib/types';
+import type { Staff, Service } from '../../lib/types';
+
+interface PerServiceStaffInfo {
+  service: Service;
+  availableStaff: Staff[];
+}
 
 interface StaffPickerProps {
   staff: Staff[];
   selectedId: string | null;
   onSelect: (staffId: string | null) => void;
+  noStaffForCombo?: boolean;
+  perServiceStaff?: PerServiceStaffInfo[];
+  onBack?: () => void;
 }
 
-export function StaffPicker({ staff, selectedId, onSelect }: StaffPickerProps) {
+export function StaffPicker({ staff, selectedId, onSelect, noStaffForCombo, perServiceStaff, onBack }: StaffPickerProps) {
+  // Show info when no single staff member can do the full combination
+  if (noStaffForCombo && perServiceStaff && perServiceStaff.length > 0) {
+    return (
+      <div className="dds-animate-in">
+        <h2 className="dds-step-title">Kies een medewerker</h2>
+        <div style={{
+          padding: 16, marginBottom: 16, background: '#FFF7ED',
+          borderRadius: 10, border: '1px solid #FED7AA',
+        }}>
+          <div style={{ fontWeight: 600, color: '#9A3412', fontSize: '0.9rem', marginBottom: 8 }}>
+            Deze combinatie is niet bij één medewerker mogelijk
+          </div>
+          <p style={{ fontSize: '0.85rem', color: '#9A3412', margin: '0 0 12px', lineHeight: 1.5 }}>
+            Je kunt de behandelingen apart boeken, of een andere combinatie kiezen.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {perServiceStaff.map(({ service, availableStaff }) => (
+              <div key={service.id} style={{
+                padding: '10px 12px', background: '#fff', borderRadius: 8,
+                border: '1px solid #FED7AA', fontSize: '0.85rem',
+              }}>
+                <div style={{ fontWeight: 600, color: '#1E293B', marginBottom: 2 }}>{service.name}</div>
+                <div style={{ color: '#64748B' }}>
+                  {availableStaff.length > 0
+                    ? availableStaff.map(s => s.name).join(', ')
+                    : 'Geen medewerker beschikbaar'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {onBack && (
+          <button className="dds-btn dds-btn-secondary" onClick={onBack} style={{ marginTop: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Andere behandeling kiezen
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="dds-animate-in">
       <h2 className="dds-step-title">Kies een medewerker</h2>

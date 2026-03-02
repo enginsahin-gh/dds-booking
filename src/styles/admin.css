@@ -21,6 +21,11 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(16px) scale(0.95); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
 .animate-in {
   animation-duration: 250ms;
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
@@ -53,7 +58,7 @@
 
 /* Touch-friendly tap targets */
 @media (pointer: coarse) {
-  button, a, [role="button"] {
+  button, a, [role="button"], [role="switch"] {
     min-height: 44px;
     min-width: 44px;
   }
@@ -82,4 +87,20 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
+}
+
+/* Global body styling */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* No scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

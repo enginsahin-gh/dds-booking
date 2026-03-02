@@ -9,11 +9,12 @@ export function useStaff(salonId: string | undefined) {
   const fetch = useCallback(async () => {
     if (!salonId) return;
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('staff')
       .select('*')
       .eq('salon_id', salonId)
       .order('sort_order');
+    if (error) console.error('useStaff error:', error.message);
     setStaff(data || []);
     setLoading(false);
   }, [salonId]);

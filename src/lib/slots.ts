@@ -52,7 +52,8 @@ export function calculateSlotsForStaff(
   schedule: StaffSchedule | undefined,
   blocks: StaffBlock[],
   bookings: PublicBooking[],
-  timezone: string
+  timezone: string,
+  bufferMinutes: number = 0
 ): TimeSlot[] {
   if (!schedule || !schedule.is_working) return [];
 
@@ -62,12 +63,15 @@ export function calculateSlotsForStaff(
   const workStart = set(dayStart, parseTime(schedule.start_time));
   const workEnd = set(dayStart, parseTime(schedule.end_time));
 
-  // Build occupied intervals
+  // Build occupied intervals (with buffer applied to bookings)
   const occupied: Interval[] = [
     ...blocks.map((b) => ({ start: toZonedTime(parseISO(b.start_at), timezone), end: toZonedTime(parseISO(b.end_at), timezone) })),
     ...bookings
       .filter((b) => b.staff_id === staffId)
-      .map((b) => ({ start: toZonedTime(parseISO(b.start_at), timezone), end: toZonedTime(parseISO(b.end_at), timezone) })),
+      .map((b) => ({
+        start: toZonedTime(parseISO(b.start_at), timezone),
+        end: addMinutes(toZonedTime(parseISO(b.end_at), timezone), bufferMinutes), // add buffer after booking
+      })),
   ];
 
   // Generate slots in 15-minute steps
@@ -108,7 +112,8 @@ export function getAvailableSlots(
   blocks: StaffBlock[],
   bookings: PublicBooking[],
   timezone: string,
-  selectedStaffId?: string | null
+  selectedStaffId?: string | null,
+  bufferMinutes: number = 0
 ): TimeSlot[] {
   // Use the date directly for day-of-week — it represents the selected calendar day (BUG-001)
   const dow = getDayOfWeek(date);
@@ -119,7 +124,7 @@ export function getAvailableSlots(
     );
     const staffBlocks = blocks.filter((b) => b.staff_id === selectedStaffId);
     return calculateSlotsForStaff(
-      selectedStaffId, date, durationMin, schedule, staffBlocks, bookings, timezone
+      selectedStaffId, date, durationMin, schedule, staffBlocks, bookings, timezone, bufferMinutes
     );
   }
 
@@ -132,7 +137,7 @@ export function getAvailableSlots(
     );
     const staffBlocks = blocks.filter((b) => b.staff_id === staff.id);
     const slots = calculateSlotsForStaff(
-      staff.id, date, durationMin, schedule, staffBlocks, bookings, timezone
+      staff.id, date, durationMin, schedule, staffBlocks, bookings, timezone, bufferMinutes
     );
 
     for (const slot of slots) {

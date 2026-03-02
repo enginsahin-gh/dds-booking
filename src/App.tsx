@@ -1,44 +1,76 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast';
+import { AuthProvider } from './contexts/AuthContext';
 import { AdminLayout } from './components/admin/AdminLayout';
-import { ProtectedRoute } from './components/admin/ProtectedRoute';
+import { ProtectedRoute, OwnerRoute } from './components/admin/ProtectedRoute';
 import { LoginPage } from './pages/admin/LoginPage';
-import { DashboardPage } from './pages/admin/DashboardPage';
-import { BookingsPage } from './pages/admin/BookingsPage';
-import { ServicesPage } from './pages/admin/ServicesPage';
-import { StaffPage } from './pages/admin/StaffPage';
-import { SchedulePage } from './pages/admin/SchedulePage';
-import { BlocksPage } from './pages/admin/BlocksPage';
-import { SettingsPage } from './pages/admin/SettingsPage';
-import { PaymentSettingsPage } from './pages/admin/PaymentSettingsPage';
-import { CustomersPage } from './pages/admin/CustomersPage';
-import { BookingPage } from './pages/BookingPage';
-import { PaymentReturnPage } from './pages/PaymentReturnPage';
+import { SetPasswordPage } from './pages/admin/SetPasswordPage';
+import { Spinner } from './components/ui/Spinner';
+
+// Lazy load pages — only fetched when navigated to
+const DashboardPage = lazy(() => import('./pages/admin/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const BookingsPage = lazy(() => import('./pages/admin/BookingsPage').then(m => ({ default: m.BookingsPage })));
+const ServicesPage = lazy(() => import('./pages/admin/ServicesPage').then(m => ({ default: m.ServicesPage })));
+const StaffPage = lazy(() => import('./pages/admin/StaffPage').then(m => ({ default: m.StaffPage })));
+const SchedulePage = lazy(() => import('./pages/admin/SchedulePage').then(m => ({ default: m.SchedulePage })));
+const BlocksPage = lazy(() => import('./pages/admin/BlocksPage').then(m => ({ default: m.BlocksPage })));
+const SettingsPage = lazy(() => import('./pages/admin/SettingsPage').then(m => ({ default: m.SettingsPage })));
+// PaymentSettingsPage is now embedded in SettingsPage as a tab
+const CustomersPage = lazy(() => import('./pages/admin/CustomersPage').then(m => ({ default: m.CustomersPage })));
+const UsersPage = lazy(() => import('./pages/admin/UsersPage').then(m => ({ default: m.UsersPage })));
+const StatsPage = lazy(() => import('./pages/admin/StatsPage').then(m => ({ default: m.StatsPage })));
+const BookingPage = lazy(() => import('./pages/BookingPage').then(m => ({ default: m.BookingPage })));
+const PaymentReturnPage = lazy(() => import('./pages/PaymentReturnPage').then(m => ({ default: m.PaymentReturnPage })));
+
+function PageLoader() {
+  return <Spinner className="min-h-[50vh]" />;
+}
+
+/** Root route: if ?salon= param present, show booking widget. Otherwise redirect to admin. */
+function RootRedirect() {
+  const [params] = useSearchParams();
+  if (params.get('salon') || params.get('payment_return')) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <BookingPage />
+      </Suspense>
+    );
+  }
+  return <Navigate to="/admin" replace />;
+}
 
 export function App() {
   return (
-    <ToastProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public booking page */}
-          <Route path="/" element={<BookingPage />} />
-          <Route path="/boeking/bevestiging" element={<PaymentReturnPage />} />
-          {/* Admin routes */}
-          <Route path="/admin/login" element={<LoginPage />} />
-          <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-            <Route index element={<DashboardPage />} />
-            <Route path="bookings" element={<BookingsPage />} />
-            <Route path="services" element={<ServicesPage />} />
-            <Route path="staff" element={<StaffPage />} />
-            <Route path="staff/:staffId/schedule" element={<SchedulePage />} />
-            <Route path="staff/:staffId/blocks" element={<BlocksPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="customers" element={<CustomersPage />} />
-            <Route path="payments" element={<PaymentSettingsPage />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/admin" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </ToastProvider>
+    <AuthProvider>
+      <ToastProvider>
+        <BrowserRouter>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              {/* Public booking page */}
+              <Route path="/" element={<RootRedirect />} />
+              <Route path="/boeking/bevestiging" element={<PaymentReturnPage />} />
+              {/* Admin routes */}
+              <Route path="/admin/login" element={<LoginPage />} />
+              <Route path="/admin/set-password" element={<SetPasswordPage />} />
+              <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                <Route index element={<DashboardPage />} />
+                <Route path="bookings" element={<BookingsPage />} />
+                <Route path="services" element={<OwnerRoute><ServicesPage /></OwnerRoute>} />
+                <Route path="staff" element={<StaffPage />} />
+                <Route path="staff/:staffId/schedule" element={<OwnerRoute><SchedulePage /></OwnerRoute>} />
+                <Route path="staff/:staffId/blocks" element={<OwnerRoute><BlocksPage /></OwnerRoute>} />
+                <Route path="settings" element={<OwnerRoute><SettingsPage /></OwnerRoute>} />
+                <Route path="customers" element={<CustomersPage />} />
+                <Route path="stats" element={<OwnerRoute><StatsPage /></OwnerRoute>} />
+                <Route path="users" element={<OwnerRoute><UsersPage /></OwnerRoute>} />
+                <Route path="payments" element={<Navigate to="/admin/settings" replace />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/admin" replace />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </ToastProvider>
+    </AuthProvider>
   );
 }

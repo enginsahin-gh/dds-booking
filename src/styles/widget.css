@@ -2,37 +2,39 @@
 /* All classes prefixed with dds- to avoid conflicts with host site */
 
 /* Widget reads theme from data attributes or CSS custom properties set by host site.
-   Host site can override: --dds-color-primary, --dds-color-bg, --dds-color-text, --dds-font */
-[id^="dds-booking-widget"] {
-  --dds-color-primary: #8B5CF6;
-  --dds-color-primary-hover: color-mix(in srgb, var(--dds-color-primary) 85%, black);
-  --dds-color-primary-light: color-mix(in srgb, var(--dds-color-primary) 10%, white);
-  --dds-color-primary-subtle: color-mix(in srgb, var(--dds-color-primary) 5%, white);
-  --dds-color-bg: #FFFFFF;
-  --dds-color-bg-secondary: #F9FAFB;
-  --dds-color-text: #1F2937;
-  --dds-color-text-muted: color-mix(in srgb, var(--dds-color-text) 55%, transparent);
-  --dds-color-border: #E5E7EB;
-  --dds-color-border-focus: var(--dds-color-primary);
-  --dds-color-success: #10B981;
-  --dds-color-error: #EF4444;
-  --dds-font: 'Inter', system-ui, -apple-system, sans-serif;
-  --dds-radius: 12px;
-  --dds-radius-sm: 8px;
-  --dds-radius-lg: 16px;
-  --dds-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-  --dds-shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
-  --dds-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+   Host site can override: --bellure-color-primary, --bellure-color-bg, --bellure-color-text, --bellure-font */
+[id^="bellure-booking-widget"] {
+  --bellure-color-primary: #8B5CF6;
+  --bellure-color-primary-hover: color-mix(in srgb, var(--bellure-color-primary) 85%, black);
+  --bellure-color-primary-light: color-mix(in srgb, var(--bellure-color-primary) 10%, white);
+  --bellure-color-primary-subtle: color-mix(in srgb, var(--bellure-color-primary) 5%, white);
+  --bellure-color-bg: #FFFFFF;
+  --bellure-color-bg-secondary: #FAFAF8;
+  --bellure-color-text: #1F2937;
+  --bellure-color-text-muted: color-mix(in srgb, var(--bellure-color-text) 55%, transparent);
+  --bellure-color-border: #E8E5E0;
+  --bellure-color-border-focus: var(--bellure-color-primary);
+  --bellure-color-success: #10B981;
+  --bellure-color-error: #EF4444;
+  --bellure-font: 'Inter', system-ui, -apple-system, sans-serif;
+  --bellure-radius: 14px;
+  --bellure-radius-sm: 10px;
+  --bellure-radius-lg: 20px;
+  --bellure-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+  --bellure-shadow-lg: 0 12px 32px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.03);
+  --bellure-shadow-premium: 0 20px 60px rgba(0,0,0,0.06), 0 8px 20px rgba(0,0,0,0.03);
+  --bellure-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --bellure-transition-smooth: 400ms cubic-bezier(0.16, 1, 0.3, 1);
 
-  font-family: var(--dds-font);
-  color: var(--dds-color-text);
-  background: var(--dds-color-bg);
-  line-height: 1.5;
+  font-family: var(--bellure-font);
+  color: var(--bellure-color-text);
+  background: var(--bellure-color-bg);
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  max-width: 480px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 24px 16px;
-  border-radius: var(--dds-radius-lg);
+  padding: 32px 24px;
+  border-radius: var(--bellure-radius-lg);
 }
 
 /* Animations */
@@ -67,11 +69,11 @@
 }
 
 .dds-animate-in {
-  animation: dds-fade-in 0.3s var(--dds-transition) forwards;
+  animation: dds-fade-in 0.3s var(--bellure-transition) forwards;
 }
 
 .dds-animate-slide {
-  animation: dds-slide-in 0.3s var(--dds-transition) forwards;
+  animation: dds-slide-in 0.3s var(--bellure-transition) forwards;
 }
 
 /* Step Indicator — always visible */
@@ -84,38 +86,42 @@
 }
 
 .dds-step-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: var(--dds-color-border);
-  transition: all var(--dds-transition);
+  background: var(--bellure-color-border);
+  transition: all var(--bellure-transition-smooth);
 }
 
 .dds-step-dot--active {
-  width: 32px;
-  border-radius: 5px;
-  background: var(--dds-color-primary);
+  width: 28px;
+  border-radius: 4px;
+  background: var(--bellure-color-primary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--bellure-color-primary) 30%, transparent);
 }
 
 .dds-step-dot--completed {
-  background: var(--dds-color-primary);
-  opacity: 0.5;
+  background: var(--bellure-color-primary);
+  opacity: 0.4;
 }
 
 /* Step title */
 .dds-step-title {
   text-align: center;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--dds-color-text);
-  margin: 0 0 4px;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--bellure-color-text);
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
 }
 
 .dds-step-subtitle {
   text-align: center;
   font-size: 0.875rem;
-  color: var(--dds-color-text-muted);
-  margin: 0 0 20px;
+  font-weight: 400;
+  color: var(--bellure-color-text-muted);
+  margin: 0 0 24px;
+  letter-spacing: 0.01em;
 }
 
 /* Service Cards */
@@ -130,24 +136,25 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 18px;
-  background: var(--dds-color-bg);
-  border: 2px solid var(--dds-color-border);
-  border-radius: var(--dds-radius);
+  padding: 18px 20px;
+  background: var(--bellure-color-bg);
+  border: 1.5px solid var(--bellure-color-border);
+  border-radius: var(--bellure-radius);
   cursor: pointer;
-  transition: all var(--dds-transition);
+  transition: all var(--bellure-transition-smooth);
   user-select: none;
 }
 
 .dds-service-card:hover {
-  border-color: var(--dds-color-primary);
-  box-shadow: var(--dds-shadow);
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--bellure-color-primary) 40%, transparent);
+  box-shadow: var(--bellure-shadow-lg);
+  transform: translateY(-2px);
 }
 
 .dds-service-card--selected {
-  border-color: var(--dds-color-primary);
-  background: var(--dds-color-primary-subtle);
+  border-color: var(--bellure-color-primary);
+  background: var(--bellure-color-primary-subtle);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bellure-color-primary) 10%, transparent);
 }
 
 .dds-service-name {
@@ -161,14 +168,69 @@
   gap: 12px;
   margin-top: 4px;
   font-size: 0.8125rem;
-  color: var(--dds-color-text-muted);
+  color: var(--bellure-color-text-muted);
 }
 
 .dds-service-price {
   font-weight: 700;
   font-size: 1rem;
-  color: var(--dds-color-text);
+  color: var(--bellure-color-text);
   white-space: nowrap;
+}
+
+/* Service checkbox */
+.dds-service-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid var(--bellure-color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--bellure-transition);
+  flex-shrink: 0;
+}
+
+.dds-service-check--active {
+  border-color: var(--bellure-color-primary);
+  background: var(--bellure-color-primary);
+  color: white;
+}
+
+/* Selection footer */
+.dds-selection-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 18px 20px;
+  background: var(--bellure-color-bg-secondary);
+  border-radius: var(--bellure-radius-lg);
+  border: 1.5px solid var(--bellure-color-border);
+  box-shadow: var(--bellure-shadow-lg);
+}
+
+.dds-selection-footer .dds-btn {
+  width: auto;
+  flex-shrink: 0;
+}
+
+.dds-selection-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dds-selection-count {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--bellure-color-text);
+}
+
+.dds-selection-detail {
+  font-size: 0.8125rem;
+  color: var(--bellure-color-text-muted);
 }
 
 /* Service Categories */
@@ -180,10 +242,10 @@
 }
 
 .dds-category {
-  border: 1px solid var(--dds-color-border);
-  border-radius: var(--dds-radius);
+  border: 1px solid var(--bellure-color-border);
+  border-radius: var(--bellure-radius);
   overflow: hidden;
-  background: var(--dds-color-bg);
+  background: var(--bellure-color-bg);
 }
 
 .dds-category-header {
@@ -211,14 +273,14 @@
 .dds-category-name {
   font-weight: 600;
   font-size: 0.9375rem;
-  color: var(--dds-color-text);
+  color: var(--bellure-color-text);
   flex: 1;
 }
 
 .dds-category-count {
   font-size: 0.75rem;
-  color: var(--dds-color-text-muted);
-  background: var(--dds-color-border);
+  color: var(--bellure-color-text-muted);
+  background: var(--bellure-color-border);
   padding: 1px 8px;
   border-radius: 999px;
   font-weight: 500;
@@ -248,32 +310,33 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 12px;
-  background: var(--dds-color-bg);
-  border: 2px solid var(--dds-color-border);
-  border-radius: var(--dds-radius);
+  padding: 24px 16px;
+  background: var(--bellure-color-bg);
+  border: 1.5px solid var(--bellure-color-border);
+  border-radius: var(--bellure-radius);
   cursor: pointer;
-  transition: all var(--dds-transition);
+  transition: all var(--bellure-transition-smooth);
   text-align: center;
 }
 
 .dds-staff-card:hover {
-  border-color: var(--dds-color-primary);
-  box-shadow: var(--dds-shadow);
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--bellure-color-primary) 40%, transparent);
+  box-shadow: var(--bellure-shadow-lg);
+  transform: translateY(-2px);
 }
 
 .dds-staff-card--selected {
-  border-color: var(--dds-color-primary);
-  background: var(--dds-color-primary-subtle);
+  border-color: var(--bellure-color-primary);
+  background: var(--bellure-color-primary-subtle);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bellure-color-primary) 10%, transparent);
 }
 
 .dds-staff-avatar {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--dds-color-primary-light);
-  color: var(--dds-color-primary);
+  background: var(--bellure-color-primary-light);
+  color: var(--bellure-color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -326,16 +389,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--dds-color-border);
-  border-radius: var(--dds-radius-sm);
-  background: var(--dds-color-bg);
+  border: 1px solid var(--bellure-color-border);
+  border-radius: var(--bellure-radius-sm);
+  background: var(--bellure-color-bg);
   cursor: pointer;
-  color: var(--dds-color-text);
-  transition: all var(--dds-transition);
+  color: var(--bellure-color-text);
+  transition: all var(--bellure-transition);
 }
 
 .dds-calendar-btn:hover {
-  background: var(--dds-color-bg-secondary);
+  background: var(--bellure-color-bg-secondary);
 }
 
 .dds-calendar-btn:disabled {
@@ -354,7 +417,7 @@
   text-align: center;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--dds-color-text-muted);
+  color: var(--bellure-color-text-muted);
   padding: 8px 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -372,24 +435,20 @@
   align-items: center;
   justify-content: center;
   font-size: 0.875rem;
-  border-radius: var(--dds-radius-sm);
+  border-radius: var(--bellure-radius-sm);
   cursor: pointer;
-  transition: all var(--dds-transition);
+  transition: all var(--bellure-transition);
   border: 2px solid transparent;
   font-weight: 500;
 }
 
-.dds-calendar-day:hover:not(.dds-calendar-day--disabled) {
-  background: var(--dds-color-primary-subtle);
-}
-
 .dds-calendar-day--today {
   font-weight: 700;
-  color: var(--dds-color-primary);
+  color: var(--bellure-color-primary);
 }
 
 .dds-calendar-day--selected {
-  background: var(--dds-color-primary) !important;
+  background: var(--bellure-color-primary) !important;
   color: white !important;
   font-weight: 700;
 }
@@ -403,15 +462,78 @@
   cursor: default;
 }
 
+.dds-calendar-day--available {
+  position: relative;
+}
+
+.dds-calendar-day--available::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--bellure-color-primary);
+  opacity: 0.5;
+}
+
+.dds-calendar-day--selected::after {
+  background: white;
+  opacity: 0.8;
+}
+
+.dds-calendar-day--closed {
+  opacity: 0.3;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.dds-calendar-day:hover:not(.dds-calendar-day--disabled):not(.dds-calendar-day--closed) {
+  background: var(--bellure-color-primary-subtle);
+}
+
 /* Time Slots */
+/* Desktop: calendar left, timeslots right */
+.dds-datetime-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+@media (min-width: 640px) {
+  .dds-datetime-layout {
+    flex-direction: row;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  .dds-datetime-calendar {
+    flex: 0 0 auto;
+    min-width: 280px;
+  }
+
+  .dds-datetime-slots {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 .dds-slots {
   margin-top: 20px;
+}
+
+@media (min-width: 640px) {
+  .dds-slots {
+    margin-top: 0;
+  }
 }
 
 .dds-slots-label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--dds-color-text-muted);
+  color: var(--bellure-color-text-muted);
   margin-bottom: 10px;
 }
 
@@ -422,36 +544,199 @@
 }
 
 .dds-slot {
-  padding: 10px 8px;
+  padding: 12px 10px;
   text-align: center;
   font-size: 0.875rem;
-  font-weight: 600;
-  border: 2px solid var(--dds-color-border);
-  border-radius: var(--dds-radius-sm);
+  font-weight: 500;
+  border: 1.5px solid var(--bellure-color-border);
+  border-radius: var(--bellure-radius);
   cursor: pointer;
-  transition: all var(--dds-transition);
-  background: var(--dds-color-bg);
+  transition: all var(--bellure-transition-smooth);
+  background: var(--bellure-color-bg);
+  letter-spacing: 0.02em;
 }
 
 .dds-slot:hover {
-  border-color: var(--dds-color-primary);
-  background: var(--dds-color-primary-subtle);
+  border-color: color-mix(in srgb, var(--bellure-color-primary) 40%, transparent);
+  background: var(--bellure-color-primary-subtle);
+  transform: translateY(-1px);
 }
 
 .dds-slot--selected {
-  border-color: var(--dds-color-primary);
-  background: var(--dds-color-primary);
+  border-color: var(--bellure-color-primary);
+  background: var(--bellure-color-primary);
   color: white;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--bellure-color-primary) 25%, transparent);
+  transform: translateY(-1px);
 }
 
 .dds-slots-empty {
   text-align: center;
   padding: 24px;
-  color: var(--dds-color-text-muted);
+  color: var(--bellure-color-text-muted);
   font-size: 0.875rem;
 }
 
 /* Customer Form */
+/* Premium Brief (summary card) */
+.dds-brief {
+  background: var(--bellure-color-bg-secondary);
+  border: 1.5px solid var(--bellure-color-border);
+  border-radius: var(--bellure-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--bellure-shadow-lg);
+}
+
+.dds-brief-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--bellure-color-border);
+  background: var(--bellure-color-bg);
+}
+
+.dds-brief-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bellure-color-primary-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bellure-color-primary);
+  flex-shrink: 0;
+}
+
+.dds-brief-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bellure-color-text-muted);
+}
+
+.dds-brief-body {
+  padding: 20px;
+}
+
+.dds-brief-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.dds-brief-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--bellure-color-text-muted);
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.dds-brief-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--bellure-color-text);
+  text-align: right;
+  line-height: 1.5;
+}
+
+.dds-brief-divider {
+  height: 1px;
+  background: var(--bellure-color-border);
+  margin: 0;
+}
+
+.dds-brief-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0 4px;
+}
+
+.dds-brief-total-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--bellure-color-text);
+  letter-spacing: 0.02em;
+}
+
+.dds-brief-total-price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--bellure-color-primary);
+  letter-spacing: -0.02em;
+}
+
+.dds-brief-deposit {
+  font-size: 0.8rem;
+  color: var(--bellure-color-text-muted);
+  text-align: right;
+  padding-top: 4px;
+}
+
+.dds-brief-deposit strong {
+  color: var(--bellure-color-primary);
+  font-weight: 600;
+}
+
+/* Powered by Bellure badge */
+.dds-powered-by {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 20px 0 4px;
+  font-size: 0.72rem;
+  color: var(--bellure-color-text-muted);
+  letter-spacing: 0.03em;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.dds-powered-by:hover {
+  opacity: 1;
+}
+
+.dds-powered-by a {
+  color: var(--bellure-color-primary);
+  font-weight: 600;
+  text-decoration: none;
+  letter-spacing: 0.06em;
+}
+
+.dds-powered-by a:hover {
+  text-decoration: underline;
+}
+
+/* Step 4: Summary + Form side by side on desktop */
+.dds-step4-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (min-width: 640px) {
+  .dds-step4-layout {
+    flex-direction: row;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  .dds-step4-summary {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dds-step4-form {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 .dds-form {
   display: flex;
   flex-direction: column;
@@ -466,37 +751,38 @@
 }
 
 .dds-form-label {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--dds-color-text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--bellure-color-text-muted);
+  letter-spacing: 0.02em;
 }
 
 .dds-form-input {
-  padding: 12px 14px;
-  border: 2px solid var(--dds-color-border);
-  border-radius: var(--dds-radius-sm);
+  padding: 14px 16px;
+  border: 1.5px solid var(--bellure-color-border);
+  border-radius: var(--bellure-radius);
   font-size: 0.9375rem;
-  font-family: var(--dds-font);
-  color: var(--dds-color-text);
-  background: var(--dds-color-bg);
-  transition: all var(--dds-transition);
+  font-family: var(--bellure-font);
+  color: var(--bellure-color-text);
+  background: var(--bellure-color-bg);
+  transition: all var(--bellure-transition-smooth);
   outline: none;
   width: 100%;
   box-sizing: border-box;
 }
 
 .dds-form-input:focus {
-  border-color: var(--dds-color-border-focus);
-  box-shadow: 0 0 0 3px var(--dds-color-primary-light);
+  border-color: var(--bellure-color-border-focus);
+  box-shadow: 0 0 0 3px var(--bellure-color-primary-light);
 }
 
 .dds-form-input--error {
-  border-color: var(--dds-color-error);
+  border-color: var(--bellure-color-error);
 }
 
 .dds-form-error {
   font-size: 0.75rem;
-  color: var(--dds-color-error);
+  color: var(--bellure-color-error);
 }
 
 /* Honeypot — hidden from humans */
@@ -514,8 +800,8 @@
 }
 
 .dds-summary-card {
-  background: var(--dds-color-bg-secondary);
-  border-radius: var(--dds-radius);
+  background: var(--bellure-color-bg-secondary);
+  border-radius: var(--bellure-radius);
   padding: 20px;
   margin-bottom: 16px;
 }
@@ -528,11 +814,11 @@
 }
 
 .dds-summary-row + .dds-summary-row {
-  border-top: 1px solid var(--dds-color-border);
+  border-top: 1px solid var(--bellure-color-border);
 }
 
 .dds-summary-label {
-  color: var(--dds-color-text-muted);
+  color: var(--bellure-color-text-muted);
 }
 
 .dds-summary-value {
@@ -544,20 +830,20 @@
 .dds-confirmation {
   text-align: center;
   padding: 32px 16px;
-  animation: dds-scale-in 0.4s var(--dds-transition) forwards;
+  animation: dds-scale-in 0.4s var(--bellure-transition) forwards;
 }
 
 .dds-confirmation-icon {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--dds-color-success) 15%, white);
-  color: var(--dds-color-success);
+  background: color-mix(in srgb, var(--bellure-color-success) 15%, white);
+  color: var(--bellure-color-success);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
-  animation: dds-check 0.5s 0.2s var(--dds-transition) forwards;
+  animation: dds-check 0.5s 0.2s var(--bellure-transition) forwards;
   transform: scale(0);
 }
 
@@ -568,7 +854,7 @@
 }
 
 .dds-confirmation-text {
-  color: var(--dds-color-text-muted);
+  color: var(--bellure-color-text-muted);
   font-size: 0.875rem;
   margin-bottom: 24px;
 }
@@ -579,15 +865,16 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 24px;
+  padding: 14px 28px;
   font-size: 0.9375rem;
-  font-weight: 600;
-  font-family: var(--dds-font);
+  font-weight: 500;
+  font-family: var(--bellure-font);
   border: none;
-  border-radius: var(--dds-radius-sm);
+  border-radius: 100px;
   cursor: pointer;
-  transition: all var(--dds-transition);
+  transition: all var(--bellure-transition-smooth);
   width: 100%;
+  letter-spacing: 0.01em;
 }
 
 .dds-btn:disabled {
@@ -596,24 +883,25 @@
 }
 
 .dds-btn-primary {
-  background: var(--dds-color-primary);
+  background: var(--bellure-color-primary);
   color: white;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--bellure-color-primary) 25%, transparent);
 }
 
 .dds-btn-primary:hover:not(:disabled) {
-  background: var(--dds-color-primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--dds-shadow-lg);
+  background: var(--bellure-color-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--bellure-color-primary) 30%, transparent);
 }
 
 .dds-btn-secondary {
   background: transparent;
-  color: var(--dds-color-text-muted);
-  border: 1px solid var(--dds-color-border);
+  color: var(--bellure-color-text-muted);
+  border: 1px solid var(--bellure-color-border);
 }
 
 .dds-btn-secondary:hover:not(:disabled) {
-  background: var(--dds-color-bg-secondary);
+  background: var(--bellure-color-bg-secondary);
 }
 
 .dds-btn-group {
@@ -642,8 +930,8 @@
 .dds-spinner-circle {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--dds-color-border);
-  border-top-color: var(--dds-color-primary);
+  border: 3px solid var(--bellure-color-border);
+  border-top-color: var(--bellure-color-primary);
   border-radius: 50%;
   animation: dds-spin 0.7s linear infinite;
 }
@@ -652,12 +940,12 @@
 .dds-error {
   text-align: center;
   padding: 32px 16px;
-  color: var(--dds-color-text-muted);
+  color: var(--bellure-color-text-muted);
 }
 
 .dds-error-title {
   font-weight: 600;
-  color: var(--dds-color-text);
+  color: var(--bellure-color-text);
   margin-bottom: 8px;
 }
 
@@ -672,8 +960,8 @@
    Summary Card (step 4 + confirmation)
    ============================================ */
 .dds-summary-card {
-  background: var(--dds-color-bg);
-  border: 1px solid var(--dds-color-border);
+  background: var(--bellure-color-bg);
+  border: 1px solid var(--bellure-color-border);
   border-radius: 12px;
   padding: 16px 20px;
   margin-top: 12px;
@@ -693,13 +981,13 @@
 
 .dds-summary-label {
   font-size: 0.875rem;
-  color: var(--dds-color-text-muted);
+  color: var(--bellure-color-text-muted);
 }
 
 .dds-summary-value {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--dds-color-text);
+  color: var(--bellure-color-text);
   text-align: right;
 }
 
@@ -707,11 +995,11 @@
   border-bottom: none;
   margin-top: 4px;
   padding-top: 12px;
-  border-top: 2px solid var(--dds-color-primary);
+  border-top: 2px solid var(--bellure-color-primary);
 }
 
 .dds-summary-value--price {
-  color: var(--dds-color-primary);
+  color: var(--bellure-color-primary);
   font-size: 1rem;
 }
 
@@ -721,7 +1009,7 @@
 
 .dds-summary-divider {
   height: 1px;
-  background: var(--dds-color-border);
+  background: var(--bellure-color-border);
   margin: 8px 0;
 }
 
@@ -740,14 +1028,14 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--dds-color-primary), color-mix(in srgb, var(--dds-color-primary) 70%, #000));
+  background: linear-gradient(135deg, var(--bellure-color-primary), color-mix(in srgb, var(--bellure-color-primary) 70%, #000));
   color: #fff;
   margin-bottom: 16px;
 }
 
 .dds-payment-breakdown {
-  background: var(--dds-color-bg);
-  border: 1px solid var(--dds-color-border);
+  background: var(--bellure-color-bg);
+  border: 1px solid var(--bellure-color-border);
   border-radius: 12px;
   padding: 16px 20px;
   margin: 20px 0;
@@ -760,31 +1048,31 @@
   align-items: center;
   padding: 8px 0;
   font-size: 0.9rem;
-  color: var(--dds-color-text);
+  color: var(--bellure-color-text);
 }
 
 .dds-payment-breakdown-divider {
   height: 1px;
-  background: var(--dds-color-border);
+  background: var(--bellure-color-border);
   margin: 4px 0;
 }
 
 .dds-payment-breakdown-highlight {
   font-weight: 700;
   font-size: 1rem;
-  color: var(--dds-color-primary);
+  color: var(--bellure-color-primary);
   padding-top: 12px;
 }
 
 .dds-payment-breakdown-remaining {
   font-size: 0.8rem;
-  color: var(--dds-color-text-muted);
+  color: var(--bellure-color-text-muted);
   padding-bottom: 4px;
 }
 
 .dds-payment-details {
-  background: var(--dds-color-bg);
-  border: 1px solid var(--dds-color-border);
+  background: var(--bellure-color-bg);
+  border: 1px solid var(--bellure-color-border);
   border-radius: 12px;
   padding: 12px 20px;
   margin-bottom: 20px;
@@ -799,11 +1087,11 @@
 }
 
 .dds-payment-detail-label {
-  color: var(--dds-color-text-muted);
+  color: var(--bellure-color-text-muted);
 }
 
 .dds-payment-detail-value {
-  color: var(--dds-color-text);
+  color: var(--bellure-color-text);
   font-weight: 500;
 }
 
@@ -845,14 +1133,14 @@
 .dds-payment-secure {
   margin-top: 12px;
   font-size: 0.75rem;
-  color: var(--dds-color-text-muted);
+  color: var(--bellure-color-text-muted);
   text-align: center;
 }
 
 .dds-payment-note {
   margin-top: 8px;
   font-size: 0.8rem;
-  color: var(--dds-color-text-muted);
+  color: var(--bellure-color-text-muted);
   text-align: center;
   padding: 10px 16px;
   background: #F0FDF4;

@@ -16,9 +16,6 @@ function calculateDepositCents(paymentMode: string, depositType: string, deposit
 }
 
 export async function createPayment(c: Context<{ Bindings: Env }>) {
-  const mollieApiKey = c.env.MOLLIE_API_KEY;
-  if (!mollieApiKey) return c.json({ error: 'Payment system not configured' }, 500);
-
   const supabase = getSupabase(c.env);
   const { bookingId, redirectUrl } = await c.req.json();
 
@@ -28,8 +25,21 @@ export async function createPayment(c: Context<{ Bindings: Env }>) {
   if (!booking) return c.json({ error: 'Booking not found' }, 404);
   if (booking.payment_status === 'paid') return c.json({ error: 'Already paid' }, 400);
 
-  const { data: salon } = await supabase.from('salons').select('slug, name, payment_mode, deposit_type, deposit_value').eq('id', booking.salon_id).single();
+  const { data: salon } = await supabase.from('salons').select('slug, name, payment_mode, deposit_type, deposit_value, mollie_profile_id').eq('id', booking.salon_id).single();
   if (!salon || salon.payment_mode === 'none') return c.json({ error: 'No online payment required' }, 400);
+
+  // Fetch Mollie tokens from salon_secrets (sensitive data, separate table)
+  const { data: secrets } = await supabase.from('salon_secrets').select('mollie_access_token, mollie_refresh_token').eq('salon_id', booking.salon_id).single();
+
+  // Determine Mollie auth: prefer salon's own token (Mollie Connect), fallback to platform key
+  let mollieAuth: string;
+  if (secrets?.mollie_access_token) {
+    mollieAuth = `Bearer ${secrets.mollie_access_token}`;
+  } else {
+    const mollieApiKey = c.env.MOLLIE_API_KEY;
+    if (!mollieApiKey) return c.json({ error: 'Payment system not configured' }, 500);
+    mollieAuth = `Bearer ${mollieApiKey}`;
+  }
 
   const { data: service } = await supabase.from('services').select('name, price_cents').eq('id', booking.service_id).single();
   const totalCents = booking.amount_total_cents || service?.price_cents || 0;
@@ -39,18 +49,41 @@ export async function createPayment(c: Context<{ Bindings: Env }>) {
 
   const isDeposit = salon.payment_mode === 'deposit';
   const description = isDeposit ? `Aanbetaling: ${service?.name || 'Behandeling'} bij ${salon.name}` : `${service?.name || 'Behandeling'} bij ${salon.name}`;
-  const siteUrl = c.env.SITE_URL || 'https://dds-booking-widget.netlify.app';
+  const siteUrl = c.env.SITE_URL || 'https://api.bellure.nl';
 
-  const mollieRes = await fetch(`${MOLLIE_API_BASE}/payments`, {
+  // Build payment request body
+  const paymentBody: Record<string, unknown> = {
+    amount: { currency: 'EUR', value: formatMollieAmount(depositCents) },
+    description,
+    redirectUrl,
+    webhookUrl: `${siteUrl}/api/mollie-webhook`,
+    metadata: { booking_id: bookingId, salon_slug: salon.slug, payment_type: salon.payment_mode },
+  };
+
+  // If using salon's Mollie Connect token, include profile ID
+  if (secrets?.mollie_access_token && salon.mollie_profile_id) {
+    paymentBody.profileId = salon.mollie_profile_id;
+  }
+
+  let mollieRes = await fetch(`${MOLLIE_API_BASE}/payments`, {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${mollieApiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      amount: { currency: 'EUR', value: formatMollieAmount(depositCents) },
-      description, redirectUrl,
-      webhookUrl: `${siteUrl}/api/mollie-webhook`,
-      metadata: { booking_id: bookingId, salon_slug: salon.slug, payment_type: salon.payment_mode },
-    }),
+    headers: { 'Authorization': mollieAuth, 'Content-Type': 'application/json' },
+    body: JSON.stringify(paymentBody),
   });
+
+  // If 401 and we have a refresh token, try refreshing
+  if (mollieRes.status === 401 && secrets?.mollie_refresh_token) {
+    const { refreshMollieToken } = await import('./mollie-connect');
+    const newToken = await refreshMollieToken(c.env, booking.salon_id, secrets.mollie_refresh_token);
+    if (newToken) {
+      mollieAuth = `Bearer ${newToken}`;
+      mollieRes = await fetch(`${MOLLIE_API_BASE}/payments`, {
+        method: 'POST',
+        headers: { 'Authorization': mollieAuth, 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentBody),
+      });
+    }
+  }
 
   if (!mollieRes.ok) {
     console.error('Mollie error:', mollieRes.status, await mollieRes.text());

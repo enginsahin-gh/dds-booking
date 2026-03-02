@@ -4,8 +4,9 @@ import type { Service, ServiceCategory } from '../../lib/types';
 interface ServicePickerProps {
   services: Service[];
   categories: ServiceCategory[];
-  selectedId: string | null;
-  onSelect: (service: Service) => void;
+  selectedIds: string[];
+  onSelect: (services: Service[]) => void;
+  onContinue: () => void;
 }
 
 function formatPrice(cents: number): string {
@@ -16,6 +17,14 @@ function ClockIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: '-2px', marginRight: '4px'}}>
       <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
     </svg>
   );
 }
@@ -31,31 +40,33 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
-function ServiceCard({ service, selected, onSelect }: { service: Service; selected: boolean; onSelect: () => void }) {
+function ServiceCard({ service, selected, onToggle }: { service: Service; selected: boolean; onToggle: () => void }) {
   return (
     <div
       className={`dds-service-card ${selected ? 'dds-service-card--selected' : ''}`}
-      onClick={onSelect}
+      onClick={onToggle}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onSelect()}
+      onKeyDown={(e) => e.key === 'Enter' && onToggle()}
     >
-      <div>
+      <div style={{ flex: 1 }}>
         <div className="dds-service-name">{service.name}</div>
         <div className="dds-service-meta">
           <span><ClockIcon />{service.duration_min} min</span>
         </div>
       </div>
-      <div className="dds-service-price">{formatPrice(service.price_cents)}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="dds-service-price">{formatPrice(service.price_cents)}</div>
+        <div className={`dds-service-check ${selected ? 'dds-service-check--active' : ''}`}>
+          {selected && <CheckIcon />}
+        </div>
+      </div>
     </div>
   );
 }
 
-export function ServicePicker({ services, categories, selectedId, onSelect }: ServicePickerProps) {
-  // If no categories, show flat list (backwards compatible)
+export function ServicePicker({ services, categories, selectedIds, onSelect, onContinue }: ServicePickerProps) {
   const hasCategories = categories.length > 0;
-
-  // Start with all categories open
   const [openCats, setOpenCats] = useState<Set<string>>(() => new Set(categories.map(c => c.id)));
 
   const grouped = useMemo(() => {
@@ -82,20 +93,41 @@ export function ServicePicker({ services, categories, selectedId, onSelect }: Se
     });
   };
 
+  const toggleService = (service: Service) => {
+    const current = services.filter(s => selectedIds.includes(s.id));
+    const isSelected = selectedIds.includes(service.id);
+    if (isSelected) {
+      onSelect(current.filter(s => s.id !== service.id));
+    } else {
+      onSelect([...current, service]);
+    }
+  };
+
+  // Calculate totals for selected services
+  const selectedServices = services.filter(s => selectedIds.includes(s.id));
+  const totalMinutes = selectedServices.reduce((sum, s) => sum + s.duration_min, 0);
+  const totalCents = selectedServices.reduce((sum, s) => sum + s.price_cents, 0);
+
+  const renderServices = (serviceList: Service[]) =>
+    serviceList.map(s => (
+      <ServiceCard
+        key={s.id}
+        service={s}
+        selected={selectedIds.includes(s.id)}
+        onToggle={() => toggleService(s)}
+      />
+    ));
+
   return (
     <div className="dds-animate-in">
-      <h2 className="dds-step-title">Kies een dienst</h2>
-      <p className="dds-step-subtitle">Selecteer de behandeling die je wilt boeken</p>
+      <h2 className="dds-step-title">Kies je behandeling(en)</h2>
+      <p className="dds-step-subtitle">Je kunt meerdere behandelingen combineren</p>
 
       {!hasCategories ? (
-        // Flat list (no categories)
         <div className="dds-services-grid">
-          {services.map(s => (
-            <ServiceCard key={s.id} service={s} selected={selectedId === s.id} onSelect={() => onSelect(s)} />
-          ))}
+          {renderServices(services)}
         </div>
       ) : (
-        // Accordion per category
         <div className="dds-categories">
           {categories.map(cat => {
             const catServices = grouped!.map.get(cat.id) || [];
@@ -115,16 +147,13 @@ export function ServicePicker({ services, categories, selectedId, onSelect }: Se
                 </button>
                 {isOpen && (
                   <div className="dds-category-services">
-                    {catServices.map(s => (
-                      <ServiceCard key={s.id} service={s} selected={selectedId === s.id} onSelect={() => onSelect(s)} />
-                    ))}
+                    {renderServices(catServices)}
                   </div>
                 )}
               </div>
             );
           })}
 
-          {/* Uncategorized services */}
           {grouped!.uncategorized.length > 0 && (
             <div className="dds-category">
               <div className="dds-category-header dds-category-header--static">
@@ -132,12 +161,23 @@ export function ServicePicker({ services, categories, selectedId, onSelect }: Se
                 <span className="dds-category-count">{grouped!.uncategorized.length}</span>
               </div>
               <div className="dds-category-services">
-                {grouped!.uncategorized.map(s => (
-                  <ServiceCard key={s.id} service={s} selected={selectedId === s.id} onSelect={() => onSelect(s)} />
-                ))}
+                {renderServices(grouped!.uncategorized)}
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Sticky footer with selection summary */}
+      {selectedIds.length > 0 && (
+        <div className="dds-selection-footer">
+          <div className="dds-selection-summary">
+            <span className="dds-selection-count">{selectedIds.length} behandeling{selectedIds.length > 1 ? 'en' : ''}</span>
+            <span className="dds-selection-detail">{totalMinutes} min &middot; {formatPrice(totalCents)}</span>
+          </div>
+          <button className="dds-btn dds-btn-primary" onClick={onContinue}>
+            Verder <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="5 12 19 12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
         </div>
       )}
     </div>

@@ -12,6 +12,20 @@ export interface Salon {
   payment_mode: PaymentMode;
   deposit_type: DepositType;
   deposit_value: number; // percentage (25 = 25%) or fixed cents-equivalent in euros (10.00 = €10)
+  buffer_minutes: number; // minutes between appointments (0, 5, 10, 15)
+  max_booking_weeks: number; // 0 = unlimited, otherwise max weeks ahead
+  google_place_id: string | null;
+  address: string | null;
+  city: string | null;
+  postal_code: string | null;
+  cancellation_policy: string | null;
+  location_info: string | null;
+  reschedule_enabled: boolean;
+  // Tokens moved to salon_secrets (not accessible from frontend)
+  mollie_profile_id: string | null;
+  mollie_organization_id: string | null;
+  mollie_organization_name: string | null;
+  mollie_connected_at: string | null;
   created_at: string;
 }
 
@@ -21,8 +35,14 @@ export interface Staff {
   name: string;
   photo_url: string | null;
   is_active: boolean;
+  all_services: boolean;
   sort_order: number;
   created_at: string;
+}
+
+export interface StaffService {
+  staff_id: string;
+  service_id: string;
 }
 
 export interface StaffSchedule {
@@ -74,7 +94,7 @@ export interface Booking {
   customer_name: string;
   customer_email: string;
   customer_phone: string;
-  status: 'confirmed' | 'cancelled' | 'pending_payment' | 'no_show';
+  status: 'confirmed' | 'cancelled' | 'pending_payment' | 'no_show' | 'completed';
   payment_status: 'none' | 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_paid';
   payment_type: 'none' | 'deposit' | 'full';
   amount_total_cents: number;
@@ -82,6 +102,7 @@ export interface Booking {
   amount_due_cents: number;
   refund_status: 'none' | 'pending' | 'refunded' | 'failed';
   deposit_amount: number | null;
+  cancel_token: string | null;
   cancelled_at: string | null;
   created_at: string;
 }

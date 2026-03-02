@@ -10,7 +10,8 @@ export function useSlots(
   durationMin: number,
   staffList: Staff[],
   selectedStaffId: string | null,
-  timezone: string
+  timezone: string,
+  bufferMinutes: number = 0
 ) {
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(false);
@@ -49,7 +50,7 @@ export function useSlots(
     const bookings: PublicBooking[] = bookingsRes.data || [];
 
     const available = getAvailableSlots(
-      date, durationMin, currentStaff, schedules, blocks, bookings, timezone, selectedStaffId
+      date, durationMin, currentStaff, schedules, blocks, bookings, timezone, selectedStaffId, bufferMinutes
     );
 
     setSlots(available);

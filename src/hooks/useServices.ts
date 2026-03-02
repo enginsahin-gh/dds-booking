@@ -9,11 +9,12 @@ export function useServices(salonId: string | undefined) {
   const fetch = useCallback(async () => {
     if (!salonId) return;
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('services')
       .select('*')
       .eq('salon_id', salonId)
       .order('sort_order');
+    if (error) console.error('useServices error:', error.message);
     setServices(data || []);
     setLoading(false);
   }, [salonId]);

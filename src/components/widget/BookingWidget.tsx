@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { addMinutes } from 'date-fns';
+import { addMinutes, addWeeks } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import { calculateDepositCents, requiresPayment, formatCents } from '../../lib/payment';
 import { StepIndicator } from './StepIndicator';
@@ -10,16 +10,24 @@ import { CustomerForm } from './CustomerForm';
 import { PaymentStep } from './PaymentStep';
 import { Confirmation } from './Confirmation';
 import { useSlots } from '../../hooks/useSlots';
-import type { Salon, Service, ServiceCategory, Staff, TimeSlot, BookingStep } from '../../lib/types';
+import type { Salon, Service, ServiceCategory, Staff, StaffService, TimeSlot, BookingStep } from '../../lib/types';
 
 interface BookingWidgetProps {
   salonSlug: string;
 }
 
-// When embedded on external sites, functions must point to the booking server origin
-const FUNCTIONS_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_FUNCTIONS_URL
-  || (typeof document !== 'undefined' && document.querySelector('script[data-dds-origin]')?.getAttribute('data-dds-origin'))
-  || 'https://dds-booking-widget.netlify.app';
+const FUNCTIONS_BASE = import.meta.env.VITE_API_URL
+  || (typeof document !== 'undefined' && document.querySelector('script[data-bellure-origin]')?.getAttribute('data-bellure-origin'))
+  || 'https://api.bellure.nl';
+
+function BellureBadge() {
+  return (
+    <div className="dds-powered-by">
+      <span>Powered by</span>
+      <a href="https://bellure.nl" target="_blank" rel="noopener noreferrer">Bellure</a>
+    </div>
+  );
+}
 
 export function BookingWidget({ salonSlug }: BookingWidgetProps) {
   const [step, setStep] = useState<BookingStep>(1);
@@ -27,11 +35,15 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
+  const [staffServices, setStaffServices] = useState<StaffService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Selections
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  // Available working days (0=Sun..6=Sat) for calendar highlighting
+  const [workingDays, setWorkingDays] = useState<Set<number>>(new Set());
+
+  // Selections — now multi-select
+  const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [staffConfirmed, setStaffConfirmed] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -44,7 +56,7 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [bookingId, setBookingId] = useState<string | null>(null);
 
-  // Customer data (stored between steps)
+  // Customer data
   const [customerData, setCustomerData] = useState<{ name: string; email: string; phone: string } | null>(null);
 
   // Confirmation data
@@ -56,13 +68,51 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
 
   const timezone = salon?.timezone || 'Europe/Amsterdam';
 
-  // Slots
+  // Computed totals from selected services
+  const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration_min, 0);
+  const totalPriceCents = selectedServices.reduce((sum, s) => sum + s.price_cents, 0);
+
+  // Filter staff based on selected services
+  // staff.all_services=true → can do everything (backward compat)
+  // staff.all_services=false → only services in staff_services table
+  const filteredStaff = staff.filter((member) => {
+    if (member.all_services) return true;
+    if (selectedServices.length === 0) return true;
+    const memberServiceIds = new Set(
+      staffServices.filter(ss => ss.staff_id === member.id).map(ss => ss.service_id)
+    );
+    return selectedServices.every(svc => memberServiceIds.has(svc.id));
+  });
+
+  // When no staff can do the full combination, build per-service availability info
+  const noStaffForCombo = selectedServices.length > 0 && filteredStaff.length === 0;
+  const perServiceStaff = noStaffForCombo
+    ? selectedServices.map(svc => ({
+        service: svc,
+        availableStaff: staff.filter(member => {
+          if (member.all_services) return true;
+          const memberServiceIds = new Set(
+            staffServices.filter(ss => ss.staff_id === member.id).map(ss => ss.service_id)
+          );
+          return memberServiceIds.has(svc.id);
+        }),
+      }))
+    : [];
+
+  // Booking horizon — max weeks ahead (0 = unlimited)
+  const maxBookingWeeks = (salon as any)?.max_booking_weeks ?? 4;
+  const maxBookingDate = maxBookingWeeks > 0 ? addWeeks(new Date(), maxBookingWeeks) : null;
+
+  // Slots — use total duration for availability check (with buffer)
+  // Only pass filtered staff so slots are only calculated for staff who can do the service
+  const bufferMinutes = salon?.buffer_minutes || 0;
   const { slots, loading: slotsLoading } = useSlots(
     selectedDate,
-    selectedService?.duration_min || 0,
-    staff,
+    totalDuration,
+    filteredStaff,
     staffConfirmed ? selectedStaffId : null,
-    timezone
+    timezone,
+    bufferMinutes
   );
 
   // Payment return state
@@ -84,7 +134,6 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     const init = async () => {
       setLoading(true);
 
-      // Check if returning from Mollie payment
       const params = new URLSearchParams(window.location.search);
       const isPaymentReturn = params.get('payment_return') === '1';
       const returnBookingId = params.get('booking_id');
@@ -103,24 +152,62 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
 
       setSalon(salonData);
 
-      const [servicesRes, staffRes, categoriesRes] = await Promise.all([
+      const [servicesRes, staffRes, categoriesRes, schedulesRes, staffServicesRes] = await Promise.all([
         supabase.from('services').select('*').eq('salon_id', salonData.id).eq('is_active', true).order('sort_order'),
         supabase.from('staff').select('*').eq('salon_id', salonData.id).eq('is_active', true).order('sort_order'),
         supabase.from('service_categories').select('*').eq('salon_id', salonData.id).order('sort_order'),
+        supabase.from('staff_schedules').select('day_of_week, staff_id').eq('is_working', true),
+        supabase.from('staff_services').select('staff_id, service_id'),
       ]);
 
-      const allServices = servicesRes.data || [];
-      const allStaff = staffRes.data || [];
-      setServices(allServices);
+      // Build set of working days (JS: 0=Sun, but DB might use 0=Mon — check)
+      // DB uses: 0=Monday..6=Sunday. JS Date.getDay(): 0=Sunday..6=Saturday
+      // Convert: DB 0(Mon)→JS 1, DB 1(Tue)→JS 2, ..., DB 6(Sun)→JS 0
+      const activeStaffIds = new Set((staffRes.data || []).map((s: Staff) => s.id));
+      const days = new Set<number>();
+      for (const sched of (schedulesRes.data || [])) {
+        if (activeStaffIds.has(sched.staff_id)) {
+          const jsDay = sched.day_of_week === 6 ? 0 : sched.day_of_week + 1;
+          days.add(jsDay);
+        }
+      }
+      setWorkingDays(days);
+
+      setServices(servicesRes.data || []);
       setCategories(categoriesRes.data || []);
-      setStaff(allStaff);
+      setStaff(staffRes.data || []);
+      setStaffServices(staffServicesRes.data || []);
 
       // Handle payment return
       if (isPaymentReturn && returnBookingId) {
         setPaymentReturn(true);
         setPaymentReturnStatus('loading');
 
-        // Poll for payment status (webhook might be slightly delayed)
+        // Scroll to widget and force-reveal parent elements so user sees the confirmation
+        const scrollToBooking = () => {
+          const widget = document.getElementById('bellure-booking-widget')
+            || document.querySelector('[id^="bellure-booking-widget"]');
+          if (widget) {
+            widget.style.opacity = '1';
+            widget.style.transform = 'none';
+            widget.classList.add('revealed', 'is-visible');
+            const section = widget.closest('section') || widget.closest('.booking');
+            if (section) {
+              section.querySelectorAll('.reveal').forEach((el: Element) => {
+                (el as HTMLElement).style.opacity = '1';
+                (el as HTMLElement).style.transform = 'none';
+                el.classList.add('revealed', 'is-visible');
+              });
+            }
+          }
+          const scrollTarget = document.getElementById('booking') || widget;
+          if (scrollTarget) scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+        // Multiple attempts to ensure scroll works after full page load
+        setTimeout(scrollToBooking, 100);
+        setTimeout(scrollToBooking, 500);
+        setTimeout(scrollToBooking, 1500);
+
         let attempts = 0;
         const checkPayment = async (): Promise<void> => {
           const { data: booking } = await supabase
@@ -137,18 +224,19 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
           if (booking.payment_status === 'paid' || booking.status === 'confirmed') {
             const svc = booking.services as unknown as { name: string; price_cents: number } | null;
             const stf = booking.staff as unknown as { name: string } | null;
+            // For multi-service bookings, show combined name from notes or service name
+            const serviceName = booking.notes || svc?.name || '';
             setPaymentReturnBooking({
               customerName: booking.customer_name,
-              serviceName: svc?.name || '',
+              serviceName,
               staffName: stf?.name || '',
               startAt: booking.start_at,
               endAt: booking.end_at,
-              priceCents: svc?.price_cents || 0,
+              priceCents: booking.amount_total_cents || svc?.price_cents || 0,
               paidCents: booking.amount_paid_cents || 0,
               paymentMode: booking.payment_type || 'none',
             });
             setPaymentReturnStatus('paid');
-            // Clean URL
             window.history.replaceState({}, '', window.location.pathname);
           } else if (booking.payment_status === 'failed' || booking.status === 'cancelled') {
             setPaymentReturnStatus('failed');
@@ -156,7 +244,6 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
             attempts++;
             setTimeout(checkPayment, 2000);
           } else {
-            // After 20 seconds, check one more time if confirmed
             if (booking.status === 'confirmed') {
               setPaymentReturnStatus('paid');
             } else {
@@ -174,11 +261,15 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     init();
   }, [salonSlug]);
 
-  // Scroll to top of widget on step change
+  // Scroll to the booking section header (above the widget) for better context
   const scrollToWidget = useCallback(() => {
-    const el = document.getElementById('dds-booking-widget') || document.querySelector('[id^="dds-booking-widget"]');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Try to find the parent section or heading first (e.g. #booking)
+    const section = document.getElementById('booking')
+      || document.querySelector('.booking')
+      || document.getElementById('bellure-booking-widget')
+      || document.querySelector('[id^="bellure-booking-widget"]');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, []);
 
@@ -187,10 +278,13 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     setTimeout(scrollToWidget, 100);
   }, [scrollToWidget]);
 
-  const handleServiceSelect = useCallback((service: Service) => {
-    setSelectedService(service);
-    goToStep(2);
-  }, [goToStep]);
+  const handleServicesChange = useCallback((svcs: Service[]) => {
+    setSelectedServices(svcs);
+  }, []);
+
+  const handleServicesContinue = useCallback(() => {
+    if (selectedServices.length > 0) goToStep(2);
+  }, [selectedServices, goToStep]);
 
   const handleStaffSelect = useCallback((staffId: string | null) => {
     setSelectedStaffId(staffId);
@@ -210,56 +304,64 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
 
   const handleBack = useCallback(() => {
     if (step === 5) {
-      // From payment back to form
       goToStep(4);
     } else if (step > 1) {
       goToStep((step - 1) as BookingStep);
     }
   }, [step, goToStep]);
 
-  // Create booking (called from CustomerForm submit)
+  // Build combined service name for display/storage
+  const combinedServiceName = selectedServices.map(s => s.name).join(' + ');
+
+  // Create booking via Worker API (server-side validation, rate limiting, atomic)
   const handleBooking = useCallback(async (data: { name: string; email: string; phone: string; hp?: string }) => {
-    if (!salon || !selectedService || !selectedSlot) return;
+    if (!salon || selectedServices.length === 0 || !selectedSlot) return;
 
     setBookingLoading(true);
     setBookingError(null);
     setCustomerData(data);
 
     const startAt = selectedSlot.time;
-    const endAt = addMinutes(new Date(startAt), selectedService.duration_min).toISOString();
+    const endAt = addMinutes(new Date(startAt), totalDuration).toISOString();
     const needsPayment = requiresPayment(salon);
-    const depositCents = calculateDepositCents(salon, selectedService.price_cents);
+    const depositCents = calculateDepositCents(salon, totalPriceCents);
 
     try {
-      // Insert booking — status depends on payment mode
-      const bookingStatus = needsPayment ? 'pending_payment' : 'confirmed';
-      const paymentType = salon.payment_mode === 'none' ? 'none' : salon.payment_mode;
+      const res = await fetch(`${FUNCTIONS_BASE}/api/create-booking`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          salonId: salon.id,
+          staffId: selectedSlot.staffId,
+          startAt,
+          endAt,
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          hp: data.hp || '',
+          services: selectedServices.map(s => ({
+            id: s.id,
+            priceCents: s.price_cents,
+            durationMin: s.duration_min,
+            name: s.name,
+          })),
+          paymentMode: salon.payment_mode,
+          totalPriceCents,
+        }),
+      });
 
-      const { data: bookingData, error: bookingErr } = await supabase
-        .from('bookings')
-        .insert({
-          salon_id: salon.id,
-          service_id: selectedService.id,
-          staff_id: selectedSlot.staffId,
-          start_at: startAt,
-          end_at: endAt,
-          customer_name: data.name,
-          customer_email: data.email,
-          customer_phone: data.phone,
-          status: bookingStatus,
-          payment_type: paymentType,
-          payment_status: needsPayment ? 'pending' : 'none',
-          amount_total_cents: selectedService.price_cents,
-          amount_paid_cents: 0,
-          amount_due_cents: needsPayment ? depositCents : 0,
-        })
-        .select('id')
-        .single();
+      const result = await res.json();
 
-      if (bookingErr) {
-        if (bookingErr.code === '23505') {
+      if (!res.ok) {
+        const err = result.error || '';
+        if (err === 'SLOT_TAKEN') {
           setBookingError('Dit tijdslot is zojuist geboekt. Kies een ander tijdstip.');
           goToStep(3);
+        } else if (err === 'RATE_LIMITED') {
+          setBookingError('Te veel boekingen. Probeer het later opnieuw.');
+        } else if (err === 'INVALID_EMAIL') {
+          setBookingError('Ongeldig e-mailadres. Controleer je gegevens.');
+          goToStep(4);
         } else {
           setBookingError('Er ging iets mis. Probeer het opnieuw.');
         }
@@ -272,14 +374,12 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
       setConfirmedStartAt(startAt);
       setConfirmedEndAt(endAt);
       setCustomerName(data.name);
-      setBookingId(bookingData.id);
+      setBookingId(result.bookingId);
 
       if (needsPayment) {
-        // Go to payment step
         setDepositPaidCents(depositCents);
         goToStep(5);
       } else {
-        // No payment needed — confirm directly
         setDepositPaidCents(0);
         goToStep(6);
       }
@@ -288,24 +388,25 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     }
 
     setBookingLoading(false);
-  }, [salon, selectedService, selectedSlot, staff, goToStep]);
+  }, [salon, selectedServices, selectedSlot, staff, goToStep, totalDuration, totalPriceCents]);
 
   // Initiate Mollie payment
   const handlePayment = useCallback(async () => {
-    if (!salon || !selectedService || !bookingId) return;
+    if (!salon || selectedServices.length === 0 || !bookingId) return;
 
     setPaymentLoading(true);
     setPaymentError(null);
 
-    const depositCents = calculateDepositCents(salon, selectedService.price_cents);
+    const depositCents = calculateDepositCents(salon, totalPriceCents);
     const isDeposit = salon.payment_mode === 'deposit';
     const description = isDeposit
-      ? `Aanbetaling: ${selectedService.name} bij ${salon.name}`
-      : `${selectedService.name} bij ${salon.name}`;
+      ? `Aanbetaling: ${combinedServiceName} bij ${salon.name}`
+      : `${combinedServiceName} bij ${salon.name}`;
 
-    // Build redirect URL — return to the widget page with booking_id
-    const currentUrl = window.location.href.split('?')[0];
-    const redirectUrl = `${currentUrl}?payment_return=1&booking_id=${bookingId}`;
+    // Strip query params AND hash to build clean redirect URL, then re-add hash after params
+    const baseUrl = window.location.origin + window.location.pathname;
+    const hash = window.location.hash || '';
+    const redirectUrl = `${baseUrl}?payment_return=1&booking_id=${bookingId}${hash}`;
 
     try {
       const res = await fetch(`${FUNCTIONS_BASE}/api/create-payment`, {
@@ -329,7 +430,6 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
 
       const { checkoutUrl } = await res.json();
       if (checkoutUrl) {
-        // Redirect to Mollie checkout
         window.location.href = checkoutUrl;
       } else {
         setPaymentError('Geen betaallink ontvangen. Probeer het opnieuw.');
@@ -339,7 +439,7 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
       setPaymentError('Er ging iets mis. Probeer het opnieuw.');
       setPaymentLoading(false);
     }
-  }, [salon, selectedService, bookingId]);
+  }, [salon, selectedServices, bookingId, totalPriceCents, combinedServiceName]);
 
   // Loading state
   if (loading) {
@@ -350,7 +450,6 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="dds-error">
@@ -367,15 +466,16 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     );
   }
 
-  // Payment return view (after Mollie redirect)
+  // Payment return view
   if (paymentReturn) {
     if (paymentReturnStatus === 'loading') {
       return (
         <div className="dds-spinner" style={{ padding: '40px 0' }}>
           <div className="dds-spinner-circle" />
-          <p style={{ textAlign: 'center', marginTop: 16, color: 'var(--dds-color-text-muted)', fontSize: '0.9rem' }}>
+          <p style={{ textAlign: 'center', marginTop: 16, color: 'var(--bellure-color-text-muted)', fontSize: '0.9rem' }}>
             Betaalstatus controleren...
           </p>
+          <BellureBadge />
         </div>
       );
     }
@@ -434,11 +534,11 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
               </>
             )}
           </div>
+          <BellureBadge />
         </div>
       );
     }
 
-    // Payment failed
     return (
       <div className="dds-confirmation">
         <div className="dds-confirmation-icon" style={{ background: '#FEF2F2', color: '#DC2626' }}>
@@ -455,15 +555,21 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
         <button className="dds-btn dds-btn-primary" style={{ marginTop: 16 }} onClick={() => { setPaymentReturn(false); window.history.replaceState({}, '', window.location.pathname); }}>
           Opnieuw boeken
         </button>
+        <BellureBadge />
       </div>
     );
   }
 
-  // Calculate deposit for display in step 4 summary
-  const depositCents = salon && selectedService
-    ? calculateDepositCents(salon, selectedService.price_cents)
-    : 0;
+  const depositCents = salon ? calculateDepositCents(salon, totalPriceCents) : 0;
   const needsPayment = salon ? requiresPayment(salon) : false;
+
+  // Create a virtual "combined service" for PaymentStep and Confirmation
+  const combinedService: Service = selectedServices.length > 0 ? {
+    ...selectedServices[0],
+    name: combinedServiceName,
+    duration_min: totalDuration,
+    price_cents: totalPriceCents,
+  } : selectedServices[0];
 
   return (
     <div>
@@ -479,17 +585,27 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
         <ServicePicker
           services={services}
           categories={categories}
-          selectedId={selectedService?.id || null}
-          onSelect={handleServiceSelect}
+          selectedIds={selectedServices.map(s => s.id)}
+          onSelect={handleServicesChange}
+          onContinue={handleServicesContinue}
         />
       )}
 
       {step === 2 && (
         <div>
-          <StaffPicker staff={staff} selectedId={selectedStaffId} onSelect={handleStaffSelect} />
-          <div className="dds-btn-group">
-            <button className="dds-btn dds-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>
-          </div>
+          <StaffPicker
+            staff={filteredStaff}
+            selectedId={selectedStaffId}
+            onSelect={handleStaffSelect}
+            noStaffForCombo={noStaffForCombo}
+            perServiceStaff={perServiceStaff}
+            onBack={handleBack}
+          />
+          {!noStaffForCombo && (
+            <div className="dds-btn-group">
+              <button className="dds-btn dds-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>
+            </div>
+          )}
         </div>
       )}
 
@@ -503,6 +619,8 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
             slots={slots}
             slotsLoading={slotsLoading}
             timezone={timezone}
+            workingDays={workingDays}
+            maxDate={maxBookingDate}
           />
           <div className="dds-btn-group">
             <button className="dds-btn dds-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>
@@ -517,69 +635,81 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
 
       {step === 4 && (
         <div>
-          {/* Booking summary */}
-          {selectedService && selectedSlot && (
-            <div className="dds-summary" style={{ marginBottom: 20 }}>
-              <h2 className="dds-step-title">Jouw afspraak</h2>
-              <p className="dds-step-subtitle">Controleer je gegevens en bevestig</p>
-              <div className="dds-summary-card">
-                <div className="dds-summary-row">
-                  <span className="dds-summary-label">Behandeling</span>
-                  <span className="dds-summary-value">{selectedService.name}</span>
-                </div>
-                <div className="dds-summary-row">
-                  <span className="dds-summary-label">Duur</span>
-                  <span className="dds-summary-value">{selectedService.duration_min} min</span>
-                </div>
-                <div className="dds-summary-row">
-                  <span className="dds-summary-label">Prijs</span>
-                  <span className="dds-summary-value">{formatCents(selectedService.price_cents)}</span>
-                </div>
-                <div className="dds-summary-row">
-                  <span className="dds-summary-label">Stylist</span>
-                  <span className="dds-summary-value">{staff.find(s => s.id === selectedSlot.staffId)?.name || 'Geen voorkeur'}</span>
-                </div>
-                <div className="dds-summary-row">
-                  <span className="dds-summary-label">Datum</span>
-                  <span className="dds-summary-value">{new Date(selectedSlot.time).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-                </div>
-                <div className="dds-summary-row">
-                  <span className="dds-summary-label">Tijd</span>
-                  <span className="dds-summary-value">{new Date(selectedSlot.time).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone })}</span>
-                </div>
-                {needsPayment && (
-                  <div className="dds-summary-row dds-summary-row--highlight">
-                    <span className="dds-summary-label">
-                      {salon?.payment_mode === 'deposit' ? 'Aanbetaling' : 'Te betalen'}
-                    </span>
-                    <span className="dds-summary-value dds-summary-value--price">
-                      {formatCents(depositCents)}
-                    </span>
-                  </div>
-                )}
-              </div>
+          <h2 className="dds-step-title">Jouw afspraak</h2>
+          <p className="dds-step-subtitle">Controleer je gegevens en bevestig</p>
+
+          <div className="dds-step4-layout">
+            {/* Left: customer form */}
+            <div className="dds-step4-form">
+              <CustomerForm
+                onSubmit={handleBooking}
+                loading={bookingLoading}
+                submitLabel={needsPayment ? 'Verder naar betaling' : 'Bevestig afspraak'}
+              />
             </div>
-          )}
-          <CustomerForm
-            onSubmit={handleBooking}
-            loading={bookingLoading}
-            submitLabel={needsPayment ? 'Verder naar betaling' : 'Bevestig afspraak'}
-          />
+
+            {/* Right: premium summary brief */}
+            {selectedServices.length > 0 && selectedSlot && (
+              <div className="dds-step4-summary">
+                <div className="dds-brief">
+                  <div className="dds-brief-header">
+                    <div className="dds-brief-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                    </div>
+                    <span className="dds-brief-title">Overzicht</span>
+                  </div>
+                  <div className="dds-brief-body">
+                    <div className="dds-brief-item">
+                      <span className="dds-brief-label">Behandeling{selectedServices.length > 1 ? 'en' : ''}</span>
+                      <span className="dds-brief-value">{combinedServiceName}</span>
+                    </div>
+                    <div className="dds-brief-divider" />
+                    <div className="dds-brief-item">
+                      <span className="dds-brief-label">Stylist</span>
+                      <span className="dds-brief-value">{staff.find(s => s.id === selectedSlot.staffId)?.name || 'Geen voorkeur'}</span>
+                    </div>
+                    <div className="dds-brief-divider" />
+                    <div className="dds-brief-item">
+                      <span className="dds-brief-label">Wanneer</span>
+                      <span className="dds-brief-value">
+                        {new Date(selectedSlot.time).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        <br />
+                        {new Date(selectedSlot.time).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone })} &middot; {totalDuration} min
+                      </span>
+                    </div>
+                    <div className="dds-brief-divider" />
+                    <div className="dds-brief-total">
+                      <span className="dds-brief-total-label">Totaal</span>
+                      <span className="dds-brief-total-price">{formatCents(totalPriceCents)}</span>
+                    </div>
+                    {needsPayment && (
+                      <div className="dds-brief-deposit">
+                        {salon?.payment_mode === 'deposit' ? 'Aanbetaling' : 'Te betalen'}: <strong>{formatCents(depositCents)}</strong>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="dds-btn-group" style={{ marginTop: 8 }}>
             <button className="dds-btn dds-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>
           </div>
         </div>
       )}
 
-      {step === 5 && salon && selectedService && selectedSlot && (
+      {step === 5 && salon && selectedServices.length > 0 && selectedSlot && (
         <div>
           <PaymentStep
             salon={salon}
-            service={selectedService}
+            service={combinedService}
             staff={confirmedStaff}
             slot={selectedSlot}
             depositCents={depositPaidCents}
-            totalCents={selectedService.price_cents}
+            totalCents={totalPriceCents}
             customerName={customerName}
             timezone={timezone}
             onPay={handlePayment}
@@ -594,9 +724,9 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
         </div>
       )}
 
-      {step === 6 && selectedService && confirmedStaff && (
+      {step === 6 && selectedServices.length > 0 && confirmedStaff && (
         <Confirmation
-          service={selectedService}
+          service={combinedService}
           staff={confirmedStaff}
           startAt={confirmedStartAt}
           endAt={confirmedEndAt}
@@ -606,6 +736,8 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
           paymentMode={salon?.payment_mode || 'none'}
         />
       )}
+
+      <BellureBadge />
     </div>
   );
 }

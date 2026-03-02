@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
-import { Input } from '../ui/Input';
+import { Input, Select } from '../ui/Input';
 import { Button } from '../ui/Button';
 import type { Service, ServiceCategory } from '../../lib/types';
 
@@ -52,24 +52,30 @@ export function ServiceFormModal({ open, onClose, onSave, service, salonId, cate
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={service ? 'Dienst bewerken' : 'Nieuwe dienst'}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={service ? 'Dienst bewerken' : 'Nieuwe dienst'}
+      footer={
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={onClose} fullWidth>Annuleren</Button>
+          <Button onClick={handleSave} loading={saving} fullWidth>Opslaan</Button>
+        </div>
+      }
+    >
       <div className="space-y-4">
         <Input label="Naam" value={name} onChange={(e) => setName(e.target.value)} placeholder="Bijv. Knippen dames" />
 
         {categories.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Categorie</label>
-            <select
-              value={categoryId}
-              onChange={e => setCategoryId(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-white focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-            >
-              <option value="">Geen categorie</option>
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label="Categorie"
+            value={categoryId}
+            onChange={e => setCategoryId(e.target.value)}
+            options={[
+              { value: '', label: 'Geen categorie' },
+              ...categories.map(c => ({ value: c.id, label: c.name })),
+            ]}
+          />
         )}
 
         <div className="grid grid-cols-2 gap-3">
@@ -77,10 +83,15 @@ export function ServiceFormModal({ open, onClose, onSave, service, salonId, cate
           <Input label="Prijs (€)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} min="0" step="0.50" />
         </div>
 
-        <div className="flex gap-3 pt-2">
-          <Button variant="secondary" onClick={onClose}>Annuleren</Button>
-          <Button onClick={handleSave} loading={saving}>Opslaan</Button>
-        </div>
+        {/* Price/duration preview */}
+        {name && (
+          <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+            <span className="text-[13px] text-gray-600 font-medium">{name || 'Dienst'}</span>
+            <span className="text-[13px] font-bold text-gray-900">
+              {duration} min — €{(parseFloat(price) || 0).toFixed(2).replace('.', ',')}
+            </span>
+          </div>
+        )}
       </div>
     </Modal>
   );

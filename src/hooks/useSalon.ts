@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Salon } from '../lib/types';
 
-export function useSalon(slug?: string, ownerId?: string) {
+export function useSalon(slug?: string, ownerId?: string, salonId?: string) {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!slug && !ownerId) return;
+    if (!slug && !ownerId && !salonId) return;
 
     const fetch = async () => {
       setLoading(true);
@@ -16,7 +16,8 @@ export function useSalon(slug?: string, ownerId?: string) {
 
       let query = supabase.from('salons').select('*');
       if (slug) query = query.eq('slug', slug);
-      if (ownerId) query = query.eq('owner_id', ownerId);
+      else if (salonId) query = query.eq('id', salonId);
+      else if (ownerId) query = query.eq('owner_id', ownerId);
 
       const { data, error: err } = await query.single();
       if (err) setError('Salon niet gevonden');
@@ -25,7 +26,7 @@ export function useSalon(slug?: string, ownerId?: string) {
     };
 
     fetch();
-  }, [slug, ownerId]);
+  }, [slug, ownerId, salonId]);
 
   const updateSalon = async (updates: Partial<Salon>) => {
     if (!salon) return;

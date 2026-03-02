@@ -5,12 +5,12 @@ import './styles/widget.css';
 // Apply theme from data attributes (data-color-primary, data-color-bg, data-color-text, data-font)
 function applyTheme(el: HTMLElement) {
   const map: Record<string, string> = {
-    'color-primary': '--dds-color-primary',
-    'color-bg': '--dds-color-bg',
-    'color-bg-secondary': '--dds-color-bg-secondary',
-    'color-text': '--dds-color-text',
-    'font': '--dds-font',
-    'radius': '--dds-radius',
+    'color-primary': '--bellure-color-primary',
+    'color-bg': '--bellure-color-bg',
+    'color-bg-secondary': '--bellure-color-bg-secondary',
+    'color-text': '--bellure-color-text',
+    'font': '--bellure-font',
+    'radius': '--bellure-radius',
   };
   for (const [attr, prop] of Object.entries(map)) {
     const val = el.dataset[attr.replace(/-([a-z])/g, (_, c) => c.toUpperCase())];
@@ -19,7 +19,7 @@ function applyTheme(el: HTMLElement) {
 }
 
 // Support multiple widgets on a single page (BUG-007)
-const containers = document.querySelectorAll<HTMLElement>('[id^="dds-booking-widget"]');
+const containers = document.querySelectorAll<HTMLElement>('[id^="bellure-booking-widget"]');
 
 containers.forEach((container) => {
   const salon = container.dataset.salon
@@ -49,7 +49,7 @@ containers.forEach((container) => {
 // Fallback: single-widget legacy mode
 if (containers.length === 0) {
   const script = document.querySelector('script[data-container]') as HTMLScriptElement | null;
-  const containerId = script?.dataset.container || 'dds-booking-widget';
+  const containerId = script?.dataset.container || 'bellure-booking-widget';
   const container = document.getElementById(containerId);
   const salon = script?.dataset.salon || container?.dataset.salon || '';
   if (container && salon) {

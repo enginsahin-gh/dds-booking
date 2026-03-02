@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 import { Modal } from '../../components/ui/Modal';
 import { Spinner } from '../../components/ui/Spinner';
 import type { Salon, Booking, Service, Staff } from '../../lib/types';
@@ -27,6 +28,7 @@ function formatPrice(cents: number): string {
 
 export function CustomersPage() {
   const { salon } = useOutletContext<{ salon: Salon | null }>();
+  const { getReadableStaffIds, canSeeRevenue } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
@@ -34,22 +36,54 @@ export function CustomersPage() {
   const [search, setSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [sortBy, setSortBy] = useState<'lastVisit' | 'totalSpent' | 'totalBookings'>('lastVisit');
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 1000;
 
   useEffect(() => {
     if (!salon) return;
     const load = async () => {
+      let bookingsQuery = supabase.from('bookings').select('*').eq('salon_id', salon.id).order('start_at', { ascending: false }).limit(PAGE_SIZE);
+      const readableIds = getReadableStaffIds();
+      if (readableIds !== null) {
+        bookingsQuery = bookingsQuery.in('staff_id', readableIds);
+      }
       const [bookingsRes, servicesRes, staffRes] = await Promise.all([
-        supabase.from('bookings').select('*').eq('salon_id', salon.id).order('start_at', { ascending: false }),
+        bookingsQuery,
         supabase.from('services').select('*').eq('salon_id', salon.id),
         supabase.from('staff').select('*').eq('salon_id', salon.id),
       ]);
-      setBookings(bookingsRes.data || []);
+      const data = bookingsRes.data || [];
+      setBookings(data);
+      setHasMore(data.length === PAGE_SIZE);
       setServices(servicesRes.data || []);
       setStaffList(staffRes.data || []);
       setLoading(false);
     };
     load();
   }, [salon]);
+
+  const loadMore = async () => {
+    if (!salon || !hasMore || loadingMore) return;
+    setLoadingMore(true);
+    const lastBooking = bookings[bookings.length - 1];
+    let moreQuery = supabase
+      .from('bookings')
+      .select('*')
+      .eq('salon_id', salon.id)
+      .order('start_at', { ascending: false })
+      .lt('start_at', lastBooking.start_at)
+      .limit(PAGE_SIZE);
+    const readableIds = getReadableStaffIds();
+    if (readableIds !== null) {
+      moreQuery = moreQuery.in('staff_id', readableIds);
+    }
+    const { data } = await moreQuery;
+    const newData = data || [];
+    setBookings(prev => [...prev, ...newData]);
+    setHasMore(newData.length === PAGE_SIZE);
+    setLoadingMore(false);
+  };
 
   const customers = useMemo(() => {
     const map = new Map<string, Customer>();
@@ -94,7 +128,6 @@ export function CustomersPage() {
 
     let list = Array.from(map.values());
 
-    // Filter
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(c =>
@@ -104,7 +137,6 @@ export function CustomersPage() {
       );
     }
 
-    // Sort
     list.sort((a, b) => {
       if (sortBy === 'lastVisit') return b.lastVisit.localeCompare(a.lastVisit);
       if (sortBy === 'totalSpent') return b.totalSpentCents - a.totalSpentCents;
@@ -118,83 +150,142 @@ export function CustomersPage() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Klanten</h1>
-          <p className="text-sm text-gray-500 mt-1">{customers.length} klanten</p>
+          <h1 className="text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">Klanten</h1>
+          <p className="text-[13px] text-gray-500 mt-0.5">{customers.length} klanten</p>
         </div>
       </div>
 
       {/* Search & sort */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             type="text"
             placeholder="Zoek op naam, email of telefoon..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white text-[14px] focus:outline-none focus:border-violet-500 focus:ring-[3px] focus:ring-violet-500/10 hover:border-gray-300 transition-all duration-200 placeholder:text-gray-400"
           />
         </div>
         <select
           value={sortBy}
           onChange={e => setSortBy(e.target.value as typeof sortBy)}
-          className="px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+          className="px-4 py-3 rounded-xl border border-gray-200 bg-white text-[14px] focus:outline-none focus:border-violet-500 focus:ring-[3px] focus:ring-violet-500/10 hover:border-gray-300 transition-all duration-200 appearance-none"
         >
           <option value="lastVisit">Laatste bezoek</option>
-          <option value="totalSpent">Meeste omzet</option>
+          {canSeeRevenue && <option value="totalSpent">Meeste omzet</option>}
           <option value="totalBookings">Meeste boekingen</option>
         </select>
       </div>
 
       {/* Customer list */}
       {customers.length === 0 ? (
-        <p className="text-gray-500 text-sm py-8 text-center">Geen klanten gevonden</p>
+        <div className="text-center py-16">
+          <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <p className="text-[14px] font-medium text-gray-600">Geen klanten gevonden</p>
+          <p className="text-[13px] text-gray-400 mt-1">Klanten verschijnen hier zodra ze een afspraak maken.</p>
+        </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Klant</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500 hidden md:table-cell">Boekingen</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500 hidden sm:table-cell">Omzet</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500 hidden md:table-cell">Laatste bezoek</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500 hidden lg:table-cell">Betaald</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {customers.map(customer => (
-                <tr
-                  key={customer.email}
-                  className="hover:bg-violet-50 cursor-pointer transition-colors"
-                  onClick={() => setSelectedCustomer(customer)}
-                >
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">{customer.name}</div>
-                    <div className="text-xs text-gray-400">{customer.email}</div>
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
-                    <span className="font-medium">{customer.totalBookings}</span>
-                    {customer.noShows > 0 && (
-                      <span className="ml-2 text-xs text-red-500">{customer.noShows} no-show</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 hidden sm:table-cell font-medium">
-                    {formatPrice(customer.totalSpentCents)}
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell text-gray-500">
-                    {format(parseISO(customer.lastVisit), 'd MMM yyyy', { locale: nl })}
-                  </td>
-                  <td className="px-4 py-3 hidden lg:table-cell text-green-600 font-medium">
-                    {customer.totalPaidCents > 0 ? formatPrice(customer.totalPaidCents) : '-'}
-                  </td>
+        <>
+          {/* Mobile: card layout */}
+          <div className="space-y-2 md:hidden">
+            {customers.map(customer => (
+              <div
+                key={customer.email}
+                onClick={() => setSelectedCustomer(customer)}
+                className="bg-white rounded-xl border border-gray-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 active:bg-violet-50 transition-colors cursor-pointer"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[14px] font-semibold text-gray-900 truncate">{customer.name}</p>
+                    <p className="text-[12px] text-gray-400 truncate mt-0.5">{customer.email}</p>
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    {canSeeRevenue && <p className="text-[14px] font-bold text-gray-900">{formatPrice(customer.totalSpentCents)}</p>}
+                    <p className="text-[11px] text-gray-400">{customer.totalBookings} boekingen</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 mt-2.5 pt-2.5 border-t border-gray-100">
+                  <span className="text-[12px] text-gray-500">
+                    Laatste bezoek: {format(parseISO(customer.lastVisit), 'd MMM yyyy', { locale: nl })}
+                  </span>
+                  {customer.noShows > 0 && (
+                    <span className="text-[11px] text-red-500 font-medium">{customer.noShows}x no-show</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: table layout */}
+          <div className="hidden md:block bg-white rounded-2xl border border-gray-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.06)] overflow-hidden">
+            <table className="w-full text-[14px]">
+              <thead className="bg-gray-50/80 border-b border-gray-100">
+                <tr>
+                  <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-[12px] uppercase tracking-wider">Klant</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-[12px] uppercase tracking-wider hidden lg:table-cell">Boekingen</th>
+                  {canSeeRevenue && <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-[12px] uppercase tracking-wider">Omzet</th>}
+                  <th className="text-left px-5 py-3.5 font-semibold text-gray-500 text-[12px] uppercase tracking-wider hidden lg:table-cell">Laatste bezoek</th>
+                  {canSeeRevenue && <th className="text-right px-5 py-3.5 font-semibold text-gray-500 text-[12px] uppercase tracking-wider hidden xl:table-cell">Online betaald</th>}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {customers.map(customer => (
+                  <tr
+                    key={customer.email}
+                    className="hover:bg-violet-50/50 cursor-pointer transition-colors"
+                    onClick={() => setSelectedCustomer(customer)}
+                  >
+                    <td className="px-5 py-3.5">
+                      <div className="font-semibold text-gray-900">{customer.name}</div>
+                      <div className="text-[12px] text-gray-400 mt-0.5">{customer.email}</div>
+                    </td>
+                    <td className="px-5 py-3.5 hidden lg:table-cell">
+                      <span className="font-semibold">{customer.totalBookings}</span>
+                      {customer.noShows > 0 && (
+                        <span className="ml-2 text-[11px] text-red-500 font-medium bg-red-50 px-1.5 py-0.5 rounded-md">{customer.noShows} no-show</span>
+                      )}
+                    </td>
+                    {canSeeRevenue && (
+                      <td className="px-5 py-3.5 font-semibold">
+                        {formatPrice(customer.totalSpentCents)}
+                      </td>
+                    )}
+                    <td className="px-5 py-3.5 hidden lg:table-cell text-gray-500">
+                      {format(parseISO(customer.lastVisit), 'd MMM yyyy', { locale: nl })}
+                    </td>
+                    {canSeeRevenue && (
+                      <td className="px-5 py-3.5 hidden xl:table-cell text-right text-emerald-600 font-semibold">
+                        {customer.totalPaidCents > 0 ? formatPrice(customer.totalPaidCents) : '-'}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* Load more */}
+      {hasMore && (
+        <div className="text-center mt-6">
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-violet-600 bg-violet-50 rounded-xl hover:bg-violet-100 transition-colors disabled:opacity-50"
+          >
+            {loadingMore ? 'Laden...' : 'Meer klanten laden'}
+          </button>
+          <p className="text-[11px] text-gray-400 mt-2">{customers.length} klanten geladen</p>
         </div>
       )}
 
@@ -206,54 +297,88 @@ export function CustomersPage() {
           title={selectedCustomer.name}
         >
           <div className="space-y-5">
+            {/* Quick actions */}
+            <div className="flex flex-wrap gap-2">
+              {selectedCustomer.phone && (
+                <>
+                  <a
+                    href={`tel:${selectedCustomer.phone}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                    Bellen
+                  </a>
+                  <a
+                    href={`https://wa.me/${selectedCustomer.phone.replace(/[^0-9+]/g, '').replace(/^0/, '31')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    WhatsApp
+                  </a>
+                </>
+              )}
+              <a
+                href={`mailto:${selectedCustomer.email}`}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                E-mail
+              </a>
+            </div>
+
             {/* Contact info */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
-                <p className="text-sm mt-1">
-                  <a href={`mailto:${selectedCustomer.email}`} className="text-violet-600 hover:underline">{selectedCustomer.email}</a>
-                </p>
+            <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+              <div className="flex justify-between items-center px-4 py-3">
+                <span className="text-[13px] text-gray-500">E-mail</span>
+                <span className="text-[14px] font-medium text-gray-900 truncate max-w-[200px]">{selectedCustomer.email}</span>
               </div>
-              <div>
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Telefoon</label>
-                <p className="text-sm mt-1">
-                  <a href={`tel:${selectedCustomer.phone}`} className="text-violet-600 hover:underline">{selectedCustomer.phone}</a>
-                </p>
+              <div className="flex justify-between items-center px-4 py-3">
+                <span className="text-[13px] text-gray-500">Telefoon</span>
+                <span className="text-[14px] font-medium text-gray-900">{selectedCustomer.phone || 'Niet opgegeven'}</span>
               </div>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-gray-50 rounded-lg p-3 text-center">
+            <div className={`grid ${canSeeRevenue ? 'grid-cols-3' : 'grid-cols-1'} gap-3`}>
+              <div className="bg-gray-50 rounded-xl p-3.5 text-center">
                 <p className="text-xl font-bold text-gray-900">{selectedCustomer.totalBookings}</p>
-                <p className="text-xs text-gray-500">Boekingen</p>
+                <p className="text-[12px] text-gray-500 mt-0.5">Boekingen</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3 text-center">
-                <p className="text-xl font-bold text-gray-900">{formatPrice(selectedCustomer.totalSpentCents)}</p>
-                <p className="text-xs text-gray-500">Totale omzet</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3 text-center">
-                <p className="text-xl font-bold text-green-600">{formatPrice(selectedCustomer.totalPaidCents)}</p>
-                <p className="text-xs text-gray-500">Online betaald</p>
-              </div>
+              {canSeeRevenue && (
+                <div className="bg-gray-50 rounded-xl p-3.5 text-center">
+                  <p className="text-xl font-bold text-gray-900">{formatPrice(selectedCustomer.totalSpentCents)}</p>
+                  <p className="text-[12px] text-gray-500 mt-0.5">Totale omzet</p>
+                </div>
+              )}
+              {canSeeRevenue && (
+                <div className="bg-emerald-50 rounded-xl p-3.5 text-center">
+                  <p className="text-xl font-bold text-emerald-600">{formatPrice(selectedCustomer.totalPaidCents)}</p>
+                  <p className="text-[12px] text-gray-500 mt-0.5">Online betaald</p>
+                </div>
+              )}
             </div>
 
             {selectedCustomer.noShows > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-sm text-red-700">
-                {selectedCustomer.noShows}x no-show · {selectedCustomer.cancellations}x geannuleerd
+              <div className="flex items-center gap-2.5 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-500 flex-shrink-0">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <span className="text-[13px] text-red-700 font-medium">{selectedCustomer.noShows}x no-show · {selectedCustomer.cancellations}x geannuleerd</span>
               </div>
             )}
 
             {/* Booking history */}
             <div>
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Geschiedenis</label>
-              <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
+              <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Geschiedenis</label>
+              <div className="mt-2.5 space-y-2 max-h-64 overflow-y-auto">
                 {selectedCustomer.bookings.map(b => {
                   const svc = services.find(s => s.id === b.service_id);
                   const stf = staffList.find(s => s.id === b.staff_id);
-                  const statusColors: Record<string, string> = {
-                    confirmed: 'text-green-600',
-                    pending_payment: 'text-yellow-600',
+                  const statusStyles: Record<string, string> = {
+                    confirmed: 'text-emerald-600',
+                    pending_payment: 'text-amber-600',
                     cancelled: 'text-red-500',
                     no_show: 'text-gray-500',
                   };
@@ -264,16 +389,16 @@ export function CustomersPage() {
                     no_show: 'No-show',
                   };
                   return (
-                    <div key={b.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                    <div key={b.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
                       <div>
-                        <div className="text-sm font-medium">{svc?.name || '-'}</div>
-                        <div className="text-xs text-gray-400">
+                        <div className="text-[14px] font-medium text-gray-900">{svc?.name || '-'}</div>
+                        <div className="text-[12px] text-gray-400 mt-0.5">
                           {format(parseISO(b.start_at), 'd MMM yyyy HH:mm', { locale: nl })} · {stf?.name || '-'}
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm font-medium">{formatPrice(svc?.price_cents || 0)}</div>
-                        <div className={`text-xs ${statusColors[b.status] || 'text-gray-500'}`}>
+                        <div className="text-[14px] font-semibold">{formatPrice(svc?.price_cents || 0)}</div>
+                        <div className={`text-[12px] font-medium ${statusStyles[b.status] || 'text-gray-500'}`}>
                           {statusLabels[b.status] || b.status}
                         </div>
                       </div>
@@ -283,9 +408,9 @@ export function CustomersPage() {
               </div>
             </div>
 
-            <div className="text-xs text-gray-400">
+            <p className="text-[12px] text-gray-400">
               Klant sinds {format(parseISO(selectedCustomer.firstVisit), 'd MMMM yyyy', { locale: nl })}
-            </div>
+            </p>
           </div>
         </Modal>
       )}

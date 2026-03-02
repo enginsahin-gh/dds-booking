@@ -39,8 +39,6 @@ export function CustomerForm({ onSubmit, loading, submitLabel }: CustomerFormPro
 
   return (
     <div className="dds-animate-in">
-      <h3 className="dds-step-title" style={{ fontSize: '1.1rem', marginTop: 8 }}>Jouw gegevens</h3>
-
       <div className="dds-form">
         {/* Honeypot field — invisible to humans */}
         <div className="dds-form-hp" aria-hidden="true">

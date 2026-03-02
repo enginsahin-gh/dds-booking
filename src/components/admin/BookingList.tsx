@@ -13,6 +13,7 @@ const statusStyles: Record<string, { bg: string; text: string; label: string }> 
   pending_payment: { bg: 'bg-amber-50', text: 'text-amber-700', label: 'Wacht op betaling' },
   cancelled: { bg: 'bg-red-50', text: 'text-red-600', label: 'Geannuleerd' },
   no_show: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'No-show' },
+  completed: { bg: 'bg-blue-50', text: 'text-blue-700', label: 'Voltooid' },
 };
 
 const paymentIcons: Record<string, { icon: string; color: string; label: string }> = {

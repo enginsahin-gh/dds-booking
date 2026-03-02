@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, useEffect } from 'react';
 import { format, parseISO, addMinutes, differenceInMinutes, startOfDay, set, isSameDay } from 'date-fns';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 import type { Booking, Service, Staff } from '../../lib/types';
 
 interface Props {
@@ -27,6 +28,7 @@ const STATUS_COLORS: Record<string, string> = {
   pending_payment: 'bg-amber-100 border-amber-400 text-amber-900',
   cancelled: 'bg-gray-100 border-gray-300 text-gray-500 opacity-50',
   no_show: 'bg-red-100 border-red-300 text-red-800',
+  completed: 'bg-blue-100 border-blue-400 text-blue-900',
 };
 
 function snapToQuarter(minutes: number): number {
@@ -47,10 +49,16 @@ export function AgendaView({
   date, bookings, services, staff: allStaff, timezone,
   onSelectBooking, onSlotClick, onBookingMoved,
 }: Props) {
+  const { getReadableStaffIds, canEditStaff } = useAuth();
   const [dragBooking, setDragBooking] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ staffId: string; time: string } | null>(null);
 
-  const activeStaff = useMemo(() => allStaff.filter(s => s.is_active), [allStaff]);
+  const activeStaff = useMemo(() => {
+    const active = allStaff.filter(s => s.is_active);
+    const readableIds = getReadableStaffIds();
+    if (readableIds === null) return active; // all visible
+    return active.filter(s => readableIds.includes(s.id));
+  }, [allStaff, getReadableStaffIds]);
   const hours = useMemo(() => Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i), []);
   const totalMinutes = (HOUR_END - HOUR_START) * 60;
   const gridHeight = hours.length * SLOT_HEIGHT;
@@ -200,8 +208,8 @@ export function AgendaView({
                   <div
                     key={booking.id}
                     data-booking="true"
-                    draggable
-                    onDragStart={e => handleDragStart(e, booking.id)}
+                    draggable={canEditStaff(booking.staff_id)}
+                    onDragStart={e => canEditStaff(booking.staff_id) && handleDragStart(e, booking.id)}
                     onDragEnd={() => { setDragBooking(null); setDropTarget(null); }}
                     onClick={e => { e.stopPropagation(); onSelectBooking(booking); }}
                     className={`absolute left-0.5 right-0.5 rounded-md border-l-[3px] px-1.5 py-0.5 cursor-grab active:cursor-grabbing overflow-hidden transition-shadow hover:shadow-md z-10 ${

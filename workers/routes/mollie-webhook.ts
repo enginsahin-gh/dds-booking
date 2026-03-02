@@ -23,7 +23,8 @@ function parseMollieCents(value: string): number {
 }
 
 export async function mollieWebhook(c: Context<{ Bindings: Env }>) {
-  const mollieApiKey = c.env.MOLLIE_API_KEY;
+  // Default to platform key, will try salon-specific token later
+  let mollieApiKey = c.env.MOLLIE_API_KEY;
   if (!mollieApiKey) return c.text('Not configured', 500);
 
   // Mollie sends form-encoded OR JSON
@@ -42,7 +43,50 @@ export async function mollieWebhook(c: Context<{ Bindings: Env }>) {
 
   if (!paymentId) return c.text('Missing payment ID', 400);
 
+  // Validate payment ID format (Mollie IDs always start with "tr_")
+  if (!paymentId.startsWith('tr_') || paymentId.length < 5 || paymentId.length > 40) {
+    return c.text('Invalid payment ID', 400);
+  }
+
+  // Verify payment exists in our database before calling Mollie API
+  const { data: existingPayment } = await getSupabase(c.env)
+    .from('payments')
+    .select('id')
+    .eq('mollie_payment_id', paymentId)
+    .limit(1);
+
+  if (!existingPayment || existingPayment.length === 0) {
+    return c.text('Unknown payment', 400);
+  }
+
   const supabase = getSupabase(c.env);
+
+  // Check if the payment's salon has its own Mollie token
+  const { data: paymentRecord } = await supabase
+    .from('payments')
+    .select('booking_id')
+    .eq('mollie_payment_id', paymentId)
+    .single();
+
+  if (paymentRecord?.booking_id) {
+    const { data: booking } = await supabase
+      .from('bookings')
+      .select('salon_id')
+      .eq('id', paymentRecord.booking_id)
+      .single();
+
+    if (booking?.salon_id) {
+      const { data: secrets } = await supabase
+        .from('salon_secrets')
+        .select('mollie_access_token')
+        .eq('salon_id', booking.salon_id)
+        .single();
+
+      if (secrets?.mollie_access_token) {
+        mollieApiKey = secrets.mollie_access_token;
+      }
+    }
+  }
 
   // Always fetch actual status from Mollie
   const mollieRes = await fetch(`${MOLLIE_API_BASE}/payments/${paymentId}`, {
@@ -80,7 +124,7 @@ export async function mollieWebhook(c: Context<{ Bindings: Env }>) {
     if (mp.status === 'paid') {
       const { data: booking } = await supabase.from('bookings').select('salon_id').eq('id', bookingId).single();
       if (booking) {
-        const siteUrl = c.env.SITE_URL || 'https://dds-booking-widget.netlify.app';
+        const siteUrl = c.env.SITE_URL || 'https://api.bellure.nl';
         const sendEmail = async (type: string) => {
           try {
             await fetch(`${siteUrl}/api/send-email`, {

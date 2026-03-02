@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks, format, isSameDay } from 'date-fns';
 import { nl } from 'date-fns/locale';
-import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 import { useBookings } from '../../hooks/useBookings';
 import { useServices } from '../../hooks/useServices';
 import { useStaff } from '../../hooks/useStaff';
@@ -10,6 +10,7 @@ import { DateNavigator } from '../../components/admin/DateNavigator';
 import { BookingList } from '../../components/admin/BookingList';
 import { BookingDetailModal } from '../../components/admin/BookingDetailModal';
 import { AgendaView } from '../../components/admin/AgendaView';
+import { WeekAgendaView } from '../../components/admin/WeekAgendaView';
 import { CreateBookingModal } from '../../components/admin/CreateBookingModal';
 import { Spinner } from '../../components/ui/Spinner';
 import { useToast } from '../../components/ui/Toast';
@@ -19,6 +20,7 @@ type ViewMode = 'day' | 'week' | 'agenda';
 
 export function BookingsPage() {
   const { salon } = useOutletContext<{ salon: Salon | null }>();
+  const { canSeeRevenue } = useAuth();
   const { addToast } = useToast();
   const [date, setDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('agenda');
@@ -35,20 +37,21 @@ export function BookingsPage() {
     return { start: startOfDay(date).toISOString(), end: endOfDay(date).toISOString() };
   }, [date, viewMode]);
 
-  const { bookings, loading, refetch, cancelBooking } = useBookings(salon?.id, dateRange);
+  const { bookings, loading, refetch, cancelBooking, completeBooking, noShowBooking } = useBookings(salon?.id, dateRange);
   const { services } = useServices(salon?.id);
   const { staff } = useStaff(salon?.id);
+  const { canEditStaff } = useAuth();
 
   const handleCancel = async (id: string) => {
     try { await cancelBooking(id); addToast('success', 'Afspraak geannuleerd'); } catch { addToast('error', 'Annulering mislukt'); }
   };
 
   const handleNoShow = async (id: string) => {
-    try {
-      await supabase.from('bookings').update({ status: 'no_show' }).eq('id', id);
-      addToast('success', 'No-show geregistreerd');
-      refetch();
-    } catch { addToast('error', 'Kon no-show niet registreren'); }
+    try { await noShowBooking(id); addToast('success', 'No-show geregistreerd'); } catch { addToast('error', 'Kon no-show niet registreren'); }
+  };
+
+  const handleComplete = async (id: string) => {
+    try { await completeBooking(id); addToast('success', 'Afspraak voltooid'); } catch { addToast('error', 'Kon status niet bijwerken'); }
   };
 
   const handleSlotClick = (staffId: string, time: string) => {
@@ -81,7 +84,7 @@ export function BookingsPage() {
   // Stats
   const confirmed = bookings.filter(b => b.status === 'confirmed');
   const pendingPayment = bookings.filter(b => b.status === 'pending_payment');
-  const totalRevenue = confirmed.reduce((sum, b) => sum + (services.find(s => s.id === b.service_id)?.price_cents || 0), 0);
+  const totalRevenue = confirmed.reduce((sum, b) => sum + (b.amount_total_cents || services.find(s => s.id === b.service_id)?.price_cents || 0), 0);
 
   return (
     <div>
@@ -139,18 +142,20 @@ export function BookingsPage() {
 
       {/* Quick stats - compact on mobile */}
       <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="bg-white rounded-xl border border-gray-100 p-2.5 lg:p-3 text-center">
+        <div className="bg-white rounded-xl border border-gray-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-2.5 lg:p-3.5 text-center">
           <p className="text-lg lg:text-2xl font-bold text-gray-900">{confirmed.length}</p>
-          <p className="text-[10px] lg:text-xs text-gray-500">Bevestigd</p>
+          <p className="text-[10px] lg:text-[12px] text-gray-500 font-medium">Bevestigd</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-2.5 lg:p-3 text-center">
+        <div className="bg-white rounded-xl border border-gray-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-2.5 lg:p-3.5 text-center">
           <p className="text-lg lg:text-2xl font-bold text-amber-600">{pendingPayment.length}</p>
-          <p className="text-[10px] lg:text-xs text-gray-500">Wacht</p>
+          <p className="text-[10px] lg:text-[12px] text-gray-500 font-medium">Wacht</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-2.5 lg:p-3 text-center">
-          <p className="text-lg lg:text-2xl font-bold text-gray-900">€{(totalRevenue / 100).toFixed(0)}</p>
-          <p className="text-[10px] lg:text-xs text-gray-500">Omzet</p>
-        </div>
+        {canSeeRevenue && (
+          <div className="bg-white rounded-xl border border-gray-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-2.5 lg:p-3.5 text-center">
+            <p className="text-lg lg:text-2xl font-bold text-gray-900">€{(totalRevenue / 100).toFixed(0)}</p>
+            <p className="text-[10px] lg:text-[12px] text-gray-500 font-medium">Omzet</p>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -171,39 +176,30 @@ export function BookingsPage() {
         )
       ) : viewMode === 'day' ? (
         <BookingList bookings={bookings} services={services} staff={staff} onSelect={setSelectedBooking} />
-      ) : (
-        <div className="space-y-4">
-          {weekDays.map(day => {
-            const key = format(day, 'yyyy-MM-dd');
-            const dayBookings = bookingsByDay.get(key) || [];
-            const isToday = isSameDay(day, new Date());
-            return (
-              <div key={key}>
-                <div className={`flex items-center gap-2 mb-2 ${isToday ? 'text-violet-700' : 'text-gray-600'}`}>
-                  <span className={`text-sm font-semibold ${isToday ? 'bg-violet-600 text-white px-2 py-0.5 rounded-full' : ''}`}>
-                    {format(day, 'EEE d MMM', { locale: nl })}
-                  </span>
-                  <span className="text-xs text-gray-400">{dayBookings.length}</span>
-                </div>
-                {dayBookings.length > 0 ? (
-                  <BookingList bookings={dayBookings} services={services} staff={staff} onSelect={setSelectedBooking} />
-                ) : (
-                  <p className="text-xs text-gray-400 py-2 pl-2">Geen afspraken</p>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      ) : salon ? (
+        <WeekAgendaView
+          date={date}
+          bookings={bookings}
+          services={services}
+          staff={staff}
+          timezone={salon.timezone}
+          onSelectBooking={setSelectedBooking}
+          onSlotClick={handleSlotClick}
+        />
+      ) : null}
 
       <BookingDetailModal
         booking={selectedBooking}
         service={selectedService}
         staff={selectedStaff}
+        allServices={services}
         open={!!selectedBooking}
         onClose={() => setSelectedBooking(null)}
         onCancel={handleCancel}
         onNoShow={handleNoShow}
+        onComplete={handleComplete}
+        canEdit={selectedBooking ? canEditStaff(selectedBooking.staff_id) : false}
+        canSeeRevenue={canSeeRevenue}
       />
 
       {salon && (

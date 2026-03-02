@@ -8,4 +8,9 @@ compatibility_flags = ["nodejs_compat"]
 # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, MOLLIE_API_KEY, EMAIL_SECRET, etc.
 
 [vars]
-SITE_URL = "https://dds-booking-api.engin-sahin.workers.dev"
+SITE_URL = "https://api.bellure.nl"
+FRONTEND_URL = "https://mijn.bellure.nl"
+
+# Cron trigger: check for appointment reminders every 15 minutes
+[triggers]
+crons = ["*/15 * * * *"]

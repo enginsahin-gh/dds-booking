@@ -129,7 +129,7 @@ function confirmationHtml(d: any): string {
     <div style="margin:16px 0;padding:14px;background:#F8FAFC;border-radius:8px;border:1px solid #E2E8F0;">
       <div style="font-size:13px;color:#64748B;font-weight:600;margin-bottom:6px;">Locatie</div>
       <div style="font-size:14px;color:#1E293B;">${esc(fullAddress)}</div>
-      ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;color:#8B5CF6;font-size:13px;text-decoration:none;">Bekijk op Google Maps &rarr;</a>` : ''}
+      ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;color:${d.brandColor};font-size:13px;text-decoration:none;">Bekijk op Google Maps &rarr;</a>` : ''}
       ${d.locationInfo ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #E2E8F0;font-size:13px;color:#64748B;">${esc(d.locationInfo)}</div>` : ''}
     </div>` : '';
 
@@ -141,21 +141,21 @@ function confirmationHtml(d: any): string {
 
   // Calendar link
   const calendarLink = d.calendarUrl ? `
-    <a href="${d.calendarUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:10px 20px;background:#8B5CF6;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;">Voeg toe aan agenda</a>` : '';
+    <a href="${d.calendarUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:10px 20px;${d.brandBg}color:${d.brandColorText};border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;">Voeg toe aan agenda</a>` : '';
 
   // Action buttons
   const rescheduleBtn = d.rescheduleUrl ? `
-    <a href="${d.rescheduleUrl}" style="display:inline-block;padding:10px 20px;background:#F5F3FF;color:#8B5CF6;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;border:1px solid #DDD6FE;">Afspraak verplaatsen</a>` : '';
+    <a href="${d.rescheduleUrl}" style="display:inline-block;padding:10px 20px;background:#F5F3FF;color:${d.brandColor};border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;border:1px solid #DDD6FE;">Afspraak verplaatsen</a>` : '';
   const cancelBtn = d.cancelUrl
     ? `<a href="${d.cancelUrl}" style="display:inline-block;padding:10px 20px;background:#FEF2F2;color:#DC2626;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;">Afspraak annuleren</a>`
     : '';
 
   return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1E293B;">
     <div style="text-align:center;padding:24px 0 16px;">
-      <div style="display:inline-block;width:48px;height:48px;background:#8B5CF6;border-radius:50%;line-height:48px;text-align:center;">
+      <div style="display:inline-block;width:48px;height:48px;${d.brandBg}border-radius:50%;line-height:48px;text-align:center;">
         <span style="color:#fff;font-size:20px;">&#10003;</span>
       </div>
-      <h2 style="color:#8B5CF6;margin:12px 0 4px;font-size:22px;">Afspraak bevestigd</h2>
+      <h2 style="color:${d.brandColor};margin:12px 0 4px;font-size:22px;">Afspraak bevestigd</h2>
     </div>
 
     <p style="font-size:15px;">Hoi ${d.customerName},</p>
@@ -197,7 +197,7 @@ function notificationHtml(d: any): string {
       <tr><td style="padding:8px 0;color:#666;">Medewerker</td><td><strong>${d.staffName}</strong></td></tr>
       <tr><td style="padding:8px 0;color:#666;">Datum/Tijd</td><td><strong>${d.date}, ${d.startTime} - ${d.endTime}</strong></td></tr>
     </table>
-    <p style="margin-top:16px;"><a href="${d.adminUrl}" style="color:#8B5CF6;">Bekijk in dashboard</a></p>
+    <p style="margin-top:16px;"><a href="${d.adminUrl}" style="color:${d.brandColor};">Bekijk in dashboard</a></p>
   </div>`;
 }
 
@@ -210,7 +210,7 @@ function cancellationHtml(d: any): string {
 
   const rebookSection = d.rebookUrl
     ? `<div style="margin:20px 0;text-align:center;">
-        <a href="${d.rebookUrl}" style="display:inline-block;padding:12px 24px;background:#8B5CF6;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;">Nieuwe afspraak maken</a>
+        <a href="${d.rebookUrl}" style="display:inline-block;padding:12px 24px;${d.brandBg}color:${d.brandColorText};border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;">Nieuwe afspraak maken</a>
       </div>` : '';
 
   return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1E293B;">
@@ -244,13 +244,13 @@ function cancellationNotificationHtml(d: any): string {
       </table>
     </div>
     ${d.amountPaid > 0 ? `<p style="font-size:14px;color:#92400E;padding:10px;background:#FFFBEB;border-radius:8px;">Klant had ${d.amountPaidFormatted} ${d.paymentType === 'deposit' ? 'aanbetaald' : 'betaald'}.</p>` : ''}
-    <p style="margin-top:16px;"><a href="${d.adminUrl}" style="color:#8B5CF6;">Bekijk in dashboard</a></p>
+    <p style="margin-top:16px;"><a href="${d.adminUrl}" style="color:${d.brandColor};">Bekijk in dashboard</a></p>
   </div>`;
 }
 
 function reminder24hHtml(d: any): string {
   return `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;">
-    <h2 style="color:#8B5CF6;">Herinnering: morgen je afspraak</h2>
+    <h2 style="color:${d.brandColor};">Herinnering: morgen je afspraak</h2>
     <p>Hoi ${d.customerName},</p>
     <p>Even een herinnering: morgen heb je een afspraak bij <strong>${d.salonName}</strong>.</p>
     <table style="width:100%;border-collapse:collapse;margin:16px 0;">
@@ -269,12 +269,12 @@ function reminder24hHtml(d: any): string {
 
 function reviewRequestHtml(d: any): string {
   return `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;">
-    <h2 style="color:#8B5CF6;">Hoe was je bezoek?</h2>
+    <h2 style="color:${d.brandColor};">Hoe was je bezoek?</h2>
     <p>Hoi ${d.customerName},</p>
     <p>Bedankt voor je bezoek aan <strong>${d.salonName}</strong>! We hopen dat je tevreden bent.</p>
     <p>Zou je een moment willen nemen om een review achter te laten? Het helpt ons enorm en andere klanten weten dan ook wat ze kunnen verwachten.</p>
     <div style="margin:24px 0;text-align:center;">
-      <a href="${d.reviewUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:14px 28px;background:#8B5CF6;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">
+      <a href="${d.reviewUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:14px 28px;${d.brandBg}color:${d.brandColorText};text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">
         Laat een review achter
       </a>
     </div>
@@ -286,7 +286,7 @@ function reviewRequestHtml(d: any): string {
 
 function reminder1hHtml(d: any): string {
   return `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;">
-    <h2 style="color:#8B5CF6;">Over een uur: je afspraak</h2>
+    <h2 style="color:${d.brandColor};">Over een uur: je afspraak</h2>
     <p>Hoi ${d.customerName},</p>
     <p>Over een uur word je verwacht bij <strong>${d.salonName}</strong> voor <strong>${d.serviceName}</strong> bij ${d.staffName}.</p>
     <p style="margin:16px 0;padding:12px;background:#F5F3FF;border-radius:8px;text-align:center;font-size:16px;font-weight:500;">
@@ -369,6 +369,20 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
     ? bookingServices.reduce((sum: number, bs: any) => sum + (bs.duration_min || 0), 0)
     : service.duration_min;
 
+  // Build branding early so templates can use it for accent colors/buttons
+  const _brandColor = salon.brand_color || '#8B5CF6';
+  const _brandColorText = salon.brand_color_text || '#FFFFFF';
+  const _gradientEnabled = salon.brand_gradient_enabled || false;
+  const _gradientFrom = salon.brand_gradient_from || _brandColor;
+  const _gradientTo = salon.brand_gradient_to || '#6366F1';
+  const _gradientDir = salon.brand_gradient_direction || '135deg';
+  const _brandBg = _gradientEnabled
+    ? `background-color:${_brandColor};background:linear-gradient(${_gradientDir},${_gradientFrom},${_gradientTo});`
+    : `background:${_brandColor};`;
+  const _brandBgShort = _gradientEnabled
+    ? `linear-gradient(${_gradientDir},${_gradientFrom},${_gradientTo})`
+    : _brandColor;
+
   const apiBase = c.env.SITE_URL || 'https://api.bellure.nl';
   const frontendUrl = c.env.FRONTEND_URL || 'https://mijn.bellure.nl';
   const cancelUrl = booking.cancel_token
@@ -403,6 +417,7 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
       cancelUrl,
       rescheduleUrl,
       calendarUrl: googleCalendarUrl(calData),
+      brandColor: _brandColor, brandBg: _brandBg, brandColorText: _brandColorText,
     });
   } else if (type === 'notification') {
     subject = `Nieuwe boeking: ${booking.customer_name} — ${displayServiceName}`;
@@ -413,6 +428,7 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
       customerEmail: esc(booking.customer_email), serviceName: esc(displayServiceName),
       duration: totalDurationMin, staffName: esc(staff.name), date, startTime, endTime,
       adminUrl: `${frontendUrl}/admin/bookings`,
+      brandColor: _brandColor, brandBg: _brandBg, brandColorText: _brandColorText,
     });
   } else if (type === 'cancellation') {
     subject = `Afspraak geannuleerd: ${date} ${startTime}`;
@@ -426,6 +442,7 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
       paymentType: booking.payment_type || 'none',
       refundStatus: booking.refund_status || 'none',
       rebookUrl: `${frontendUrl}?salon=${salon.slug}`,
+      brandColor: _brandColor, brandBg: _brandBg, brandColorText: _brandColorText,
     });
   } else if (type === 'cancellation_notification') {
     subject = `Annulering: ${booking.customer_name} — ${displayServiceName} op ${date}`;
@@ -437,6 +454,7 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
       amountPaidFormatted: booking.amount_paid_cents > 0 ? formatPrice(booking.amount_paid_cents) : '',
       paymentType: booking.payment_type || 'none',
       adminUrl: `${frontendUrl}/admin/bookings`,
+      brandColor: _brandColor, brandBg: _brandBg, brandColorText: _brandColorText,
     });
   } else if (type === 'reminder_24h') {
     subject = `Herinnering: morgen je afspraak bij ${salon.name}`;
@@ -445,6 +463,7 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
       customerName: esc(booking.customer_name), serviceName: esc(displayServiceName),
       staffName: esc(staff.name), date, startTime,
       salonName: esc(salon.name), cancelUrl,
+      brandColor: _brandColor, brandBg: _brandBg, brandColorText: _brandColorText,
     });
   } else if (type === 'reminder_1h') {
     subject = `Over een uur: ${displayServiceName} bij ${salon.name}`;
@@ -452,6 +471,7 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
     html = reminder1hHtml({
       customerName: esc(booking.customer_name), serviceName: esc(displayServiceName),
       staffName: esc(staff.name), startTime, salonName: esc(salon.name),
+      brandColor: _brandColor, brandBg: _brandBg, brandColorText: _brandColorText,
     });
   } else if (type === 'review_request') {
     // Build Google review URL from Place ID
@@ -464,6 +484,7 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
       customerName: esc(booking.customer_name),
       salonName: esc(salon.name),
       reviewUrl,
+      brandColor: _brandColor, brandBg: _brandBg, brandColorText: _brandColorText,
     });
   } else {
     return c.json({ error: 'Invalid email type' }, 400);

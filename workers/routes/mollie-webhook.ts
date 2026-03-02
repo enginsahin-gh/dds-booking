@@ -120,6 +120,22 @@ export async function mollieWebhook(c: Context<{ Bindings: Env }>) {
 
     await supabase.from('bookings').update(bookingUpdate).eq('id', bookingId);
 
+    // Insert in-app notification for payment events
+    if (mp.status === 'paid') {
+      const { data: paidBooking } = await supabase.from('bookings').select('customer_name, salon_id').eq('id', bookingId).single();
+      if (paidBooking) {
+        c.executionCtx.waitUntil(
+          supabase.from('notifications').insert({
+            salon_id: paidBooking.salon_id,
+            type: 'payment',
+            title: `Betaling ontvangen: ${paidBooking.customer_name}`,
+            message: `€${(paidCents / 100).toFixed(2).replace('.', ',')} via ${mp.method || 'iDEAL'}`,
+            booking_id: bookingId,
+          }).then(({ error }) => { if (error) console.error('Notification insert error:', error.message); })
+        );
+      }
+    }
+
     // Send emails on success
     if (mp.status === 'paid') {
       const { data: booking } = await supabase.from('bookings').select('salon_id').eq('id', bookingId).single();

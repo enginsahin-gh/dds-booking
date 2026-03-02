@@ -40,6 +40,11 @@ const settingsTabs = [
     icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
   },
   {
+    id: 'email',
+    label: 'E-mail',
+    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+  },
+  {
     id: 'embed',
     label: 'Widget',
     icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
@@ -67,6 +72,12 @@ export function SettingsPage() {
   const [reviewEnabled, setReviewEnabled] = useState(false);
   const [reviewAfterVisit, setReviewAfterVisit] = useState(3);
   const [saving, setSaving] = useState(false);
+
+  // Email branding
+  const [brandColor, setBrandColor] = useState('#8B5CF6');
+  const [brandColorText, setBrandColorText] = useState('#FFFFFF');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [emailFooterText, setEmailFooterText] = useState('');
 
   // Payment settings
   const [searchParams, setSearchParams] = useSearchParams();
@@ -110,6 +121,10 @@ export function SettingsPage() {
       setPaymentMode(salon.payment_mode || 'deposit');
       setDepositType(salon.deposit_type || 'percentage');
       setDepositValue(salon.deposit_value || 25);
+      setBrandColor((salon as any).brand_color || '#8B5CF6');
+      setBrandColorText((salon as any).brand_color_text || '#FFFFFF');
+      setLogoUrl((salon as any).logo_url || '');
+      setEmailFooterText((salon as any).email_footer_text || '');
     }
   }, [salon]);
 
@@ -125,6 +140,10 @@ export function SettingsPage() {
         buffer_minutes: bufferMinutes, max_booking_weeks: maxBookingWeeks,
         google_place_id: googlePlaceId || null,
         review_enabled: reviewEnabled, review_after_visit: reviewAfterVisit,
+        brand_color: brandColor || '#8B5CF6',
+        brand_color_text: brandColorText || '#FFFFFF',
+        logo_url: logoUrl || null,
+        email_footer_text: emailFooterText || null,
       });
       addToast('success', 'Instellingen opgeslagen');
     } catch {
@@ -656,6 +675,82 @@ export function SettingsPage() {
             {paymentMode === 'none' && (
               <Button onClick={handleSavePayment} loading={paymentSaving}>Betalingsinstellingen opslaan</Button>
             )}
+          </div>
+        </TabPanel>
+
+        {/* EMAIL BRANDING TAB */}
+        <TabPanel active={activeTab === 'email'}>
+          <Card padding="lg">
+            <CardSection title="E-mail branding" description="Pas het uiterlijk van bevestigings- en herinneringsmails aan.">
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Merkkleur</label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={brandColor}
+                        onChange={(e) => setBrandColor(e.target.value)}
+                        className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5"
+                      />
+                      <Input value={brandColor} onChange={(e) => setBrandColor(e.target.value)} placeholder="#8B5CF6" />
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-1">Wordt gebruikt als header en knopkleur in e-mails.</p>
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Tekstkleur op merkkleur</label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={brandColorText}
+                        onChange={(e) => setBrandColorText(e.target.value)}
+                        className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5"
+                      />
+                      <Input value={brandColorText} onChange={(e) => setBrandColorText(e.target.value)} placeholder="#FFFFFF" />
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-1">Tekst die op de merkkleur staat (wit of donker).</p>
+                  </div>
+                </div>
+                <Input
+                  label="Logo URL"
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                />
+                <p className="text-[11px] text-gray-400 -mt-3">Logo wordt getoond in de header van elke e-mail. Max hoogte: 48px.</p>
+                <Input
+                  label="E-mail footer tekst"
+                  value={emailFooterText}
+                  onChange={(e) => setEmailFooterText(e.target.value)}
+                  placeholder="Bijv. Tot snel bij Salon Amara!"
+                />
+                <p className="text-[11px] text-gray-400 -mt-3">Optionele tekst onderaan elke e-mail.</p>
+              </div>
+            </CardSection>
+
+            {/* Preview */}
+            <CardSection title="Voorbeeld" description="Zo ziet de header van je e-mails eruit.">
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <div style={{ background: brandColor, padding: '20px 24px', textAlign: 'center' as const }}>
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="Logo" style={{ maxHeight: 48, maxWidth: 180, display: 'block', margin: '0 auto' }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  ) : (
+                    <span style={{ fontSize: 20, fontWeight: 700, color: brandColorText, letterSpacing: '-0.5px' }}>{name || 'Je Salon'}</span>
+                  )}
+                </div>
+                <div style={{ padding: '20px 24px', background: '#fff' }}>
+                  <p style={{ margin: 0, color: '#475569', fontSize: 14 }}>Je afspraak bij <strong>{name || 'Je Salon'}</strong> is bevestigd...</p>
+                </div>
+                <div style={{ padding: '12px 24px', borderTop: '1px solid #F1F1EF', textAlign: 'center' as const }}>
+                  {emailFooterText && <p style={{ color: '#94A3B8', fontSize: 13, margin: '0 0 4px', fontStyle: 'italic' }}>{emailFooterText}</p>}
+                  <p style={{ color: '#CBD5E1', fontSize: 11, margin: 0 }}>Powered by Bellure</p>
+                </div>
+              </div>
+            </CardSection>
+          </Card>
+          <div className="mt-4">
+            <Button onClick={handleSave} loading={saving}>Opslaan</Button>
           </div>
         </TabPanel>
 

@@ -32,6 +32,57 @@ function googleCalendarUrl(d: any): string {
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
+interface SalonBranding {
+  brandColor: string;
+  brandColorText: string;
+  logoUrl?: string;
+  salonName: string;
+  footerText?: string;
+}
+
+function brandedEmailWrapper(branding: SalonBranding, content: string): string {
+  const { brandColor, brandColorText, logoUrl, salonName, footerText } = branding;
+  const logoHtml = logoUrl
+    ? `<img src="${esc(logoUrl)}" alt="${esc(salonName)}" style="max-height:48px;max-width:180px;display:block;margin:0 auto;" />`
+    : `<span style="font-size:20px;font-weight:700;color:${brandColorText};letter-spacing:-0.5px;">${esc(salonName)}</span>`;
+
+  const footerLine = footerText
+    ? `<p style="color:#94A3B8;font-size:13px;margin:8px 0 0;font-style:italic;">${esc(footerText)}</p>`
+    : '';
+
+  return `<!DOCTYPE html>
+<html lang="nl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F7F7F5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F7F5;padding:24px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+        <!-- Branded header -->
+        <tr>
+          <td style="background:${brandColor};padding:20px 24px;text-align:center;">
+            ${logoHtml}
+          </td>
+        </tr>
+        <!-- Content -->
+        <tr>
+          <td style="padding:28px 24px 20px;">
+            ${content}
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="padding:16px 24px 20px;text-align:center;border-top:1px solid #F1F1EF;">
+            ${footerLine}
+            <p style="color:#CBD5E1;font-size:11px;margin:8px 0 0;">Powered by <a href="https://bellure.nl" style="color:#CBD5E1;text-decoration:underline;">Bellure</a></p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
 function confirmationHtml(d: any): string {
   // Payment section
   let paymentSection = '';
@@ -113,13 +164,6 @@ function confirmationHtml(d: any): string {
     </div>
 
     ${!d.cancelUrl && !d.rescheduleUrl ? `<p style="margin-top:16px;color:#64748B;font-size:13px;text-align:center;">Wil je je afspraak wijzigen? Neem contact op met ${d.salonName}${d.salonPhone ? ` via ${d.salonPhone}` : ''} of mail naar ${d.salonEmail}.</p>` : ''}
-
-    <hr style="margin:28px 0 16px;border:none;border-top:1px solid #E2E8F0;"/>
-    <div style="text-align:center;color:#94A3B8;font-size:12px;line-height:1.6;">
-      <strong>${d.salonName}</strong>${d.salonPhone ? ` · ${d.salonPhone}` : ''}<br/>
-      ${d.salonEmail}<br/>
-      <span style="color:#CBD5E1;">Powered by Bellure</span>
-    </div>
   </div>`;
 }
 
@@ -165,12 +209,6 @@ function cancellationHtml(d: any): string {
     </div>
     ${refundSection}
     ${rebookSection}
-    <hr style="margin:28px 0 16px;border:none;border-top:1px solid #E2E8F0;"/>
-    <div style="text-align:center;color:#94A3B8;font-size:12px;line-height:1.6;">
-      <strong>${d.salonName}</strong>${d.salonPhone ? ` · ${d.salonPhone}` : ''}<br/>
-      ${d.salonEmail}<br/>
-      <span style="color:#CBD5E1;">Powered by Bellure</span>
-    </div>
   </div>`;
 }
 
@@ -411,6 +449,16 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
   } else {
     return c.json({ error: 'Invalid email type' }, 400);
   }
+
+  // Wrap HTML in branded email template
+  const branding: SalonBranding = {
+    brandColor: salon.brand_color || '#8B5CF6',
+    brandColorText: salon.brand_color_text || '#FFFFFF',
+    logoUrl: salon.logo_url || undefined,
+    salonName: salon.name,
+    footerText: salon.email_footer_text || undefined,
+  };
+  html = brandedEmailWrapper(branding, html);
 
   const fromEmail = 'noreply@bellure.nl';
   const fromName = ['notification', 'cancellation_notification'].includes(type)

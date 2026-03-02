@@ -197,6 +197,17 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
     // Non-fatal: booking still created, just missing service breakdown
   }
 
+  // Insert in-app notification (non-blocking)
+  c.executionCtx.waitUntil(
+    supabase.from('notifications').insert({
+      salon_id: salonId,
+      type: 'new_booking',
+      title: `Nieuwe boeking: ${name}`,
+      message: `${combinedServiceName} op ${new Date(startAt).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/Amsterdam' })} om ${new Date(startAt).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' })}`,
+      booking_id: bookingId,
+    }).then(({ error }) => { if (error) console.error('Notification insert error:', error.message); })
+  );
+
   // Send emails (non-blocking) — only for confirmed bookings (not pending_payment)
   if (!needsPayment) {
     const apiBase = c.env.SITE_URL || 'https://api.bellure.nl';

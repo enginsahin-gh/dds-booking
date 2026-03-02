@@ -115,9 +115,10 @@ export function StatsPage() {
     });
   }, [salon, range.start.getTime(), range.end.getTime()]);
 
-  // Calculate stats
-  const confirmed = bookings.filter(b => b.status === 'confirmed');
-  const prevConfirmed = prevBookings.filter(b => b.status === 'confirmed');
+  // Calculate stats — include both confirmed and completed bookings for revenue
+  const confirmed = bookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
+  const prevConfirmed = prevBookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
+  const completed = bookings.filter(b => b.status === 'completed');
   const cancelled = bookings.filter(b => b.status === 'cancelled');
   const noShows = bookings.filter(b => b.status === 'no_show');
 
@@ -198,7 +199,7 @@ export function StatsPage() {
       {loading ? <Spinner className="py-12" /> : (
         <div className="space-y-5">
           {/* Summary stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
             <Card padding="md">
               <div className="text-center">
                 <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Omzet</p>
@@ -230,6 +231,15 @@ export function StatsPage() {
                 <p className="text-2xl font-bold text-emerald-600 mt-1">{fmtShort(totalPaid)}</p>
                 <p className="text-[11px] text-gray-400 mt-1.5">
                   {totalRevenue > 0 ? `${Math.round((totalPaid / totalRevenue) * 100)}% van omzet` : '-'}
+                </p>
+              </div>
+            </Card>
+            <Card padding="md">
+              <div className="text-center">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Voltooid</p>
+                <p className="text-2xl font-bold text-blue-600 mt-1">{completed.length}</p>
+                <p className="text-[11px] text-gray-400 mt-1.5">
+                  {confirmed.length > 0 ? `${Math.round((completed.length / confirmed.length) * 100)}% afgerond` : '-'}
                 </p>
               </div>
             </Card>

@@ -19,6 +19,17 @@ export async function cancelBooking(c: Context<{ Bindings: Env }>) {
 
   await supabase.from('bookings').update({ status: 'cancelled', cancelled_at: new Date().toISOString() }).eq('id', bookingId);
 
+  // Insert in-app notification
+  c.executionCtx.waitUntil(
+    supabase.from('notifications').insert({
+      salon_id: booking.salon_id,
+      type: 'cancellation',
+      title: `Annulering: ${booking.customer_name}`,
+      message: reason || 'Afspraak geannuleerd',
+      booking_id: bookingId,
+    }).then(({ error }) => { if (error) console.error('Notification insert error:', error.message); })
+  );
+
   let refundResult = null;
 
   if (refund && booking.payment_status === 'paid' && booking.amount_paid_cents > 0) {

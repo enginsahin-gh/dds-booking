@@ -35,13 +35,25 @@ function googleCalendarUrl(d: any): string {
 interface SalonBranding {
   brandColor: string;
   brandColorText: string;
+  gradientEnabled: boolean;
+  gradientFrom: string;
+  gradientTo: string;
+  gradientDirection: string;
   logoUrl?: string;
   salonName: string;
   footerText?: string;
 }
 
+function getBrandBackground(b: SalonBranding): string {
+  if (b.gradientEnabled && b.gradientFrom && b.gradientTo) {
+    return `linear-gradient(${b.gradientDirection || '135deg'}, ${b.gradientFrom}, ${b.gradientTo})`;
+  }
+  return b.brandColor;
+}
+
 function brandedEmailWrapper(branding: SalonBranding, content: string): string {
   const { brandColor, brandColorText, logoUrl, salonName, footerText } = branding;
+  const bgStyle = getBrandBackground(branding);
   const logoHtml = logoUrl
     ? `<img src="${esc(logoUrl)}" alt="${esc(salonName)}" style="max-height:48px;max-width:180px;display:block;margin:0 auto;" />`
     : `<span style="font-size:20px;font-weight:700;color:${brandColorText};letter-spacing:-0.5px;">${esc(salonName)}</span>`;
@@ -50,16 +62,23 @@ function brandedEmailWrapper(branding: SalonBranding, content: string): string {
     ? `<p style="color:#94A3B8;font-size:13px;margin:8px 0 0;font-style:italic;">${esc(footerText)}</p>`
     : '';
 
+  // Email gradient: use background shorthand with solid fallback for Outlook
+  const headerBg = branding.gradientEnabled
+    ? `background-color:${brandColor};background:${bgStyle};`
+    : `background:${brandColor};`;
+
   return `<!DOCTYPE html>
 <html lang="nl">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!--[if mso]><style>td{font-family:Arial,sans-serif!important;}</style><![endif]-->
+</head>
 <body style="margin:0;padding:0;background:#F7F7F5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F7F5;padding:24px 16px;">
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-        <!-- Branded header -->
+        <!-- Branded header with gradient support -->
         <tr>
-          <td style="background:${brandColor};padding:20px 24px;text-align:center;">
+          <td style="${headerBg}padding:20px 24px;text-align:center;">
             ${logoHtml}
           </td>
         </tr>
@@ -450,10 +469,20 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
     return c.json({ error: 'Invalid email type' }, 400);
   }
 
+  // Check email preferences: if this email type is disabled, skip sending
+  const emailPrefs = salon.email_preferences || {};
+  if (emailPrefs[type] === false) {
+    return c.json({ success: true, skipped: true, reason: 'Email type disabled by salon' });
+  }
+
   // Wrap HTML in branded email template
   const branding: SalonBranding = {
     brandColor: salon.brand_color || '#8B5CF6',
     brandColorText: salon.brand_color_text || '#FFFFFF',
+    gradientEnabled: salon.brand_gradient_enabled || false,
+    gradientFrom: salon.brand_gradient_from || salon.brand_color || '#8B5CF6',
+    gradientTo: salon.brand_gradient_to || '#6366F1',
+    gradientDirection: salon.brand_gradient_direction || '135deg',
     logoUrl: salon.logo_url || undefined,
     salonName: salon.name,
     footerText: salon.email_footer_text || undefined,

@@ -11,10 +11,11 @@ export default defineConfig({
     emptyOutDir: false,
     lib: {
       entry: 'src/widget-entry.tsx',
-      name: 'DDSWidget',
+      name: 'BellureWidget',
       formats: ['iife'],
       fileName: () => 'widget.js',
     },
+    cssCodeSplit: false, // Keep CSS as separate file for Shadow DOM <link>
     rollupOptions: {
       output: {
         assetFileNames: (assetInfo) => {

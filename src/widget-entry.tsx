@@ -1,9 +1,10 @@
 import { createRoot } from 'react-dom/client';
 import { BookingWidget } from './components/widget/BookingWidget';
-import './styles/widget.css';
 
-// Apply theme from data attributes (data-color-primary, data-color-bg, data-color-text, data-font)
-function applyTheme(el: HTMLElement) {
+// Widget CSS is injected inline into Shadow DOM to ensure complete isolation
+import widgetCssUrl from './styles/widget.css?url';
+
+function applyTheme(el: HTMLElement, shadow: ShadowRoot) {
   const map: Record<string, string> = {
     'color-primary': '--bellure-color-primary',
     'color-bg': '--bellure-color-bg',
@@ -12,13 +13,39 @@ function applyTheme(el: HTMLElement) {
     'font': '--bellure-font',
     'radius': '--bellure-radius',
   };
+  // Read from the host element, apply to shadow host wrapper
+  const wrapper = shadow.querySelector('.bellure-shadow-host') as HTMLElement;
+  if (!wrapper) return;
   for (const [attr, prop] of Object.entries(map)) {
     const val = el.dataset[attr.replace(/-([a-z])/g, (_, c) => c.toUpperCase())];
-    if (val) el.style.setProperty(prop, val);
+    if (val) wrapper.style.setProperty(prop, val);
   }
 }
 
-// Support multiple widgets on a single page (BUG-007)
+function mountWidget(container: HTMLElement, salonSlug: string) {
+  // Create Shadow DOM for CSS isolation
+  const shadow = container.attachShadow({ mode: 'open' });
+
+  // Inject CSS via <link> inside shadow
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = widgetCssUrl;
+  shadow.appendChild(link);
+
+  // Create render target inside shadow
+  const wrapper = document.createElement('div');
+  wrapper.className = 'bellure-shadow-host';
+  shadow.appendChild(wrapper);
+
+  // Apply theme vars
+  applyTheme(container, shadow);
+
+  // Mount React
+  const root = createRoot(wrapper);
+  root.render(<BookingWidget salonSlug={salonSlug} />);
+}
+
+// Support multiple widgets on a single page
 const containers = document.querySelectorAll<HTMLElement>('[id^="bellure-booking-widget"]');
 
 containers.forEach((container) => {
@@ -26,23 +53,17 @@ containers.forEach((container) => {
     || container.previousElementSibling?.getAttribute?.('data-salon')
     || '';
 
-  // Also check the script tag that loaded this widget
   if (!salon) {
     const script = document.querySelector(
       `script[data-container="${container.id}"]`
     ) as HTMLScriptElement | null;
     const salonSlug = script?.dataset.salon || '';
-    if (salonSlug && container) {
-      const root = createRoot(container);
-      root.render(<BookingWidget salonSlug={salonSlug} />);
-    }
+    if (salonSlug && container) mountWidget(container, salonSlug);
     return;
   }
 
   if (container && salon) {
-    applyTheme(container);
-    const root = createRoot(container);
-    root.render(<BookingWidget salonSlug={salon} />);
+    mountWidget(container, salon);
   }
 });
 
@@ -53,8 +74,6 @@ if (containers.length === 0) {
   const container = document.getElementById(containerId);
   const salon = script?.dataset.salon || container?.dataset.salon || '';
   if (container && salon) {
-    applyTheme(container);
-    const root = createRoot(container);
-    root.render(<BookingWidget salonSlug={salon} />);
+    mountWidget(container, salon);
   }
 }

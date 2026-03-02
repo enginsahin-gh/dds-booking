@@ -9,7 +9,9 @@
     "build:admin": "vite build",
     "build:widget": "vite build --config vite.widget.config.ts",
     "build:sri": "npm run build && node scripts/generate-sri.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
@@ -28,6 +30,7 @@
     "tailwindcss": "^4.0.0",
     "typescript": "^5.5.4",
     "vite": "^5.4.0",
+    "vitest": "^4.0.18",
     "wrangler": "^4.68.1"
   }
 }

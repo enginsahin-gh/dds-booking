@@ -38,7 +38,7 @@ export const submitLead = async (c: Context<{ Bindings: Env }>) => {
       contact_method: method,
       current_website: body.current_website?.trim() || null,
       message: body.message?.trim() || null,
-      source: 'dds-site',
+      source: 'bellure-site',
     }).select('id').single();
 
     if (error) {

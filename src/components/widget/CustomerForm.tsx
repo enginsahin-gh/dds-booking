@@ -38,10 +38,10 @@ export function CustomerForm({ onSubmit, loading, submitLabel }: CustomerFormPro
   };
 
   return (
-    <div className="dds-animate-in">
-      <div className="dds-form">
+    <div className="bellure-animate-in">
+      <div className="bellure-form">
         {/* Honeypot field — invisible to humans */}
-        <div className="dds-form-hp" aria-hidden="true">
+        <div className="bellure-form-hp" aria-hidden="true">
           <label>
             Laat dit veld leeg
             <input
@@ -55,47 +55,47 @@ export function CustomerForm({ onSubmit, loading, submitLabel }: CustomerFormPro
           </label>
         </div>
 
-        <div className="dds-form-group">
-          <label className="dds-form-label">Naam *</label>
+        <div className="bellure-form-group">
+          <label className="bellure-form-label">Naam *</label>
           <input
-            className={`dds-form-input ${errors.name ? 'dds-form-input--error' : ''}`}
+            className={`bellure-form-input ${errors.name ? 'bellure-form-input--error' : ''}`}
             type="text"
             placeholder="Je volledige naam"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoComplete="name"
           />
-          {errors.name && <span className="dds-form-error">{errors.name}</span>}
+          {errors.name && <span className="bellure-form-error">{errors.name}</span>}
         </div>
 
-        <div className="dds-form-group">
-          <label className="dds-form-label">Telefoonnummer *</label>
+        <div className="bellure-form-group">
+          <label className="bellure-form-label">Telefoonnummer *</label>
           <input
-            className={`dds-form-input ${errors.phone ? 'dds-form-input--error' : ''}`}
+            className={`bellure-form-input ${errors.phone ? 'bellure-form-input--error' : ''}`}
             type="tel"
             placeholder="06 12345678"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             autoComplete="tel"
           />
-          {errors.phone && <span className="dds-form-error">{errors.phone}</span>}
+          {errors.phone && <span className="bellure-form-error">{errors.phone}</span>}
         </div>
 
-        <div className="dds-form-group">
-          <label className="dds-form-label">E-mailadres *</label>
+        <div className="bellure-form-group">
+          <label className="bellure-form-label">E-mailadres *</label>
           <input
-            className={`dds-form-input ${errors.email ? 'dds-form-input--error' : ''}`}
+            className={`bellure-form-input ${errors.email ? 'bellure-form-input--error' : ''}`}
             type="email"
             placeholder="je@email.nl"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
           />
-          {errors.email && <span className="dds-form-error">{errors.email}</span>}
+          {errors.email && <span className="bellure-form-error">{errors.email}</span>}
         </div>
 
         <button
-          className="dds-btn dds-btn-primary"
+          className="bellure-btn bellure-btn-primary"
           onClick={handleSubmit}
           disabled={loading}
         >

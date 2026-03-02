@@ -39,20 +39,20 @@ export function CalendarGrid({ selectedDate, onSelectDate, currentMonth, onChang
   const canGoNext = !maxDate || !isBefore(maxDate, startOfMonth(addMonths(currentMonth, 1)));
 
   return (
-    <div className="dds-calendar">
-      <div className="dds-calendar-header">
+    <div className="bellure-calendar">
+      <div className="bellure-calendar-header">
         <button
-          className="dds-calendar-btn"
+          className="bellure-calendar-btn"
           onClick={() => onChangeMonth(subMonths(currentMonth, 1))}
           disabled={!canGoPrev}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <span className="dds-calendar-title">
+        <span className="bellure-calendar-title">
           {format(currentMonth, 'MMMM yyyy', { locale: nl })}
         </span>
         <button
-          className="dds-calendar-btn"
+          className="bellure-calendar-btn"
           onClick={() => onChangeMonth(addMonths(currentMonth, 1))}
           disabled={!canGoNext}
         >
@@ -60,13 +60,13 @@ export function CalendarGrid({ selectedDate, onSelectDate, currentMonth, onChang
         </button>
       </div>
 
-      <div className="dds-calendar-weekdays">
+      <div className="bellure-calendar-weekdays">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="dds-calendar-weekday">{d}</div>
+          <div key={d} className="bellure-calendar-weekday">{d}</div>
         ))}
       </div>
 
-      <div className="dds-calendar-days">
+      <div className="bellure-calendar-days">
         {days.map((day) => {
           const inMonth = isSameMonth(day, currentMonth);
           const isPast = isBefore(day, today);
@@ -78,14 +78,14 @@ export function CalendarGrid({ selectedDate, onSelectDate, currentMonth, onChang
           const isWorkDay = !workingDays || workingDays.size === 0 || workingDays.has(jsDay);
           const isClosed = inMonth && !isPast && !isBeyondHorizon && !isWorkDay;
 
-          let cls = 'dds-calendar-day';
-          if (!inMonth) cls += ' dds-calendar-day--empty dds-calendar-day--disabled';
-          else if (isPast || isBeyondHorizon) cls += ' dds-calendar-day--disabled';
-          else if (isClosed) cls += ' dds-calendar-day--closed';
+          let cls = 'bellure-calendar-day';
+          if (!inMonth) cls += ' bellure-calendar-day--empty bellure-calendar-day--disabled';
+          else if (isPast || isBeyondHorizon) cls += ' bellure-calendar-day--disabled';
+          else if (isClosed) cls += ' bellure-calendar-day--closed';
           else {
-            if (todayClass) cls += ' dds-calendar-day--today';
-            if (selected) cls += ' dds-calendar-day--selected';
-            cls += ' dds-calendar-day--available';
+            if (todayClass) cls += ' bellure-calendar-day--today';
+            if (selected) cls += ' bellure-calendar-day--selected';
+            cls += ' bellure-calendar-day--available';
           }
 
           return (

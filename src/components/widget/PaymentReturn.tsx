@@ -89,9 +89,9 @@ export function PaymentReturn() {
 
   if (loading) {
     return (
-      <div className="dds-payment-return">
-        <div className="dds-spinner">
-          <div className="dds-spinner-circle" />
+      <div className="bellure-payment-return">
+        <div className="bellure-spinner">
+          <div className="bellure-spinner-circle" />
         </div>
         <p style={{ textAlign: 'center', marginTop: 16, color: '#6B7280' }}>
           Betaalstatus controleren...
@@ -102,16 +102,16 @@ export function PaymentReturn() {
 
   if (error) {
     return (
-      <div className="dds-payment-return">
-        <div className="dds-confirmation">
-          <div className="dds-confirmation-icon" style={{ background: '#FEE2E2', color: '#DC2626' }}>
+      <div className="bellure-payment-return">
+        <div className="bellure-confirmation">
+          <div className="bellure-confirmation-icon" style={{ background: '#FEE2E2', color: '#DC2626' }}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </div>
-          <h2 className="dds-confirmation-title">Er ging iets mis</h2>
-          <p className="dds-confirmation-text">{error}</p>
+          <h2 className="bellure-confirmation-title">Er ging iets mis</h2>
+          <p className="bellure-confirmation-text">{error}</p>
         </div>
       </div>
     );
@@ -124,45 +124,45 @@ export function PaymentReturn() {
     const end = toZonedTime(parseISO(booking.end_at), timezone);
 
     return (
-      <div className="dds-payment-return">
-        <div className="dds-confirmation">
-          <div className="dds-confirmation-icon">
+      <div className="bellure-payment-return">
+        <div className="bellure-confirmation">
+          <div className="bellure-confirmation-icon">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <h2 className="dds-confirmation-title">Betaling gelukt!</h2>
-          <p className="dds-confirmation-text">
+          <h2 className="bellure-confirmation-title">Betaling gelukt!</h2>
+          <p className="bellure-confirmation-text">
             Je afspraak is bevestigd, {booking.customer_name}. Je ontvangt een bevestiging per e-mail.
           </p>
 
-          <div className="dds-summary-card" style={{ textAlign: 'left' }}>
+          <div className="bellure-summary-card" style={{ textAlign: 'left' }}>
             {booking.services && (
-              <div className="dds-summary-row">
-                <span className="dds-summary-label">Behandeling</span>
-                <span className="dds-summary-value">{booking.services.name}</span>
+              <div className="bellure-summary-row">
+                <span className="bellure-summary-label">Behandeling</span>
+                <span className="bellure-summary-value">{booking.services.name}</span>
               </div>
             )}
             {booking.staff && (
-              <div className="dds-summary-row">
-                <span className="dds-summary-label">Medewerker</span>
-                <span className="dds-summary-value">{booking.staff.name}</span>
+              <div className="bellure-summary-row">
+                <span className="bellure-summary-label">Medewerker</span>
+                <span className="bellure-summary-value">{booking.staff.name}</span>
               </div>
             )}
-            <div className="dds-summary-row">
-              <span className="dds-summary-label">Datum</span>
-              <span className="dds-summary-value">
+            <div className="bellure-summary-row">
+              <span className="bellure-summary-label">Datum</span>
+              <span className="bellure-summary-value">
                 {format(start, 'EEEE d MMMM yyyy', { locale: nl })}
               </span>
             </div>
-            <div className="dds-summary-row">
-              <span className="dds-summary-label">Tijd</span>
-              <span className="dds-summary-value">{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</span>
+            <div className="bellure-summary-row">
+              <span className="bellure-summary-label">Tijd</span>
+              <span className="bellure-summary-value">{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</span>
             </div>
             {payment && (
-              <div className="dds-summary-row">
-                <span className="dds-summary-label">Betaald</span>
-                <span className="dds-summary-value">
+              <div className="bellure-summary-row">
+                <span className="bellure-summary-label">Betaald</span>
+                <span className="bellure-summary-value">
                   {formatPrice(payment.amount)}
                   {payment.method && ` (${payment.method})`}
                 </span>
@@ -176,17 +176,17 @@ export function PaymentReturn() {
 
   // Payment not successful
   return (
-    <div className="dds-payment-return">
-      <div className="dds-confirmation">
-        <div className="dds-confirmation-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
+    <div className="bellure-payment-return">
+      <div className="bellure-confirmation">
+        <div className="bellure-confirmation-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
         </div>
-        <h2 className="dds-confirmation-title">Betaling niet gelukt</h2>
-        <p className="dds-confirmation-text">
+        <h2 className="bellure-confirmation-title">Betaling niet gelukt</h2>
+        <p className="bellure-confirmation-text">
           {payment?.status === 'expired'
             ? 'De betaling is verlopen. Maak een nieuwe boeking om het opnieuw te proberen.'
             : payment?.status === 'canceled'

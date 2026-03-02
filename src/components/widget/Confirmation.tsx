@@ -24,62 +24,62 @@ export function Confirmation({
   const remainingCents = service.price_cents - depositPaidCents;
 
   return (
-    <div className="dds-confirmation">
-      <div className="dds-confirmation-icon">
+    <div className="bellure-confirmation">
+      <div className="bellure-confirmation-icon">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="20 6 9 17 4 12" />
         </svg>
       </div>
 
-      <h2 className="dds-confirmation-title">Afspraak bevestigd!</h2>
-      <p className="dds-confirmation-text">
+      <h2 className="bellure-confirmation-title">Afspraak bevestigd!</h2>
+      <p className="bellure-confirmation-text">
         Bedankt {customerName}! Je ontvangt een bevestiging per e-mail.
       </p>
 
-      <div className="dds-summary-card" style={{ textAlign: 'left' }}>
-        <div className="dds-summary-row">
-          <span className="dds-summary-label">Behandeling</span>
-          <span className="dds-summary-value">{service.name}</span>
+      <div className="bellure-summary-card" style={{ textAlign: 'left' }}>
+        <div className="bellure-summary-row">
+          <span className="bellure-summary-label">Behandeling</span>
+          <span className="bellure-summary-value">{service.name}</span>
         </div>
-        <div className="dds-summary-row">
-          <span className="dds-summary-label">Medewerker</span>
-          <span className="dds-summary-value">{staff.name}</span>
+        <div className="bellure-summary-row">
+          <span className="bellure-summary-label">Medewerker</span>
+          <span className="bellure-summary-value">{staff.name}</span>
         </div>
-        <div className="dds-summary-row">
-          <span className="dds-summary-label">Datum</span>
-          <span className="dds-summary-value">
+        <div className="bellure-summary-row">
+          <span className="bellure-summary-label">Datum</span>
+          <span className="bellure-summary-value">
             {format(start, 'EEEE d MMMM yyyy', { locale: nl })}
           </span>
         </div>
-        <div className="dds-summary-row">
-          <span className="dds-summary-label">Tijd</span>
-          <span className="dds-summary-value">{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</span>
+        <div className="bellure-summary-row">
+          <span className="bellure-summary-label">Tijd</span>
+          <span className="bellure-summary-value">{format(start, 'HH:mm')} – {format(end, 'HH:mm')}</span>
         </div>
-        <div className="dds-summary-row">
-          <span className="dds-summary-label">Prijs</span>
-          <span className="dds-summary-value">{formatCents(service.price_cents)}</span>
+        <div className="bellure-summary-row">
+          <span className="bellure-summary-label">Prijs</span>
+          <span className="bellure-summary-value">{formatCents(service.price_cents)}</span>
         </div>
 
         {paymentMode === 'deposit' && depositPaidCents > 0 && (
           <>
-            <div className="dds-summary-divider" />
-            <div className="dds-summary-row dds-summary-row--highlight">
-              <span className="dds-summary-label">Aanbetaald</span>
-              <span className="dds-summary-value dds-summary-value--paid">{formatCents(depositPaidCents)}</span>
+            <div className="bellure-summary-divider" />
+            <div className="bellure-summary-row bellure-summary-row--highlight">
+              <span className="bellure-summary-label">Aanbetaald</span>
+              <span className="bellure-summary-value bellure-summary-value--paid">{formatCents(depositPaidCents)}</span>
             </div>
-            <div className="dds-summary-row">
-              <span className="dds-summary-label">Restbedrag in salon</span>
-              <span className="dds-summary-value">{formatCents(remainingCents)}</span>
+            <div className="bellure-summary-row">
+              <span className="bellure-summary-label">Restbedrag in salon</span>
+              <span className="bellure-summary-value">{formatCents(remainingCents)}</span>
             </div>
           </>
         )}
 
         {paymentMode === 'full' && depositPaidCents > 0 && (
           <>
-            <div className="dds-summary-divider" />
-            <div className="dds-summary-row dds-summary-row--highlight">
-              <span className="dds-summary-label">Betaald</span>
-              <span className="dds-summary-value dds-summary-value--paid">{formatCents(depositPaidCents)}</span>
+            <div className="bellure-summary-divider" />
+            <div className="bellure-summary-row bellure-summary-row--highlight">
+              <span className="bellure-summary-label">Betaald</span>
+              <span className="bellure-summary-value bellure-summary-value--paid">{formatCents(depositPaidCents)}</span>
             </div>
           </>
         )}

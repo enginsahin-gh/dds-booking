@@ -43,21 +43,21 @@ function ChevronIcon({ open }: { open: boolean }) {
 function ServiceCard({ service, selected, onToggle }: { service: Service; selected: boolean; onToggle: () => void }) {
   return (
     <div
-      className={`dds-service-card ${selected ? 'dds-service-card--selected' : ''}`}
+      className={`bellure-service-card ${selected ? 'bellure-service-card--selected' : ''}`}
       onClick={onToggle}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onToggle()}
     >
       <div style={{ flex: 1 }}>
-        <div className="dds-service-name">{service.name}</div>
-        <div className="dds-service-meta">
+        <div className="bellure-service-name">{service.name}</div>
+        <div className="bellure-service-meta">
           <span><ClockIcon />{service.duration_min} min</span>
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div className="dds-service-price">{formatPrice(service.price_cents)}</div>
-        <div className={`dds-service-check ${selected ? 'dds-service-check--active' : ''}`}>
+        <div className="bellure-service-price">{formatPrice(service.price_cents)}</div>
+        <div className={`bellure-service-check ${selected ? 'bellure-service-check--active' : ''}`}>
           {selected && <CheckIcon />}
         </div>
       </div>
@@ -119,34 +119,34 @@ export function ServicePicker({ services, categories, selectedIds, onSelect, onC
     ));
 
   return (
-    <div className="dds-animate-in">
-      <h2 className="dds-step-title">Kies je behandeling(en)</h2>
-      <p className="dds-step-subtitle">Je kunt meerdere behandelingen combineren</p>
+    <div className="bellure-animate-in">
+      <h2 className="bellure-step-title">Kies je behandeling(en)</h2>
+      <p className="bellure-step-subtitle">Je kunt meerdere behandelingen combineren</p>
 
       {!hasCategories ? (
-        <div className="dds-services-grid">
+        <div className="bellure-services-grid">
           {renderServices(services)}
         </div>
       ) : (
-        <div className="dds-categories">
+        <div className="bellure-categories">
           {categories.map(cat => {
             const catServices = grouped!.map.get(cat.id) || [];
             if (catServices.length === 0) return null;
             const isOpen = openCats.has(cat.id);
 
             return (
-              <div key={cat.id} className="dds-category">
+              <div key={cat.id} className="bellure-category">
                 <button
-                  className="dds-category-header"
+                  className="bellure-category-header"
                   onClick={() => toggleCat(cat.id)}
                   type="button"
                 >
-                  <span className="dds-category-name">{cat.name}</span>
-                  <span className="dds-category-count">{catServices.length}</span>
+                  <span className="bellure-category-name">{cat.name}</span>
+                  <span className="bellure-category-count">{catServices.length}</span>
                   <ChevronIcon open={isOpen} />
                 </button>
                 {isOpen && (
-                  <div className="dds-category-services">
+                  <div className="bellure-category-services">
                     {renderServices(catServices)}
                   </div>
                 )}
@@ -155,12 +155,12 @@ export function ServicePicker({ services, categories, selectedIds, onSelect, onC
           })}
 
           {grouped!.uncategorized.length > 0 && (
-            <div className="dds-category">
-              <div className="dds-category-header dds-category-header--static">
-                <span className="dds-category-name">Overig</span>
-                <span className="dds-category-count">{grouped!.uncategorized.length}</span>
+            <div className="bellure-category">
+              <div className="bellure-category-header bellure-category-header--static">
+                <span className="bellure-category-name">Overig</span>
+                <span className="bellure-category-count">{grouped!.uncategorized.length}</span>
               </div>
-              <div className="dds-category-services">
+              <div className="bellure-category-services">
                 {renderServices(grouped!.uncategorized)}
               </div>
             </div>
@@ -170,12 +170,12 @@ export function ServicePicker({ services, categories, selectedIds, onSelect, onC
 
       {/* Sticky footer with selection summary */}
       {selectedIds.length > 0 && (
-        <div className="dds-selection-footer">
-          <div className="dds-selection-summary">
-            <span className="dds-selection-count">{selectedIds.length} behandeling{selectedIds.length > 1 ? 'en' : ''}</span>
-            <span className="dds-selection-detail">{totalMinutes} min &middot; {formatPrice(totalCents)}</span>
+        <div className="bellure-selection-footer">
+          <div className="bellure-selection-summary">
+            <span className="bellure-selection-count">{selectedIds.length} behandeling{selectedIds.length > 1 ? 'en' : ''}</span>
+            <span className="bellure-selection-detail">{totalMinutes} min &middot; {formatPrice(totalCents)}</span>
           </div>
-          <button className="dds-btn dds-btn-primary" onClick={onContinue}>
+          <button className="bellure-btn bellure-btn-primary" onClick={onContinue}>
             Verder <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="5 12 19 12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
         </div>

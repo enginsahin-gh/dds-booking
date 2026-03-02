@@ -46,37 +46,37 @@ export function PaymentStep({
   });
 
   return (
-    <div className="dds-animate-in">
-      <div className="dds-payment-step">
-        <div className="dds-payment-icon">
+    <div className="bellure-animate-in">
+      <div className="bellure-payment-step">
+        <div className="bellure-payment-icon">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
             <line x1="1" y1="10" x2="23" y2="10" />
           </svg>
         </div>
 
-        <h2 className="dds-step-title">
+        <h2 className="bellure-step-title">
           {isDeposit ? 'Aanbetaling voldoen' : 'Betaling voldoen'}
         </h2>
-        <p className="dds-step-subtitle">
+        <p className="bellure-step-subtitle">
           {isDeposit
             ? `Betaal ${formatCents(depositCents)} als aanbetaling om je afspraak te bevestigen.`
             : `Betaal ${formatCents(totalCents)} om je afspraak te bevestigen.`}
         </p>
 
-        <div className="dds-payment-breakdown">
-          <div className="dds-payment-breakdown-row">
+        <div className="bellure-payment-breakdown">
+          <div className="bellure-payment-breakdown-row">
             <span>{service.name}</span>
             <span>{formatCents(totalCents)}</span>
           </div>
           {isDeposit && (
             <>
-              <div className="dds-payment-breakdown-divider" />
-              <div className="dds-payment-breakdown-row dds-payment-breakdown-highlight">
+              <div className="bellure-payment-breakdown-divider" />
+              <div className="bellure-payment-breakdown-row bellure-payment-breakdown-highlight">
                 <span>Aanbetaling nu</span>
                 <span>{formatCents(depositCents)}</span>
               </div>
-              <div className="dds-payment-breakdown-row dds-payment-breakdown-remaining">
+              <div className="bellure-payment-breakdown-row bellure-payment-breakdown-remaining">
                 <span>Restbedrag in de salon</span>
                 <span>{formatCents(remainingCents)}</span>
               </div>
@@ -84,41 +84,41 @@ export function PaymentStep({
           )}
         </div>
 
-        <div className="dds-payment-details">
-          <div className="dds-payment-detail-row">
-            <span className="dds-payment-detail-label">Klant</span>
-            <span className="dds-payment-detail-value">{customerName}</span>
+        <div className="bellure-payment-details">
+          <div className="bellure-payment-detail-row">
+            <span className="bellure-payment-detail-label">Klant</span>
+            <span className="bellure-payment-detail-value">{customerName}</span>
           </div>
-          <div className="dds-payment-detail-row">
-            <span className="dds-payment-detail-label">Datum</span>
-            <span className="dds-payment-detail-value">{dateStr}</span>
+          <div className="bellure-payment-detail-row">
+            <span className="bellure-payment-detail-label">Datum</span>
+            <span className="bellure-payment-detail-value">{dateStr}</span>
           </div>
-          <div className="dds-payment-detail-row">
-            <span className="dds-payment-detail-label">Tijd</span>
-            <span className="dds-payment-detail-value">{timeStr}</span>
+          <div className="bellure-payment-detail-row">
+            <span className="bellure-payment-detail-label">Tijd</span>
+            <span className="bellure-payment-detail-value">{timeStr}</span>
           </div>
           {staff && (
-            <div className="dds-payment-detail-row">
-              <span className="dds-payment-detail-label">Medewerker</span>
-              <span className="dds-payment-detail-value">{staff.name}</span>
+            <div className="bellure-payment-detail-row">
+              <span className="bellure-payment-detail-label">Medewerker</span>
+              <span className="bellure-payment-detail-value">{staff.name}</span>
             </div>
           )}
         </div>
 
         {error && (
-          <div className="dds-payment-error">
+          <div className="bellure-payment-error">
             {error}
           </div>
         )}
 
         <button
-          className="dds-btn dds-btn-primary dds-btn-pay"
+          className="bellure-btn bellure-btn-primary bellure-btn-pay"
           onClick={onPay}
           disabled={loading}
         >
           {loading ? (
-            <span className="dds-btn-loading">
-              <span className="dds-btn-spinner" />
+            <span className="bellure-btn-loading">
+              <span className="bellure-btn-spinner" />
               Even geduld...
             </span>
           ) : (
@@ -131,7 +131,7 @@ export function PaymentStep({
           )}
         </button>
 
-        <p className="dds-payment-secure">
+        <p className="bellure-payment-secure">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-2px', marginRight: 4 }}>
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -140,7 +140,7 @@ export function PaymentStep({
         </p>
 
         {isDeposit && (
-          <p className="dds-payment-note">
+          <p className="bellure-payment-note">
             Het restbedrag van {formatCents(remainingCents)} betaal je bij je bezoek aan de salon.
           </p>
         )}

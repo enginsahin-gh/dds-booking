@@ -16,9 +16,9 @@ export function TimeSlotList({ slots, selectedSlot, onSelect, loading, timezone,
 
   if (loading) {
     return (
-      <div className="dds-slots">
-        <div className="dds-spinner">
-          <div className="dds-spinner-circle" />
+      <div className="bellure-slots">
+        <div className="bellure-spinner">
+          <div className="bellure-spinner-circle" />
         </div>
       </div>
     );
@@ -26,8 +26,8 @@ export function TimeSlotList({ slots, selectedSlot, onSelect, loading, timezone,
 
   if (slots.length === 0) {
     return (
-      <div className="dds-slots">
-        <div className="dds-slots-empty">
+      <div className="bellure-slots">
+        <div className="bellure-slots-empty">
           Geen beschikbare tijden op deze dag. Probeer een andere datum.
         </div>
       </div>
@@ -35,9 +35,9 @@ export function TimeSlotList({ slots, selectedSlot, onSelect, loading, timezone,
   }
 
   return (
-    <div className="dds-slots dds-animate-in">
-      <div className="dds-slots-label">Beschikbare tijden</div>
-      <div className="dds-slots-grid">
+    <div className="bellure-slots bellure-animate-in">
+      <div className="bellure-slots-label">Beschikbare tijden</div>
+      <div className="bellure-slots-grid">
         {slots.map((slot) => {
           const zonedTime = toZonedTime(parseISO(slot.time), timezone);
           const timeStr = format(zonedTime, 'HH:mm');
@@ -46,7 +46,7 @@ export function TimeSlotList({ slots, selectedSlot, onSelect, loading, timezone,
           return (
             <div
               key={slot.time + slot.staffId}
-              className={`dds-slot ${isSelected ? 'dds-slot--selected' : ''}`}
+              className={`bellure-slot ${isSelected ? 'bellure-slot--selected' : ''}`}
               onClick={() => onSelect(slot)}
               role="button"
               tabIndex={0}

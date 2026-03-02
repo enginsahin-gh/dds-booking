@@ -1,8 +1,10 @@
-/* De Digitale Stylist — Booking Widget Styles */
-/* All classes prefixed with dds- to avoid conflicts with host site */
+/* Bellure — Booking Widget Styles */
+/* All classes prefixed with bellure- to avoid conflicts with host site */
 
 /* Widget reads theme from data attributes or CSS custom properties set by host site.
    Host site can override: --bellure-color-primary, --bellure-color-bg, --bellure-color-text, --bellure-font */
+/* Root selector: works both in Shadow DOM (.bellure-shadow-host) and standalone ([id^=...]) */
+.bellure-shadow-host,
 [id^="bellure-booking-widget"] {
   --bellure-color-primary: #8B5CF6;
   --bellure-color-primary-hover: color-mix(in srgb, var(--bellure-color-primary) 85%, black);
@@ -38,46 +40,46 @@
 }
 
 /* Animations */
-@keyframes dds-fade-in {
+@keyframes bellure-fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes dds-slide-in {
+@keyframes bellure-slide-in {
   from { opacity: 0; transform: translateX(16px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes dds-scale-in {
+@keyframes bellure-scale-in {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
 
-@keyframes dds-check {
+@keyframes bellure-check {
   0% { transform: scale(0); }
   50% { transform: scale(1.2); }
   100% { transform: scale(1); }
 }
 
-@keyframes dds-spin {
+@keyframes bellure-spin {
   to { transform: rotate(360deg); }
 }
 
-@keyframes dds-pulse {
+@keyframes bellure-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
 
-.dds-animate-in {
-  animation: dds-fade-in 0.3s var(--bellure-transition) forwards;
+.bellure-animate-in {
+  animation: bellure-fade-in 0.3s var(--bellure-transition) forwards;
 }
 
-.dds-animate-slide {
-  animation: dds-slide-in 0.3s var(--bellure-transition) forwards;
+.bellure-animate-slide {
+  animation: bellure-slide-in 0.3s var(--bellure-transition) forwards;
 }
 
 /* Step Indicator — always visible */
-.dds-steps {
+.bellure-steps {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -85,7 +87,7 @@
   padding: 16px 0;
 }
 
-.dds-step-dot {
+.bellure-step-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -93,20 +95,20 @@
   transition: all var(--bellure-transition-smooth);
 }
 
-.dds-step-dot--active {
+.bellure-step-dot--active {
   width: 28px;
   border-radius: 4px;
   background: var(--bellure-color-primary);
   box-shadow: 0 2px 8px color-mix(in srgb, var(--bellure-color-primary) 30%, transparent);
 }
 
-.dds-step-dot--completed {
+.bellure-step-dot--completed {
   background: var(--bellure-color-primary);
   opacity: 0.4;
 }
 
 /* Step title */
-.dds-step-title {
+.bellure-step-title {
   text-align: center;
   font-size: 1.35rem;
   font-weight: 600;
@@ -115,7 +117,7 @@
   letter-spacing: -0.02em;
 }
 
-.dds-step-subtitle {
+.bellure-step-subtitle {
   text-align: center;
   font-size: 0.875rem;
   font-weight: 400;
@@ -125,14 +127,14 @@
 }
 
 /* Service Cards */
-.dds-services-grid {
+.bellure-services-grid {
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 0 4px;
 }
 
-.dds-service-card {
+.bellure-service-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -145,24 +147,24 @@
   user-select: none;
 }
 
-.dds-service-card:hover {
+.bellure-service-card:hover {
   border-color: color-mix(in srgb, var(--bellure-color-primary) 40%, transparent);
   box-shadow: var(--bellure-shadow-lg);
   transform: translateY(-2px);
 }
 
-.dds-service-card--selected {
+.bellure-service-card--selected {
   border-color: var(--bellure-color-primary);
   background: var(--bellure-color-primary-subtle);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--bellure-color-primary) 10%, transparent);
 }
 
-.dds-service-name {
+.bellure-service-name {
   font-weight: 600;
   font-size: 0.9375rem;
 }
 
-.dds-service-meta {
+.bellure-service-meta {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -171,7 +173,7 @@
   color: var(--bellure-color-text-muted);
 }
 
-.dds-service-price {
+.bellure-service-price {
   font-weight: 700;
   font-size: 1rem;
   color: var(--bellure-color-text);
@@ -179,7 +181,7 @@
 }
 
 /* Service checkbox */
-.dds-service-check {
+.bellure-service-check {
   width: 24px;
   height: 24px;
   border-radius: 6px;
@@ -191,14 +193,14 @@
   flex-shrink: 0;
 }
 
-.dds-service-check--active {
+.bellure-service-check--active {
   border-color: var(--bellure-color-primary);
   background: var(--bellure-color-primary);
   color: white;
 }
 
 /* Selection footer */
-.dds-selection-footer {
+.bellure-selection-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -211,44 +213,44 @@
   box-shadow: var(--bellure-shadow-lg);
 }
 
-.dds-selection-footer .dds-btn {
+.bellure-selection-footer .bellure-btn {
   width: auto;
   flex-shrink: 0;
 }
 
-.dds-selection-summary {
+.bellure-selection-summary {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.dds-selection-count {
+.bellure-selection-count {
   font-weight: 600;
   font-size: 0.9375rem;
   color: var(--bellure-color-text);
 }
 
-.dds-selection-detail {
+.bellure-selection-detail {
   font-size: 0.8125rem;
   color: var(--bellure-color-text-muted);
 }
 
 /* Service Categories */
-.dds-categories {
+.bellure-categories {
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 0 4px;
 }
 
-.dds-category {
+.bellure-category {
   border: 1px solid var(--bellure-color-border);
   border-radius: var(--bellure-radius);
   overflow: hidden;
   background: var(--bellure-color-bg);
 }
 
-.dds-category-header {
+.bellure-category-header {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -262,22 +264,22 @@
   transition: background 150ms ease;
 }
 
-.dds-category-header:hover {
+.bellure-category-header:hover {
   background: rgba(0,0,0,0.02);
 }
 
-.dds-category-header--static {
+.bellure-category-header--static {
   cursor: default;
 }
 
-.dds-category-name {
+.bellure-category-name {
   font-weight: 600;
   font-size: 0.9375rem;
   color: var(--bellure-color-text);
   flex: 1;
 }
 
-.dds-category-count {
+.bellure-category-count {
   font-size: 0.75rem;
   color: var(--bellure-color-text-muted);
   background: var(--bellure-color-border);
@@ -286,27 +288,27 @@
   font-weight: 500;
 }
 
-.dds-category-services {
+.bellure-category-services {
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 0 8px 10px;
 }
 
-.dds-category-services .dds-service-card {
+.bellure-category-services .bellure-service-card {
   border-width: 1px;
   padding: 12px 14px;
 }
 
 /* Staff Cards */
-.dds-staff-grid {
+.bellure-staff-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
   padding: 0 4px;
 }
 
-.dds-staff-card {
+.bellure-staff-card {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -319,19 +321,19 @@
   text-align: center;
 }
 
-.dds-staff-card:hover {
+.bellure-staff-card:hover {
   border-color: color-mix(in srgb, var(--bellure-color-primary) 40%, transparent);
   box-shadow: var(--bellure-shadow-lg);
   transform: translateY(-2px);
 }
 
-.dds-staff-card--selected {
+.bellure-staff-card--selected {
   border-color: var(--bellure-color-primary);
   background: var(--bellure-color-primary-subtle);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--bellure-color-primary) 10%, transparent);
 }
 
-.dds-staff-avatar {
+.bellure-staff-avatar {
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -346,44 +348,44 @@
   overflow: hidden;
 }
 
-.dds-staff-avatar img {
+.bellure-staff-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.dds-staff-name {
+.bellure-staff-name {
   font-weight: 600;
   font-size: 0.875rem;
 }
 
-.dds-no-preference {
+.bellure-no-preference {
   border-style: dashed;
 }
 
 /* Calendar */
-.dds-calendar {
+.bellure-calendar {
   padding: 0 4px;
 }
 
-.dds-calendar-header {
+.bellure-calendar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
 }
 
-.dds-calendar-title {
+.bellure-calendar-title {
   font-weight: 600;
   font-size: 1rem;
 }
 
-.dds-calendar-nav {
+.bellure-calendar-nav {
   display: flex;
   gap: 4px;
 }
 
-.dds-calendar-btn {
+.bellure-calendar-btn {
   width: 36px;
   height: 36px;
   display: flex;
@@ -397,23 +399,23 @@
   transition: all var(--bellure-transition);
 }
 
-.dds-calendar-btn:hover {
+.bellure-calendar-btn:hover {
   background: var(--bellure-color-bg-secondary);
 }
 
-.dds-calendar-btn:disabled {
+.bellure-calendar-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }
 
-.dds-calendar-weekdays {
+.bellure-calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 2px;
   margin-bottom: 4px;
 }
 
-.dds-calendar-weekday {
+.bellure-calendar-weekday {
   text-align: center;
   font-size: 0.75rem;
   font-weight: 600;
@@ -423,13 +425,13 @@
   letter-spacing: 0.05em;
 }
 
-.dds-calendar-days {
+.bellure-calendar-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 2px;
 }
 
-.dds-calendar-day {
+.bellure-calendar-day {
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -442,31 +444,31 @@
   font-weight: 500;
 }
 
-.dds-calendar-day--today {
+.bellure-calendar-day--today {
   font-weight: 700;
   color: var(--bellure-color-primary);
 }
 
-.dds-calendar-day--selected {
+.bellure-calendar-day--selected {
   background: var(--bellure-color-primary) !important;
   color: white !important;
   font-weight: 700;
 }
 
-.dds-calendar-day--disabled {
+.bellure-calendar-day--disabled {
   opacity: 0.25;
   cursor: not-allowed;
 }
 
-.dds-calendar-day--empty {
+.bellure-calendar-day--empty {
   cursor: default;
 }
 
-.dds-calendar-day--available {
+.bellure-calendar-day--available {
   position: relative;
 }
 
-.dds-calendar-day--available::after {
+.bellure-calendar-day--available::after {
   content: '';
   position: absolute;
   bottom: 4px;
@@ -479,71 +481,71 @@
   opacity: 0.5;
 }
 
-.dds-calendar-day--selected::after {
+.bellure-calendar-day--selected::after {
   background: white;
   opacity: 0.8;
 }
 
-.dds-calendar-day--closed {
+.bellure-calendar-day--closed {
   opacity: 0.3;
   cursor: not-allowed;
   text-decoration: line-through;
 }
 
-.dds-calendar-day:hover:not(.dds-calendar-day--disabled):not(.dds-calendar-day--closed) {
+.bellure-calendar-day:hover:not(.bellure-calendar-day--disabled):not(.bellure-calendar-day--closed) {
   background: var(--bellure-color-primary-subtle);
 }
 
 /* Time Slots */
 /* Desktop: calendar left, timeslots right */
-.dds-datetime-layout {
+.bellure-datetime-layout {
   display: flex;
   flex-direction: column;
   gap: 0;
 }
 
 @media (min-width: 640px) {
-  .dds-datetime-layout {
+  .bellure-datetime-layout {
     flex-direction: row;
     gap: 24px;
     align-items: flex-start;
   }
 
-  .dds-datetime-calendar {
+  .bellure-datetime-calendar {
     flex: 0 0 auto;
     min-width: 280px;
   }
 
-  .dds-datetime-slots {
+  .bellure-datetime-slots {
     flex: 1;
     min-width: 0;
   }
 }
 
-.dds-slots {
+.bellure-slots {
   margin-top: 20px;
 }
 
 @media (min-width: 640px) {
-  .dds-slots {
+  .bellure-slots {
     margin-top: 0;
   }
 }
 
-.dds-slots-label {
+.bellure-slots-label {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--bellure-color-text-muted);
   margin-bottom: 10px;
 }
 
-.dds-slots-grid {
+.bellure-slots-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   gap: 8px;
 }
 
-.dds-slot {
+.bellure-slot {
   padding: 12px 10px;
   text-align: center;
   font-size: 0.875rem;
@@ -556,13 +558,13 @@
   letter-spacing: 0.02em;
 }
 
-.dds-slot:hover {
+.bellure-slot:hover {
   border-color: color-mix(in srgb, var(--bellure-color-primary) 40%, transparent);
   background: var(--bellure-color-primary-subtle);
   transform: translateY(-1px);
 }
 
-.dds-slot--selected {
+.bellure-slot--selected {
   border-color: var(--bellure-color-primary);
   background: var(--bellure-color-primary);
   color: white;
@@ -570,7 +572,7 @@
   transform: translateY(-1px);
 }
 
-.dds-slots-empty {
+.bellure-slots-empty {
   text-align: center;
   padding: 24px;
   color: var(--bellure-color-text-muted);
@@ -579,7 +581,7 @@
 
 /* Customer Form */
 /* Premium Brief (summary card) */
-.dds-brief {
+.bellure-brief {
   background: var(--bellure-color-bg-secondary);
   border: 1.5px solid var(--bellure-color-border);
   border-radius: var(--bellure-radius-lg);
@@ -587,7 +589,7 @@
   box-shadow: var(--bellure-shadow-lg);
 }
 
-.dds-brief-header {
+.bellure-brief-header {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -596,7 +598,7 @@
   background: var(--bellure-color-bg);
 }
 
-.dds-brief-icon {
+.bellure-brief-icon {
   width: 36px;
   height: 36px;
   border-radius: 10px;
@@ -608,7 +610,7 @@
   flex-shrink: 0;
 }
 
-.dds-brief-title {
+.bellure-brief-title {
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -616,11 +618,11 @@
   color: var(--bellure-color-text-muted);
 }
 
-.dds-brief-body {
+.bellure-brief-body {
   padding: 20px;
 }
 
-.dds-brief-item {
+.bellure-brief-item {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -628,7 +630,7 @@
   padding: 10px 0;
 }
 
-.dds-brief-label {
+.bellure-brief-label {
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--bellure-color-text-muted);
@@ -636,7 +638,7 @@
   flex-shrink: 0;
 }
 
-.dds-brief-value {
+.bellure-brief-value {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--bellure-color-text);
@@ -644,47 +646,47 @@
   line-height: 1.5;
 }
 
-.dds-brief-divider {
+.bellure-brief-divider {
   height: 1px;
   background: var(--bellure-color-border);
   margin: 0;
 }
 
-.dds-brief-total {
+.bellure-brief-total {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 14px 0 4px;
 }
 
-.dds-brief-total-label {
+.bellure-brief-total-label {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--bellure-color-text);
   letter-spacing: 0.02em;
 }
 
-.dds-brief-total-price {
+.bellure-brief-total-price {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--bellure-color-primary);
   letter-spacing: -0.02em;
 }
 
-.dds-brief-deposit {
+.bellure-brief-deposit {
   font-size: 0.8rem;
   color: var(--bellure-color-text-muted);
   text-align: right;
   padding-top: 4px;
 }
 
-.dds-brief-deposit strong {
+.bellure-brief-deposit strong {
   color: var(--bellure-color-primary);
   font-weight: 600;
 }
 
 /* Powered by Bellure badge */
-.dds-powered-by {
+.bellure-powered-by {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -697,67 +699,67 @@
   transition: opacity 0.3s ease;
 }
 
-.dds-powered-by:hover {
+.bellure-powered-by:hover {
   opacity: 1;
 }
 
-.dds-powered-by a {
+.bellure-powered-by a {
   color: var(--bellure-color-primary);
   font-weight: 600;
   text-decoration: none;
   letter-spacing: 0.06em;
 }
 
-.dds-powered-by a:hover {
+.bellure-powered-by a:hover {
   text-decoration: underline;
 }
 
 /* Step 4: Summary + Form side by side on desktop */
-.dds-step4-layout {
+.bellure-step4-layout {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
 @media (min-width: 640px) {
-  .dds-step4-layout {
+  .bellure-step4-layout {
     flex-direction: row;
     gap: 24px;
     align-items: flex-start;
   }
 
-  .dds-step4-summary {
+  .bellure-step4-summary {
     flex: 1;
     min-width: 0;
   }
 
-  .dds-step4-form {
+  .bellure-step4-form {
     flex: 1;
     min-width: 0;
   }
 }
 
-.dds-form {
+.bellure-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 0 4px;
 }
 
-.dds-form-group {
+.bellure-form-group {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.dds-form-label {
+.bellure-form-label {
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--bellure-color-text-muted);
   letter-spacing: 0.02em;
 }
 
-.dds-form-input {
+.bellure-form-input {
   padding: 14px 16px;
   border: 1.5px solid var(--bellure-color-border);
   border-radius: var(--bellure-radius);
@@ -771,22 +773,22 @@
   box-sizing: border-box;
 }
 
-.dds-form-input:focus {
+.bellure-form-input:focus {
   border-color: var(--bellure-color-border-focus);
   box-shadow: 0 0 0 3px var(--bellure-color-primary-light);
 }
 
-.dds-form-input--error {
+.bellure-form-input--error {
   border-color: var(--bellure-color-error);
 }
 
-.dds-form-error {
+.bellure-form-error {
   font-size: 0.75rem;
   color: var(--bellure-color-error);
 }
 
 /* Honeypot — hidden from humans */
-.dds-form-hp {
+.bellure-form-hp {
   position: absolute;
   left: -9999px;
   opacity: 0;
@@ -795,45 +797,45 @@
 }
 
 /* Summary */
-.dds-summary {
+.bellure-summary {
   padding: 0 4px;
 }
 
-.dds-summary-card {
+.bellure-summary-card {
   background: var(--bellure-color-bg-secondary);
   border-radius: var(--bellure-radius);
   padding: 20px;
   margin-bottom: 16px;
 }
 
-.dds-summary-row {
+.bellure-summary-row {
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
   font-size: 0.875rem;
 }
 
-.dds-summary-row + .dds-summary-row {
+.bellure-summary-row + .bellure-summary-row {
   border-top: 1px solid var(--bellure-color-border);
 }
 
-.dds-summary-label {
+.bellure-summary-label {
   color: var(--bellure-color-text-muted);
 }
 
-.dds-summary-value {
+.bellure-summary-value {
   font-weight: 600;
   text-align: right;
 }
 
 /* Confirmation */
-.dds-confirmation {
+.bellure-confirmation {
   text-align: center;
   padding: 32px 16px;
-  animation: dds-scale-in 0.4s var(--bellure-transition) forwards;
+  animation: bellure-scale-in 0.4s var(--bellure-transition) forwards;
 }
 
-.dds-confirmation-icon {
+.bellure-confirmation-icon {
   width: 64px;
   height: 64px;
   border-radius: 50%;
@@ -843,24 +845,24 @@
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
-  animation: dds-check 0.5s 0.2s var(--bellure-transition) forwards;
+  animation: bellure-check 0.5s 0.2s var(--bellure-transition) forwards;
   transform: scale(0);
 }
 
-.dds-confirmation-title {
+.bellure-confirmation-title {
   font-size: 1.25rem;
   font-weight: 700;
   margin-bottom: 8px;
 }
 
-.dds-confirmation-text {
+.bellure-confirmation-text {
   color: var(--bellure-color-text-muted);
   font-size: 0.875rem;
   margin-bottom: 24px;
 }
 
 /* Buttons */
-.dds-btn {
+.bellure-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -877,80 +879,80 @@
   letter-spacing: 0.01em;
 }
 
-.dds-btn:disabled {
+.bellure-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.dds-btn-primary {
+.bellure-btn-primary {
   background: var(--bellure-color-primary);
   color: white;
   box-shadow: 0 4px 16px color-mix(in srgb, var(--bellure-color-primary) 25%, transparent);
 }
 
-.dds-btn-primary:hover:not(:disabled) {
+.bellure-btn-primary:hover:not(:disabled) {
   background: var(--bellure-color-primary-hover);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px color-mix(in srgb, var(--bellure-color-primary) 30%, transparent);
 }
 
-.dds-btn-secondary {
+.bellure-btn-secondary {
   background: transparent;
   color: var(--bellure-color-text-muted);
   border: 1px solid var(--bellure-color-border);
 }
 
-.dds-btn-secondary:hover:not(:disabled) {
+.bellure-btn-secondary:hover:not(:disabled) {
   background: var(--bellure-color-bg-secondary);
 }
 
-.dds-btn-group {
+.bellure-btn-group {
   display: flex;
   gap: 10px;
   margin-top: 20px;
 }
 
-.dds-btn-group .dds-btn-secondary {
+.bellure-btn-group .bellure-btn-secondary {
   width: auto;
   flex-shrink: 0;
 }
 
-.dds-btn-group .dds-btn-primary {
+.bellure-btn-group .bellure-btn-primary {
   flex: 1;
 }
 
 /* Spinner */
-.dds-spinner {
+.bellure-spinner {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px;
 }
 
-.dds-spinner-circle {
+.bellure-spinner-circle {
   width: 32px;
   height: 32px;
   border: 3px solid var(--bellure-color-border);
   border-top-color: var(--bellure-color-primary);
   border-radius: 50%;
-  animation: dds-spin 0.7s linear infinite;
+  animation: bellure-spin 0.7s linear infinite;
 }
 
 /* Error state */
-.dds-error {
+.bellure-error {
   text-align: center;
   padding: 32px 16px;
   color: var(--bellure-color-text-muted);
 }
 
-.dds-error-title {
+.bellure-error-title {
   font-weight: 600;
   color: var(--bellure-color-text);
   margin-bottom: 8px;
 }
 
 /* Back button arrow */
-.dds-back-arrow {
+.bellure-back-arrow {
   display: inline-block;
   width: 18px;
   height: 18px;
@@ -959,7 +961,7 @@
 /* ============================================
    Summary Card (step 4 + confirmation)
    ============================================ */
-.dds-summary-card {
+.bellure-summary-card {
   background: var(--bellure-color-bg);
   border: 1px solid var(--bellure-color-border);
   border-radius: 12px;
@@ -967,7 +969,7 @@
   margin-top: 12px;
 }
 
-.dds-summary-row {
+.bellure-summary-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -975,39 +977,39 @@
   border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 
-.dds-summary-row:last-child {
+.bellure-summary-row:last-child {
   border-bottom: none;
 }
 
-.dds-summary-label {
+.bellure-summary-label {
   font-size: 0.875rem;
   color: var(--bellure-color-text-muted);
 }
 
-.dds-summary-value {
+.bellure-summary-value {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--bellure-color-text);
   text-align: right;
 }
 
-.dds-summary-row--highlight {
+.bellure-summary-row--highlight {
   border-bottom: none;
   margin-top: 4px;
   padding-top: 12px;
   border-top: 2px solid var(--bellure-color-primary);
 }
 
-.dds-summary-value--price {
+.bellure-summary-value--price {
   color: var(--bellure-color-primary);
   font-size: 1rem;
 }
 
-.dds-summary-value--paid {
+.bellure-summary-value--paid {
   color: #059669;
 }
 
-.dds-summary-divider {
+.bellure-summary-divider {
   height: 1px;
   background: var(--bellure-color-border);
   margin: 8px 0;
@@ -1016,12 +1018,12 @@
 /* ============================================
    Payment Step
    ============================================ */
-.dds-payment-step {
+.bellure-payment-step {
   text-align: center;
   padding: 8px 0;
 }
 
-.dds-payment-icon {
+.bellure-payment-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1033,7 +1035,7 @@
   margin-bottom: 16px;
 }
 
-.dds-payment-breakdown {
+.bellure-payment-breakdown {
   background: var(--bellure-color-bg);
   border: 1px solid var(--bellure-color-border);
   border-radius: 12px;
@@ -1042,7 +1044,7 @@
   text-align: left;
 }
 
-.dds-payment-breakdown-row {
+.bellure-payment-breakdown-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1051,26 +1053,26 @@
   color: var(--bellure-color-text);
 }
 
-.dds-payment-breakdown-divider {
+.bellure-payment-breakdown-divider {
   height: 1px;
   background: var(--bellure-color-border);
   margin: 4px 0;
 }
 
-.dds-payment-breakdown-highlight {
+.bellure-payment-breakdown-highlight {
   font-weight: 700;
   font-size: 1rem;
   color: var(--bellure-color-primary);
   padding-top: 12px;
 }
 
-.dds-payment-breakdown-remaining {
+.bellure-payment-breakdown-remaining {
   font-size: 0.8rem;
   color: var(--bellure-color-text-muted);
   padding-bottom: 4px;
 }
 
-.dds-payment-details {
+.bellure-payment-details {
   background: var(--bellure-color-bg);
   border: 1px solid var(--bellure-color-border);
   border-radius: 12px;
@@ -1079,23 +1081,23 @@
   text-align: left;
 }
 
-.dds-payment-detail-row {
+.bellure-payment-detail-row {
   display: flex;
   justify-content: space-between;
   padding: 6px 0;
   font-size: 0.825rem;
 }
 
-.dds-payment-detail-label {
+.bellure-payment-detail-label {
   color: var(--bellure-color-text-muted);
 }
 
-.dds-payment-detail-value {
+.bellure-payment-detail-value {
   color: var(--bellure-color-text);
   font-weight: 500;
 }
 
-.dds-btn-pay {
+.bellure-btn-pay {
   width: 100%;
   padding: 14px 24px;
   font-size: 1rem;
@@ -1103,23 +1105,23 @@
   position: relative;
 }
 
-.dds-btn-loading {
+.bellure-btn-loading {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-.dds-btn-spinner {
+.bellure-btn-spinner {
   display: inline-block;
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255,255,255,0.3);
   border-top-color: #fff;
   border-radius: 50%;
-  animation: dds-spin 0.7s linear infinite;
+  animation: bellure-spin 0.7s linear infinite;
 }
 
-.dds-payment-error {
+.bellure-payment-error {
   padding: 10px 16px;
   margin-bottom: 16px;
   background: #FEF2F2;
@@ -1130,14 +1132,14 @@
   text-align: center;
 }
 
-.dds-payment-secure {
+.bellure-payment-secure {
   margin-top: 12px;
   font-size: 0.75rem;
   color: var(--bellure-color-text-muted);
   text-align: center;
 }
 
-.dds-payment-note {
+.bellure-payment-note {
   margin-top: 8px;
   font-size: 0.8rem;
   color: var(--bellure-color-text-muted);

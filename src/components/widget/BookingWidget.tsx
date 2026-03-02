@@ -22,7 +22,7 @@ const FUNCTIONS_BASE = import.meta.env.VITE_API_URL
 
 function BellureBadge() {
   return (
-    <div className="dds-powered-by">
+    <div className="bellure-powered-by">
       <span>Powered by</span>
       <a href="https://bellure.nl" target="_blank" rel="noopener noreferrer">Bellure</a>
     </div>
@@ -444,24 +444,24 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
   // Loading state
   if (loading) {
     return (
-      <div className="dds-spinner">
-        <div className="dds-spinner-circle" />
+      <div className="bellure-spinner">
+        <div className="bellure-spinner-circle" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="dds-error">
-        <p className="dds-error-title">{error}</p>
+      <div className="bellure-error">
+        <p className="bellure-error-title">{error}</p>
       </div>
     );
   }
 
   if (!services.length || !staff.length) {
     return (
-      <div className="dds-error">
-        <p className="dds-error-title">Er zijn momenteel geen diensten beschikbaar</p>
+      <div className="bellure-error">
+        <p className="bellure-error-title">Er zijn momenteel geen diensten beschikbaar</p>
       </div>
     );
   }
@@ -470,8 +470,8 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
   if (paymentReturn) {
     if (paymentReturnStatus === 'loading') {
       return (
-        <div className="dds-spinner" style={{ padding: '40px 0' }}>
-          <div className="dds-spinner-circle" />
+        <div className="bellure-spinner" style={{ padding: '40px 0' }}>
+          <div className="bellure-spinner-circle" />
           <p style={{ textAlign: 'center', marginTop: 16, color: 'var(--bellure-color-text-muted)', fontSize: '0.9rem' }}>
             Betaalstatus controleren...
           </p>
@@ -487,48 +487,48 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
       const remainingCents = b.priceCents - b.paidCents;
 
       return (
-        <div className="dds-confirmation">
-          <div className="dds-confirmation-icon">
+        <div className="bellure-confirmation">
+          <div className="bellure-confirmation-icon">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <h2 className="dds-confirmation-title">Betaling gelukt!</h2>
-          <p className="dds-confirmation-text">
+          <h2 className="bellure-confirmation-title">Betaling gelukt!</h2>
+          <p className="bellure-confirmation-text">
             Bedankt {b.customerName}! Je afspraak is bevestigd. Je ontvangt een bevestiging per e-mail.
           </p>
-          <div className="dds-summary-card" style={{ textAlign: 'left' }}>
-            <div className="dds-summary-row">
-              <span className="dds-summary-label">Behandeling</span>
-              <span className="dds-summary-value">{b.serviceName}</span>
+          <div className="bellure-summary-card" style={{ textAlign: 'left' }}>
+            <div className="bellure-summary-row">
+              <span className="bellure-summary-label">Behandeling</span>
+              <span className="bellure-summary-value">{b.serviceName}</span>
             </div>
-            <div className="dds-summary-row">
-              <span className="dds-summary-label">Medewerker</span>
-              <span className="dds-summary-value">{b.staffName}</span>
+            <div className="bellure-summary-row">
+              <span className="bellure-summary-label">Medewerker</span>
+              <span className="bellure-summary-value">{b.staffName}</span>
             </div>
-            <div className="dds-summary-row">
-              <span className="dds-summary-label">Datum</span>
-              <span className="dds-summary-value">{start.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: timezone })}</span>
+            <div className="bellure-summary-row">
+              <span className="bellure-summary-label">Datum</span>
+              <span className="bellure-summary-value">{start.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: timezone })}</span>
             </div>
-            <div className="dds-summary-row">
-              <span className="dds-summary-label">Tijd</span>
-              <span className="dds-summary-value">{start.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone })} – {end.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone })}</span>
+            <div className="bellure-summary-row">
+              <span className="bellure-summary-label">Tijd</span>
+              <span className="bellure-summary-value">{start.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone })} – {end.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone })}</span>
             </div>
-            <div className="dds-summary-row">
-              <span className="dds-summary-label">Totaalprijs</span>
-              <span className="dds-summary-value">{formatCents(b.priceCents)}</span>
+            <div className="bellure-summary-row">
+              <span className="bellure-summary-label">Totaalprijs</span>
+              <span className="bellure-summary-value">{formatCents(b.priceCents)}</span>
             </div>
             {b.paidCents > 0 && (
               <>
-                <div className="dds-summary-divider" />
-                <div className="dds-summary-row dds-summary-row--highlight">
-                  <span className="dds-summary-label">{b.paymentMode === 'deposit' ? 'Aanbetaald' : 'Betaald'}</span>
-                  <span className="dds-summary-value dds-summary-value--paid">{formatCents(b.paidCents)}</span>
+                <div className="bellure-summary-divider" />
+                <div className="bellure-summary-row bellure-summary-row--highlight">
+                  <span className="bellure-summary-label">{b.paymentMode === 'deposit' ? 'Aanbetaald' : 'Betaald'}</span>
+                  <span className="bellure-summary-value bellure-summary-value--paid">{formatCents(b.paidCents)}</span>
                 </div>
                 {b.paymentMode === 'deposit' && remainingCents > 0 && (
-                  <div className="dds-summary-row">
-                    <span className="dds-summary-label">Restbedrag in salon</span>
-                    <span className="dds-summary-value">{formatCents(remainingCents)}</span>
+                  <div className="bellure-summary-row">
+                    <span className="bellure-summary-label">Restbedrag in salon</span>
+                    <span className="bellure-summary-value">{formatCents(remainingCents)}</span>
                   </div>
                 )}
               </>
@@ -540,19 +540,19 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     }
 
     return (
-      <div className="dds-confirmation">
-        <div className="dds-confirmation-icon" style={{ background: '#FEF2F2', color: '#DC2626' }}>
+      <div className="bellure-confirmation">
+        <div className="bellure-confirmation-icon" style={{ background: '#FEF2F2', color: '#DC2626' }}>
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
         </div>
-        <h2 className="dds-confirmation-title">Betaling niet gelukt</h2>
-        <p className="dds-confirmation-text">
+        <h2 className="bellure-confirmation-title">Betaling niet gelukt</h2>
+        <p className="bellure-confirmation-text">
           De betaling is niet gelukt of verlopen. Probeer opnieuw een afspraak te maken.
         </p>
-        <button className="dds-btn dds-btn-primary" style={{ marginTop: 16 }} onClick={() => { setPaymentReturn(false); window.history.replaceState({}, '', window.location.pathname); }}>
+        <button className="bellure-btn bellure-btn-primary" style={{ marginTop: 16 }} onClick={() => { setPaymentReturn(false); window.history.replaceState({}, '', window.location.pathname); }}>
           Opnieuw boeken
         </button>
         <BellureBadge />
@@ -602,8 +602,8 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
             onBack={handleBack}
           />
           {!noStaffForCombo && (
-            <div className="dds-btn-group">
-              <button className="dds-btn dds-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>
+            <div className="bellure-btn-group">
+              <button className="bellure-btn bellure-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>
             </div>
           )}
         </div>
@@ -622,10 +622,10 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
             workingDays={workingDays}
             maxDate={maxBookingDate}
           />
-          <div className="dds-btn-group">
-            <button className="dds-btn dds-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>
+          <div className="bellure-btn-group">
+            <button className="bellure-btn bellure-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>
             {selectedSlot && (
-              <button className="dds-btn dds-btn-primary" onClick={() => goToStep(4)}>
+              <button className="bellure-btn bellure-btn-primary" onClick={() => goToStep(4)}>
                 Verder <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="5 12 19 12"/><polyline points="12 5 19 12 12 19"/></svg>
               </button>
             )}
@@ -635,12 +635,12 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
 
       {step === 4 && (
         <div>
-          <h2 className="dds-step-title">Jouw afspraak</h2>
-          <p className="dds-step-subtitle">Controleer je gegevens en bevestig</p>
+          <h2 className="bellure-step-title">Jouw afspraak</h2>
+          <p className="bellure-step-subtitle">Controleer je gegevens en bevestig</p>
 
-          <div className="dds-step4-layout">
+          <div className="bellure-step4-layout">
             {/* Left: customer form */}
-            <div className="dds-step4-form">
+            <div className="bellure-step4-form">
               <CustomerForm
                 onSubmit={handleBooking}
                 loading={bookingLoading}
@@ -650,42 +650,42 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
 
             {/* Right: premium summary brief */}
             {selectedServices.length > 0 && selectedSlot && (
-              <div className="dds-step4-summary">
-                <div className="dds-brief">
-                  <div className="dds-brief-header">
-                    <div className="dds-brief-icon">
+              <div className="bellure-step4-summary">
+                <div className="bellure-brief">
+                  <div className="bellure-brief-header">
+                    <div className="bellure-brief-icon">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                       </svg>
                     </div>
-                    <span className="dds-brief-title">Overzicht</span>
+                    <span className="bellure-brief-title">Overzicht</span>
                   </div>
-                  <div className="dds-brief-body">
-                    <div className="dds-brief-item">
-                      <span className="dds-brief-label">Behandeling{selectedServices.length > 1 ? 'en' : ''}</span>
-                      <span className="dds-brief-value">{combinedServiceName}</span>
+                  <div className="bellure-brief-body">
+                    <div className="bellure-brief-item">
+                      <span className="bellure-brief-label">Behandeling{selectedServices.length > 1 ? 'en' : ''}</span>
+                      <span className="bellure-brief-value">{combinedServiceName}</span>
                     </div>
-                    <div className="dds-brief-divider" />
-                    <div className="dds-brief-item">
-                      <span className="dds-brief-label">Stylist</span>
-                      <span className="dds-brief-value">{staff.find(s => s.id === selectedSlot.staffId)?.name || 'Geen voorkeur'}</span>
+                    <div className="bellure-brief-divider" />
+                    <div className="bellure-brief-item">
+                      <span className="bellure-brief-label">Stylist</span>
+                      <span className="bellure-brief-value">{staff.find(s => s.id === selectedSlot.staffId)?.name || 'Geen voorkeur'}</span>
                     </div>
-                    <div className="dds-brief-divider" />
-                    <div className="dds-brief-item">
-                      <span className="dds-brief-label">Wanneer</span>
-                      <span className="dds-brief-value">
+                    <div className="bellure-brief-divider" />
+                    <div className="bellure-brief-item">
+                      <span className="bellure-brief-label">Wanneer</span>
+                      <span className="bellure-brief-value">
                         {new Date(selectedSlot.time).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })}
                         <br />
                         {new Date(selectedSlot.time).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone })} &middot; {totalDuration} min
                       </span>
                     </div>
-                    <div className="dds-brief-divider" />
-                    <div className="dds-brief-total">
-                      <span className="dds-brief-total-label">Totaal</span>
-                      <span className="dds-brief-total-price">{formatCents(totalPriceCents)}</span>
+                    <div className="bellure-brief-divider" />
+                    <div className="bellure-brief-total">
+                      <span className="bellure-brief-total-label">Totaal</span>
+                      <span className="bellure-brief-total-price">{formatCents(totalPriceCents)}</span>
                     </div>
                     {needsPayment && (
-                      <div className="dds-brief-deposit">
+                      <div className="bellure-brief-deposit">
                         {salon?.payment_mode === 'deposit' ? 'Aanbetaling' : 'Te betalen'}: <strong>{formatCents(depositCents)}</strong>
                       </div>
                     )}
@@ -695,8 +695,8 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
             )}
           </div>
 
-          <div className="dds-btn-group" style={{ marginTop: 8 }}>
-            <button className="dds-btn dds-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>
+          <div className="bellure-btn-group" style={{ marginTop: 8 }}>
+            <button className="bellure-btn bellure-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>
           </div>
         </div>
       )}
@@ -716,8 +716,8 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
             loading={paymentLoading}
             error={paymentError}
           />
-          <div className="dds-btn-group" style={{ marginTop: 8 }}>
-            <button className="dds-btn dds-btn-secondary" onClick={handleBack} disabled={paymentLoading}>
+          <div className="bellure-btn-group" style={{ marginTop: 8 }}>
+            <button className="bellure-btn bellure-btn-secondary" onClick={handleBack} disabled={paymentLoading}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug
             </button>
           </div>

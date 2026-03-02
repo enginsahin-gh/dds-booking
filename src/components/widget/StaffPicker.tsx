@@ -18,8 +18,8 @@ export function StaffPicker({ staff, selectedId, onSelect, noStaffForCombo, perS
   // Show info when no single staff member can do the full combination
   if (noStaffForCombo && perServiceStaff && perServiceStaff.length > 0) {
     return (
-      <div className="dds-animate-in">
-        <h2 className="dds-step-title">Kies een medewerker</h2>
+      <div className="bellure-animate-in">
+        <h2 className="bellure-step-title">Kies een medewerker</h2>
         <div style={{
           padding: 16, marginBottom: 16, background: '#FFF7ED',
           borderRadius: 10, border: '1px solid #FED7AA',
@@ -47,7 +47,7 @@ export function StaffPicker({ staff, selectedId, onSelect, noStaffForCombo, perS
           </div>
         </div>
         {onBack && (
-          <button className="dds-btn dds-btn-secondary" onClick={onBack} style={{ marginTop: 8 }}>
+          <button className="bellure-btn bellure-btn-secondary" onClick={onBack} style={{ marginTop: 8 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Andere behandeling kiezen
           </button>
         )}
@@ -56,39 +56,39 @@ export function StaffPicker({ staff, selectedId, onSelect, noStaffForCombo, perS
   }
 
   return (
-    <div className="dds-animate-in">
-      <h2 className="dds-step-title">Kies een medewerker</h2>
-      <p className="dds-step-subtitle">Bij wie wil je je afspraak maken?</p>
-      <div className="dds-staff-grid">
+    <div className="bellure-animate-in">
+      <h2 className="bellure-step-title">Kies een medewerker</h2>
+      <p className="bellure-step-subtitle">Bij wie wil je je afspraak maken?</p>
+      <div className="bellure-staff-grid">
         {/* No preference option */}
         <div
-          className={`dds-staff-card dds-no-preference ${selectedId === null ? 'dds-staff-card--selected' : ''}`}
+          className={`bellure-staff-card bellure-no-preference ${selectedId === null ? 'bellure-staff-card--selected' : ''}`}
           onClick={() => onSelect(null)}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && onSelect(null)}
         >
-          <div className="dds-staff-avatar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-          <div className="dds-staff-name">Geen voorkeur</div>
+          <div className="bellure-staff-avatar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div className="bellure-staff-name">Geen voorkeur</div>
         </div>
 
         {staff.map((member) => (
           <div
             key={member.id}
-            className={`dds-staff-card ${selectedId === member.id ? 'dds-staff-card--selected' : ''}`}
+            className={`bellure-staff-card ${selectedId === member.id ? 'bellure-staff-card--selected' : ''}`}
             onClick={() => onSelect(member.id)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => e.key === 'Enter' && onSelect(member.id)}
           >
-            <div className="dds-staff-avatar">
+            <div className="bellure-staff-avatar">
               {member.photo_url ? (
                 <img src={member.photo_url} alt={member.name} />
               ) : (
                 member.name.charAt(0).toUpperCase()
               )}
             </div>
-            <div className="dds-staff-name">{member.name}</div>
+            <div className="bellure-staff-name">{member.name}</div>
           </div>
         ))}
       </div>

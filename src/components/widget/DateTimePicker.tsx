@@ -30,12 +30,12 @@ export function DateTimePicker({
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
 
   return (
-    <div className="dds-animate-in">
-      <h2 className="dds-step-title">Kies datum & tijd</h2>
-      <p className="dds-step-subtitle">Wanneer wil je langskomen?</p>
+    <div className="bellure-animate-in">
+      <h2 className="bellure-step-title">Kies datum & tijd</h2>
+      <p className="bellure-step-subtitle">Wanneer wil je langskomen?</p>
 
-      <div className="dds-datetime-layout">
-        <div className="dds-datetime-calendar">
+      <div className="bellure-datetime-layout">
+        <div className="bellure-datetime-calendar">
           <CalendarGrid
             selectedDate={selectedDate}
             onSelectDate={onSelectDate}
@@ -46,7 +46,7 @@ export function DateTimePicker({
           />
         </div>
 
-        <div className="dds-datetime-slots">
+        <div className="bellure-datetime-slots">
           <TimeSlotList
             slots={slots}
             selectedSlot={selectedSlot}

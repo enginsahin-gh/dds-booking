@@ -10,6 +10,7 @@ import { submitLead } from './routes/submit-lead';
 import { customerCancel } from './routes/customer-cancel';
 import { mollieConnect, mollieCallback, mollieDisconnect } from './routes/mollie-connect';
 import { inviteUser, removeUser, updateUserRole, updateUserPermissions, listUsers } from './routes/admin-users';
+import { trialRegister, trialStatus } from './routes/trial';
 import { handleScheduled } from './scheduled';
 
 export type Env = {
@@ -49,6 +50,10 @@ app.post('/api/cancel', customerCancel);
 app.get('/api/mollie/connect', mollieConnect);
 app.get('/api/mollie/callback', mollieCallback);
 app.post('/api/mollie/disconnect', mollieDisconnect);
+
+// Trial / onboarding
+app.post('/api/trial/register', trialRegister);
+app.get('/api/trial/status', trialStatus);
 
 // Admin user management (requires owner auth)
 app.get('/api/admin/users', listUsers);

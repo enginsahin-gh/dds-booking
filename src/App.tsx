@@ -5,6 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { ProtectedRoute, OwnerRoute } from './components/admin/ProtectedRoute';
 import { LoginPage } from './pages/admin/LoginPage';
+import { RegisterPage } from './pages/admin/RegisterPage';
 import { SetPasswordPage } from './pages/admin/SetPasswordPage';
 import { Spinner } from './components/ui/Spinner';
 
@@ -52,6 +53,7 @@ export function App() {
               <Route path="/boeking/bevestiging" element={<PaymentReturnPage />} />
               {/* Admin routes */}
               <Route path="/admin/login" element={<LoginPage />} />
+              <Route path="/admin/registreren" element={<RegisterPage />} />
               <Route path="/admin/set-password" element={<SetPasswordPage />} />
               <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                 <Route index element={<DashboardPage />} />

@@ -5,7 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { ProtectedRoute, OwnerRoute } from './components/admin/ProtectedRoute';
 import { LoginPage } from './pages/admin/LoginPage';
-import { RegisterPage } from './pages/admin/RegisterPage';
+const RegisterPage = lazy(() => import('./pages/admin/RegisterPage').then(m => ({ default: m.RegisterPage })));
 import { SetPasswordPage } from './pages/admin/SetPasswordPage';
 import { Spinner } from './components/ui/Spinner';
 

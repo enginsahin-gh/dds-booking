@@ -185,8 +185,8 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
 
         // Scroll to widget and force-reveal parent elements so user sees the confirmation
         const scrollToBooking = () => {
-          const widget = document.getElementById('bellure-booking-widget')
-            || document.querySelector('[id^="bellure-booking-widget"]');
+          const widget = document.getElementById('bellure-booking-widget') || document.getElementById('dds-booking-widget')
+            || document.querySelector('[id^="bellure-booking-widget"],[id^="dds-booking-widget"]');
           if (widget) {
             widget.style.opacity = '1';
             widget.style.transform = 'none';
@@ -266,8 +266,8 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     // Try to find the parent section or heading first (e.g. #booking)
     const section = document.getElementById('booking')
       || document.querySelector('.booking')
-      || document.getElementById('bellure-booking-widget')
-      || document.querySelector('[id^="bellure-booking-widget"]');
+      || document.getElementById('bellure-booking-widget') || document.getElementById('dds-booking-widget')
+      || document.querySelector('[id^="bellure-booking-widget"],[id^="dds-booking-widget"]');
     if (section) {
       section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }

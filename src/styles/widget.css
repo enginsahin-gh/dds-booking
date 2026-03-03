@@ -3,9 +3,10 @@
 
 /* Widget reads theme from data attributes or CSS custom properties set by host site.
    Host site can override: --bellure-color-primary, --bellure-color-bg, --bellure-color-text, --bellure-font */
-/* Root selector: works both in Shadow DOM (.bellure-shadow-host) and standalone ([id^=...]) */
+/* Root selector: works in Shadow DOM (.bellure-shadow-host), new prefix, and legacy dds- prefix */
 .bellure-shadow-host,
-[id^="bellure-booking-widget"] {
+[id^="bellure-booking-widget"],
+[id^="dds-booking-widget"] {
   --bellure-color-primary: #8B5CF6;
   --bellure-color-primary-hover: color-mix(in srgb, var(--bellure-color-primary) 85%, black);
   --bellure-color-primary-light: color-mix(in srgb, var(--bellure-color-primary) 10%, white);

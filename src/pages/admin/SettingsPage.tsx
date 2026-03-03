@@ -777,13 +777,18 @@ export function SettingsPage() {
                         </div>
                       </div>
 
-                      <Select label="Richting" value={gradientDirection} onChange={(e) => setGradientDirection(e.target.value)}>
-                        <option value="135deg">Diagonaal ↘</option>
-                        <option value="to right">Horizontaal →</option>
-                        <option value="to bottom">Verticaal ↓</option>
-                        <option value="45deg">Diagonaal ↗</option>
-                        <option value="to left">Horizontaal ←</option>
-                      </Select>
+                      <Select
+                        label="Richting"
+                        value={gradientDirection}
+                        onChange={(e) => setGradientDirection(e.target.value)}
+                        options={[
+                          { value: '135deg', label: 'Diagonaal ↘' },
+                          { value: 'to right', label: 'Horizontaal →' },
+                          { value: 'to bottom', label: 'Verticaal ↓' },
+                          { value: '45deg', label: 'Diagonaal ↗' },
+                          { value: 'to left', label: 'Horizontaal ←' },
+                        ]}
+                      />
 
                       {/* Live gradient preview */}
                       <div className="rounded-xl overflow-hidden h-16" style={{ background: `linear-gradient(${gradientDirection}, ${gradientFrom}, ${gradientTo})` }}>

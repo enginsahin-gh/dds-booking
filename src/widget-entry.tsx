@@ -45,8 +45,8 @@ function mountWidget(container: HTMLElement, salonSlug: string) {
   root.render(<BookingWidget salonSlug={salonSlug} />);
 }
 
-// Support multiple widgets on a single page
-const containers = document.querySelectorAll<HTMLElement>('[id^="bellure-booking-widget"]');
+// Support multiple widgets on a single page (including legacy dds- prefix)
+const containers = document.querySelectorAll<HTMLElement>('[id^="bellure-booking-widget"], [id^="dds-booking-widget"]');
 
 containers.forEach((container) => {
   const salon = container.dataset.salon
@@ -71,7 +71,7 @@ containers.forEach((container) => {
 if (containers.length === 0) {
   const script = document.querySelector('script[data-container]') as HTMLScriptElement | null;
   const containerId = script?.dataset.container || 'bellure-booking-widget';
-  const container = document.getElementById(containerId);
+  const container = document.getElementById(containerId) || document.getElementById('dds-booking-widget');
   const salon = script?.dataset.salon || container?.dataset.salon || '';
   if (container && salon) {
     mountWidget(container, salon);

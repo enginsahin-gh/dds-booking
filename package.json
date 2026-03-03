@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "npm run build:admin && npm run build:widget",
     "build:admin": "vite build",
-    "build:widget": "vite build --config vite.widget.config.ts",
+    "build:widget": "vite build --config vite.widget.config.ts && echo '/* CSS inlined in widget.js */' > dist/widget.css",
     "build:sri": "npm run build && node scripts/generate-sri.mjs",
     "preview": "vite preview",
     "test": "vitest run",

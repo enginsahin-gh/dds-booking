@@ -15,7 +15,7 @@ export default defineConfig({
       formats: ['iife'],
       fileName: () => 'widget.js',
     },
-    cssCodeSplit: false, // Keep CSS as separate file for Shadow DOM <link>
+    cssCodeSplit: false, // CSS is inlined via ?inline import for Shadow DOM
     rollupOptions: {
       output: {
         assetFileNames: (assetInfo) => {

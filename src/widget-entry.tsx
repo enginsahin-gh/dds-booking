@@ -2,7 +2,8 @@ import { createRoot } from 'react-dom/client';
 import { BookingWidget } from './components/widget/BookingWidget';
 
 // Widget CSS is injected inline into Shadow DOM to ensure complete isolation
-import widgetCssUrl from './styles/widget.css?url';
+// Using ?inline to get the CSS as a string (works regardless of host page domain)
+import widgetCss from './styles/widget.css?inline';
 
 function applyTheme(el: HTMLElement, shadow: ShadowRoot) {
   const map: Record<string, string> = {
@@ -26,11 +27,10 @@ function mountWidget(container: HTMLElement, salonSlug: string) {
   // Create Shadow DOM for CSS isolation
   const shadow = container.attachShadow({ mode: 'open' });
 
-  // Inject CSS via <link> inside shadow
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = widgetCssUrl;
-  shadow.appendChild(link);
+  // Inject CSS inline into shadow DOM (no external <link> = no cross-origin issues)
+  const style = document.createElement('style');
+  style.textContent = widgetCss;
+  shadow.appendChild(style);
 
   // Create render target inside shadow
   const wrapper = document.createElement('div');

@@ -11,6 +11,12 @@ interface AppointmentsTabProps {
   setCancellationPolicy: (v: string) => void;
   rescheduleEnabled: boolean;
   setRescheduleEnabled: (v: boolean) => void;
+  customerLoginEnabled: boolean;
+  setCustomerLoginEnabled: (v: boolean) => void;
+  guestBookingAllowed: boolean;
+  setGuestBookingAllowed: (v: boolean) => void;
+  customerLoginMethods: string[];
+  setCustomerLoginMethods: (v: string[]) => void;
 }
 
 export function AppointmentsTab({
@@ -18,7 +24,20 @@ export function AppointmentsTab({
   maxBookingWeeks, setMaxBookingWeeks,
   cancellationPolicy, setCancellationPolicy,
   rescheduleEnabled, setRescheduleEnabled,
+  customerLoginEnabled, setCustomerLoginEnabled,
+  guestBookingAllowed, setGuestBookingAllowed,
+  customerLoginMethods, setCustomerLoginMethods,
 }: AppointmentsTabProps) {
+  const hasMethod = (method: string) => customerLoginMethods.includes(method);
+  const toggleMethod = (method: string, enabled: boolean) => {
+    if (enabled) {
+      const next = Array.from(new Set([...customerLoginMethods, method]));
+      setCustomerLoginMethods(next);
+    } else {
+      const next = customerLoginMethods.filter((m) => m !== method);
+      setCustomerLoginMethods(next);
+    }
+  };
   return (
     <div className="space-y-4">
       <Card padding="lg">
@@ -73,6 +92,45 @@ export function AppointmentsTab({
               label="Klanten mogen afspraak verplaatsen"
               description="Toont een 'Afspraak verplaatsen' link in de bevestigingsmail."
             />
+          </div>
+        </CardSection>
+      </Card>
+
+      <Card padding="lg">
+        <CardSection title="Klantlogin" description="Laat klanten een account gebruiken voor sneller boeken.">
+          <div className="space-y-4">
+            <Toggle
+              checked={customerLoginEnabled}
+              onChange={setCustomerLoginEnabled}
+              label="Klantlogin inschakelen"
+              description="Klanten kunnen een account gebruiken om sneller te boeken."
+            />
+            <Toggle
+              checked={guestBookingAllowed}
+              onChange={setGuestBookingAllowed}
+              label="Gast boeken toegestaan"
+              description="Laat klanten ook boeken zonder account."
+              disabled={!customerLoginEnabled}
+            />
+            <div className="grid grid-cols-1 gap-3">
+              <Toggle
+                checked={hasMethod('password')}
+                onChange={(v) => toggleMethod('password', v)}
+                label="Inloggen met wachtwoord"
+                description="Klant maakt een eigen wachtwoord aan."
+                disabled={!customerLoginEnabled}
+              />
+              <Toggle
+                checked={hasMethod('otp')}
+                onChange={(v) => toggleMethod('otp', v)}
+                label="Inloggen met e‑mailcode"
+                description="Eenmalige code via e‑mail."
+                disabled={!customerLoginEnabled}
+              />
+            </div>
+            <p className="text-[12px] text-gray-500">
+              Tip: zet beide methodes aan voor maximale flexibiliteit.
+            </p>
           </div>
         </CardSection>
       </Card>

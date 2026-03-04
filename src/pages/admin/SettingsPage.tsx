@@ -73,6 +73,9 @@ export function SettingsPage() {
   const [cancellationPolicy, setCancellationPolicy] = useState('');
   const [locationInfo, setLocationInfo] = useState('');
   const [rescheduleEnabled, setRescheduleEnabled] = useState(true);
+  const [customerLoginEnabled, setCustomerLoginEnabled] = useState(false);
+  const [guestBookingAllowed, setGuestBookingAllowed] = useState(true);
+  const [customerLoginMethods, setCustomerLoginMethods] = useState<string[]>(['password', 'otp']);
   const [googlePlaceId, setGooglePlaceId] = useState('');
   const [reviewEnabled, setReviewEnabled] = useState(false);
   const [reviewAfterVisit, setReviewAfterVisit] = useState(3);
@@ -133,6 +136,9 @@ export function SettingsPage() {
       setCancellationPolicy((salon as any).cancellation_policy || '');
       setLocationInfo((salon as any).location_info || '');
       setRescheduleEnabled((salon as any).reschedule_enabled ?? true);
+      setCustomerLoginEnabled((salon as any).customer_login_enabled ?? false);
+      setGuestBookingAllowed((salon as any).guest_booking_allowed ?? true);
+      setCustomerLoginMethods((salon as any).customer_login_methods || ['password', 'otp']);
       setGooglePlaceId((salon as any).google_place_id || '');
       setReviewEnabled((salon as any).review_enabled ?? false);
       setReviewAfterVisit((salon as any).review_after_visit ?? 3);
@@ -162,6 +168,9 @@ export function SettingsPage() {
         cancellation_policy: cancellationPolicy || null,
         location_info: locationInfo || null,
         reschedule_enabled: rescheduleEnabled,
+        customer_login_enabled: customerLoginEnabled,
+        customer_login_methods: customerLoginMethods,
+        guest_booking_allowed: guestBookingAllowed,
         buffer_minutes: bufferMinutes, max_booking_weeks: maxBookingWeeks,
         google_place_id: googlePlaceId || null,
         review_enabled: reviewEnabled, review_after_visit: reviewAfterVisit,
@@ -237,6 +246,9 @@ export function SettingsPage() {
             maxBookingWeeks={maxBookingWeeks} setMaxBookingWeeks={setMaxBookingWeeks}
             cancellationPolicy={cancellationPolicy} setCancellationPolicy={setCancellationPolicy}
             rescheduleEnabled={rescheduleEnabled} setRescheduleEnabled={setRescheduleEnabled}
+            customerLoginEnabled={customerLoginEnabled} setCustomerLoginEnabled={setCustomerLoginEnabled}
+            guestBookingAllowed={guestBookingAllowed} setGuestBookingAllowed={setGuestBookingAllowed}
+            customerLoginMethods={customerLoginMethods} setCustomerLoginMethods={setCustomerLoginMethods}
           />
         </TabPanel>
 

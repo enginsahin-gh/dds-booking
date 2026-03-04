@@ -16,6 +16,7 @@ import { googleConnect, googleCallback, googleDisconnect, googleStatus, googleSy
 import { handleScheduled } from './scheduled';
 import { handleTrialPause } from './scheduled-trial-pause';
 import { waitlistJoin, waitlistNotify, waitlistEntries, waitlistCancel, handleExpiredWaitlist } from './routes/waitlist';
+import { getCustomerProfile, upsertCustomerProfile } from './routes/customer-profile';
 
 export type Env = {
   SUPABASE_URL: string;
@@ -95,6 +96,10 @@ app.post('/api/waitlist/join', waitlistJoin);
 app.post('/api/waitlist/notify', waitlistNotify);
 app.get('/api/waitlist/entries', waitlistEntries);
 app.post('/api/waitlist/cancel', waitlistCancel);
+
+// Customer login (profile)
+app.get('/api/customers/profile', getCustomerProfile);
+app.post('/api/customers/profile', upsertCustomerProfile);
 
 // Google Calendar integration
 app.get('/api/google/connect', googleConnect);

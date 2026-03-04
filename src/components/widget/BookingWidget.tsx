@@ -7,6 +7,7 @@ import { ServicePicker } from './ServicePicker';
 import { StaffPicker } from './StaffPicker';
 import { DateTimePicker } from './DateTimePicker';
 import { CustomerForm } from './CustomerForm';
+import { CustomerLogin } from './CustomerLogin';
 import { PaymentStep } from './PaymentStep';
 import { Confirmation } from './Confirmation';
 import { useSlots } from '../../hooks/useSlots';
@@ -58,6 +59,8 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
 
   // Customer data
   const [customerData, setCustomerData] = useState<{ name: string; email: string; phone: string } | null>(null);
+  const [customerSession, setCustomerSession] = useState<any>(null);
+  const [customerProfile, setCustomerProfile] = useState<{ name: string; email: string; phone: string | null } | null>(null);
 
   // Confirmation data
   const [confirmedStaff, setConfirmedStaff] = useState<Staff | null>(null);
@@ -102,6 +105,11 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
   // Booking horizon — max weeks ahead (0 = unlimited)
   const maxBookingWeeks = (salon as any)?.max_booking_weeks ?? 4;
   const maxBookingDate = maxBookingWeeks > 0 ? addWeeks(new Date(), maxBookingWeeks) : null;
+
+  const customerLoginEnabled = (salon as any)?.customer_login_enabled ?? false;
+  const customerLoginMethods = (salon as any)?.customer_login_methods || ['password', 'otp'];
+  const guestBookingAllowed = (salon as any)?.guest_booking_allowed ?? true;
+  const loginRequired = customerLoginEnabled && !guestBookingAllowed;
 
   // Slots — use total duration for availability check (with buffer)
   // Only pass filtered staff so slots are only calculated for staff who can do the service
@@ -286,6 +294,11 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     if (selectedServices.length > 0) goToStep(2);
   }, [selectedServices, goToStep]);
 
+  const handleCustomerAuth = useCallback((payload: { session: any; customer: { name: string; email: string; phone: string | null } | null }) => {
+    setCustomerSession(payload.session);
+    setCustomerProfile(payload.customer);
+  }, []);
+
   const handleStaffSelect = useCallback((staffId: string | null) => {
     setSelectedStaffId(staffId);
     setStaffConfirmed(true);
@@ -380,6 +393,23 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
       setCustomerName(data.name);
       setBookingId(result.bookingId);
 
+      // If customer is logged in but no profile exists yet, create it now
+      if (customerSession && !customerProfile) {
+        fetch(`${FUNCTIONS_BASE}/api/customers/profile`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${customerSession.access_token}`,
+          },
+          body: JSON.stringify({
+            salonId: salon.id,
+            name: data.name,
+            phone: data.phone,
+            email: data.email,
+          }),
+        }).catch(() => null);
+      }
+
       if (needsPayment) {
         setDepositPaidCents(depositCents);
         goToStep(5);
@@ -392,7 +422,7 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     }
 
     setBookingLoading(false);
-  }, [salon, selectedServices, selectedSlot, staff, goToStep, totalDuration, totalPriceCents]);
+  }, [salon, selectedServices, selectedSlot, staff, goToStep, totalDuration, totalPriceCents, customerSession, customerProfile]);
 
   // Initiate Mollie payment
   const handlePayment = useCallback(async () => {
@@ -648,11 +678,34 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
           <div className="bellure-step4-layout">
             {/* Left: customer form */}
             <div className="bellure-step4-form">
-              <CustomerForm
-                onSubmit={handleBooking}
-                loading={bookingLoading}
-                submitLabel={needsPayment ? 'Verder naar betaling' : 'Bevestig afspraak'}
-              />
+              {customerLoginEnabled && salon && (
+                <CustomerLogin
+                  salonId={salon.id}
+                  apiBase={FUNCTIONS_BASE}
+                  enabled={customerLoginEnabled}
+                  methods={customerLoginMethods}
+                  guestAllowed={guestBookingAllowed}
+                  onAuthenticated={handleCustomerAuth}
+                />
+              )}
+
+              {(!loginRequired || customerSession) ? (
+                <CustomerForm
+                  onSubmit={handleBooking}
+                  loading={bookingLoading}
+                  submitLabel={needsPayment ? 'Verder naar betaling' : 'Bevestig afspraak'}
+                  initial={{
+                    name: customerProfile?.name || customerData?.name || '',
+                    email: customerProfile?.email || customerSession?.user?.email || customerData?.email || '',
+                    phone: customerProfile?.phone || customerData?.phone || '',
+                  }}
+                  lockEmail={!!customerSession}
+                />
+              ) : (
+                <div className="bellure-login-required">
+                  Log in om verder te gaan met boeken.
+                </div>
+              )}
             </div>
 
             {/* Right: premium summary brief */}

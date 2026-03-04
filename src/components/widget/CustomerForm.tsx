@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface CustomerFormProps {
   onSubmit: (data: { name: string; email: string; phone: string; hp?: string }) => void;
   loading: boolean;
   submitLabel?: string;
+  initial?: { name?: string; email?: string; phone?: string } | null;
+  lockEmail?: boolean;
 }
 
 interface FormErrors {
@@ -12,12 +14,18 @@ interface FormErrors {
   phone?: string;
 }
 
-export function CustomerForm({ onSubmit, loading, submitLabel }: CustomerFormProps) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+export function CustomerForm({ onSubmit, loading, submitLabel, initial, lockEmail }: CustomerFormProps) {
+  const [name, setName] = useState(initial?.name || '');
+  const [email, setEmail] = useState(initial?.email || '');
+  const [phone, setPhone] = useState(initial?.phone || '');
   const [honeypot, setHoneypot] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
+
+  useEffect(() => {
+    if (initial?.name) setName(initial.name);
+    if (initial?.email) setEmail(initial.email);
+    if (initial?.phone) setPhone(initial.phone);
+  }, [initial?.name, initial?.email, initial?.phone]);
 
   const validate = (): boolean => {
     const e: FormErrors = {};
@@ -90,6 +98,7 @@ export function CustomerForm({ onSubmit, loading, submitLabel }: CustomerFormPro
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
+            disabled={!!lockEmail}
           />
           {errors.email && <span className="bellure-form-error">{errors.email}</span>}
         </div>

@@ -747,6 +747,84 @@
   padding: 0 4px;
 }
 
+/* Customer login */
+.bellure-login {
+  background: var(--bellure-color-bg-secondary);
+  border: 1px solid var(--bellure-color-border);
+  border-radius: var(--bellure-radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.bellure-login-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bellure-color-bg-secondary);
+  border: 1px solid var(--bellure-color-border);
+  border-radius: var(--bellure-radius);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.bellure-login-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--bellure-color-text);
+}
+
+.bellure-login-sub {
+  font-size: 0.8rem;
+  color: var(--bellure-color-text-muted);
+  margin-top: 2px;
+}
+
+.bellure-login-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.bellure-login-tab {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--bellure-color-border);
+  background: var(--bellure-color-bg);
+  color: var(--bellure-color-text);
+  cursor: pointer;
+  transition: all var(--bellure-transition-smooth);
+}
+
+.bellure-login-tab.active {
+  border-color: var(--bellure-color-primary);
+  color: var(--bellure-color-primary);
+  background: var(--bellure-color-primary-light);
+}
+
+.bellure-login-form {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.bellure-login-error {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--bellure-color-error);
+}
+
+.bellure-login-required {
+  background: #FEF2F2;
+  color: #DC2626;
+  padding: 12px 14px;
+  border-radius: var(--bellure-radius);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
 .bellure-form-group {
   display: flex;
   flex-direction: column;

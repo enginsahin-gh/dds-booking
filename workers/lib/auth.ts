@@ -39,3 +39,26 @@ export async function verifyAuth(
     return null;
   }
 }
+
+/**
+ * Verify any authenticated user (no owner role required).
+ * Returns { userId, email } or null if unauthorized.
+ */
+export async function verifyUser(
+  c: Context<{ Bindings: Env }>
+): Promise<{ userId: string; email: string | null } | null> {
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return null;
+
+  const token = authHeader.slice(7);
+
+  try {
+    const supabase = getSupabase(c.env);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) return null;
+
+    return { userId: user.id, email: user.email || null };
+  } catch {
+    return null;
+  }
+}

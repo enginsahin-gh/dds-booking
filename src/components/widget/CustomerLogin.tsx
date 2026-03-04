@@ -21,6 +21,7 @@ export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [session, setSession] = useState<any>(null);
+  const [collapsed, setCollapsed] = useState(true);
 
   const hasPassword = methods.includes('password');
   const hasOtp = methods.includes('otp');
@@ -145,7 +146,7 @@ export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed
       <div className="bellure-login-card">
         <div>
           <div className="bellure-login-title">Ingelogd</div>
-          <div className="bellure-login-sub">Je bent ingelogd met {session.user?.email}</div>
+          <div className="bellure-login-sub">Gegevens automatisch ingevuld</div>
         </div>
         <button className="bellure-btn bellure-btn-secondary" onClick={handleLogout}>
           Uitloggen
@@ -155,10 +156,10 @@ export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed
   }
 
   return (
-    <div className="bellure-login">
+    <div className={`bellure-login ${collapsed ? 'collapsed' : 'open'}`}>
       <div className="bellure-login-row">
         <div>
-          <div className="bellure-login-title">Log in voor sneller boeken</div>
+          <div className="bellure-login-title">Sneller boeken met account</div>
           <div className="bellure-login-sub">Je gegevens worden automatisch ingevuld.</div>
         </div>
         <span className={`bellure-login-badge ${guestAllowed ? 'optional' : 'required'}`}>
@@ -167,23 +168,19 @@ export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed
       </div>
 
       <div className="bellure-login-actions">
+        <button className="bellure-login-action primary" onClick={() => { setCollapsed(false); setMode('login'); }}>Terugkomer?</button>
+        <button className="bellure-login-action" onClick={() => { setCollapsed(false); setMode('otp'); }}>Code per e‑mail</button>
         {hasPassword && (
-          <button className={`bellure-login-action ${mode === 'login' ? 'active' : ''}`} onClick={() => setMode('login')}>Inloggen</button>
+          <button className={`bellure-login-link ${mode === 'signup' ? 'active' : ''}`} onClick={() => { setCollapsed(false); setMode('signup'); }}>Nieuw? Maak account</button>
         )}
-        {hasOtp && (
-          <button className={`bellure-login-action ${mode === 'otp' ? 'active' : ''}`} onClick={() => setMode('otp')}>E‑mailcode</button>
-        )}
-        {hasPassword && (
-          <button className={`bellure-login-link ${mode === 'signup' ? 'active' : ''}`} onClick={() => setMode('signup')}>Account maken</button>
-        )}
-        {mode !== 'none' && (
-          <button className="bellure-login-link" onClick={() => { setMode('none'); setError(null); }}>Sluit</button>
+        {!collapsed && (
+          <button className="bellure-login-link" onClick={() => { setCollapsed(true); setMode('none'); setError(null); }}>Sluit</button>
         )}
       </div>
 
-      {error && <div className="bellure-login-error">{error}</div>}
+      {!collapsed && error && <div className="bellure-login-error">{error}</div>}
 
-      {mode === 'login' && hasPassword && (
+      {!collapsed && mode === 'login' && hasPassword && (
         <div className="bellure-login-form">
           <input className="bellure-form-input" placeholder="E-mailadres" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           <input className="bellure-form-input" placeholder="Wachtwoord" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -191,7 +188,7 @@ export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed
         </div>
       )}
 
-      {mode === 'signup' && hasPassword && (
+      {!collapsed && mode === 'signup' && hasPassword && (
         <div className="bellure-login-form">
           <input className="bellure-form-input" placeholder="Naam" type="text" value={name} onChange={(e) => setName(e.target.value)} />
           <input className="bellure-form-input" placeholder="Telefoon (optioneel)" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
@@ -201,7 +198,7 @@ export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed
         </div>
       )}
 
-      {mode === 'otp' && hasOtp && (
+      {!collapsed && mode === 'otp' && hasOtp && (
         <div className="bellure-login-form">
           <input className="bellure-form-input" placeholder="E-mailadres" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           {!otpSent ? (

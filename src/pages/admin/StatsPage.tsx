@@ -188,18 +188,23 @@ export function StatsPage() {
     return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 5);
   }, [confirmed, services]);
 
-  const maxServiceCount = Math.max(...popularServices.map(s => s.count), 1);
+  const maxServiceCount = popularServices.length > 0 ? Math.max(...popularServices.map(s => s.count), 1) : 1;
 
   // Heatmap data: 7 days x 24 hours
   const heatmapData = useMemo(() => {
     const matrix: number[][] = Array.from({ length: 7 }, () => new Array(24).fill(0));
     for (const b of confirmed) {
-      const date = parseISO(b.start_at);
-      // JS getDay: 0=Sunday, but we want 0=Monday
-      const jsDay = date.getDay();
-      const dayIndex = jsDay === 0 ? 6 : jsDay - 1;
-      const hour = date.getHours();
-      matrix[dayIndex][hour]++;
+      try {
+        const date = parseISO(b.start_at);
+        if (isNaN(date.getTime())) continue;
+        // JS getDay: 0=Sunday, but we want 0=Monday
+        const jsDay = date.getDay();
+        const dayIndex = jsDay === 0 ? 6 : jsDay - 1;
+        const hour = date.getHours();
+        if (dayIndex >= 0 && dayIndex < 7 && hour >= 0 && hour < 24) {
+          matrix[dayIndex][hour]++;
+        }
+      } catch { continue; }
     }
     return matrix;
   }, [confirmed]);
@@ -406,7 +411,7 @@ export function StatsPage() {
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full bg-violet-500 transition-all duration-500"
-                          style={{ width: `${Math.max((s.revenue / Math.max(...staffStats.map(x => x.revenue), 1)) * 100, 2)}%` }}
+                          style={{ width: `${Math.max((s.revenue / (staffStats.length > 0 ? Math.max(...staffStats.map(x => x.revenue), 1) : 1)) * 100, 2)}%` }}
                         />
                       </div>
                     </div>

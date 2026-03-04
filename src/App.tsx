@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast';
 import { AuthProvider } from './contexts/AuthContext';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { ProtectedRoute, OwnerRoute } from './components/admin/ProtectedRoute';
 import { LoginPage } from './pages/admin/LoginPage';
@@ -48,6 +49,7 @@ export function App() {
     <AuthProvider>
       <ToastProvider>
         <BrowserRouter>
+          <ErrorBoundary>
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public booking page */}
@@ -75,6 +77,7 @@ export function App() {
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>
           </Suspense>
+          </ErrorBoundary>
         </BrowserRouter>
       </ToastProvider>
     </AuthProvider>

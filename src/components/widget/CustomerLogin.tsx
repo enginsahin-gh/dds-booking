@@ -11,7 +11,7 @@ interface CustomerLoginProps {
 }
 
 export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed, onAuthenticated }: CustomerLoginProps) {
-  const [mode, setMode] = useState<'login' | 'signup' | 'otp'>('login');
+  const [mode, setMode] = useState<'none' | 'login' | 'signup' | 'otp'>('none');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -156,22 +156,28 @@ export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed
 
   return (
     <div className="bellure-login">
-      <div className="bellure-login-header">
+      <div className="bellure-login-row">
         <div>
-          <div className="bellure-login-title">Heb je al een account?</div>
-          <div className="bellure-login-sub">Log in voor sneller boeken. {guestAllowed ? 'Gast boeken blijft mogelijk.' : 'Gast boeken is uitgeschakeld.'}</div>
+          <div className="bellure-login-title">Log in voor sneller boeken</div>
+          <div className="bellure-login-sub">Je gegevens worden automatisch ingevuld.</div>
         </div>
+        <span className={`bellure-login-badge ${guestAllowed ? 'optional' : 'required'}`}>
+          {guestAllowed ? 'Optioneel' : 'Verplicht'}
+        </span>
       </div>
 
-      <div className="bellure-login-tabs">
+      <div className="bellure-login-actions">
         {hasPassword && (
-          <button className={`bellure-login-tab ${mode === 'login' ? 'active' : ''}`} onClick={() => setMode('login')}>Inloggen</button>
-        )}
-        {hasPassword && (
-          <button className={`bellure-login-tab ${mode === 'signup' ? 'active' : ''}`} onClick={() => setMode('signup')}>Account maken</button>
+          <button className={`bellure-login-action ${mode === 'login' ? 'active' : ''}`} onClick={() => setMode('login')}>Inloggen</button>
         )}
         {hasOtp && (
-          <button className={`bellure-login-tab ${mode === 'otp' ? 'active' : ''}`} onClick={() => setMode('otp')}>E‑mailcode</button>
+          <button className={`bellure-login-action ${mode === 'otp' ? 'active' : ''}`} onClick={() => setMode('otp')}>E‑mailcode</button>
+        )}
+        {hasPassword && (
+          <button className={`bellure-login-link ${mode === 'signup' ? 'active' : ''}`} onClick={() => setMode('signup')}>Account maken</button>
+        )}
+        {mode !== 'none' && (
+          <button className="bellure-login-link" onClick={() => { setMode('none'); setError(null); }}>Sluit</button>
         )}
       </div>
 

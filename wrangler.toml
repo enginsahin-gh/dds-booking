@@ -13,4 +13,4 @@ FRONTEND_URL = "https://mijn.bellure.nl"
 
 # Cron trigger: check for appointment reminders every 15 minutes
 [triggers]
-crons = ["*/15 * * * *"]
+crons = ["*/15 * * * *", "0 6 * * *"]

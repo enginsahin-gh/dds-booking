@@ -6,6 +6,7 @@ import { AdminLayout } from './components/admin/AdminLayout';
 import { ProtectedRoute, OwnerRoute } from './components/admin/ProtectedRoute';
 import { LoginPage } from './pages/admin/LoginPage';
 const RegisterPage = lazy(() => import('./pages/admin/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const OnboardingWizard = lazy(() => import('./pages/admin/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 import { SetPasswordPage } from './pages/admin/SetPasswordPage';
 import { Spinner } from './components/ui/Spinner';
 
@@ -55,6 +56,7 @@ export function App() {
               <Route path="/admin/login" element={<LoginPage />} />
               <Route path="/admin/registreren" element={<RegisterPage />} />
               <Route path="/admin/set-password" element={<SetPasswordPage />} />
+              <Route path="/admin/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                 <Route index element={<DashboardPage />} />
                 <Route path="bookings" element={<BookingsPage />} />

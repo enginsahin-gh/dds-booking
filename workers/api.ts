@@ -11,7 +11,9 @@ import { customerCancel } from './routes/customer-cancel';
 import { mollieConnect, mollieCallback, mollieDisconnect } from './routes/mollie-connect';
 import { inviteUser, removeUser, updateUserRole, updateUserPermissions, listUsers } from './routes/admin-users';
 import { trialRegister, trialStatus } from './routes/trial';
+import { subscriptionActivate, subscriptionWebhook, subscriptionPaymentWebhook, subscriptionStatus, subscriptionCancel } from './routes/subscription';
 import { handleScheduled } from './scheduled';
+import { handleTrialPause } from './scheduled-trial-pause';
 
 export type Env = {
   SUPABASE_URL: string;
@@ -55,6 +57,13 @@ app.post('/api/mollie/disconnect', mollieDisconnect);
 app.post('/api/trial/register', trialRegister);
 app.get('/api/trial/status', trialStatus);
 
+// Subscription management
+app.post('/api/subscription/activate', subscriptionActivate);
+app.post('/api/subscription/webhook', subscriptionWebhook);
+app.post('/api/subscription/payment-webhook', subscriptionPaymentWebhook);
+app.get('/api/subscription/status', subscriptionStatus);
+app.post('/api/subscription/cancel', subscriptionCancel);
+
 // Admin user management (requires owner auth)
 app.get('/api/admin/users', listUsers);
 app.post('/api/admin/invite-user', inviteUser);
@@ -65,6 +74,12 @@ app.post('/api/admin/update-user-permissions', updateUserPermissions);
 export default {
   fetch: app.fetch,
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(handleScheduled(env));
+    // Daily at 06:00 UTC: pause expired trials
+    if (event.cron === '0 6 * * *') {
+      ctx.waitUntil(handleTrialPause(env));
+    } else {
+      // Every 15 min: appointment reminders
+      ctx.waitUntil(handleScheduled(env));
+    }
   },
 };

@@ -41,15 +41,27 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
   // Honeypot
   if (hp) return c.json({ bookingId: 'ok' });
 
-  // Fetch salon config
+  // Fetch salon config (including subscription fields for trial/pause enforcement)
   const { data: salon } = await supabase
     .from('salons')
-    .select('id, buffer_minutes, payment_mode, max_booking_weeks')
+    .select('id, buffer_minutes, payment_mode, max_booking_weeks, subscription_status, trial_ends_at')
     .eq('id', salonId)
     .single();
 
   if (!salon) {
     return c.json({ error: 'Salon not found' }, 404);
+  }
+
+  // Block bookings for paused or cancelled salons
+  if (salon.subscription_status === 'paused' || salon.subscription_status === 'cancelled') {
+    return c.json({ error: 'SALON_PAUSED' }, 403);
+  }
+
+  // Block bookings for expired trials
+  if (salon.subscription_status === 'trial' && salon.trial_ends_at) {
+    if (new Date(salon.trial_ends_at) < new Date()) {
+      return c.json({ error: 'SALON_PAUSED' }, 403);
+    }
   }
 
   const bufferMin = salon.buffer_minutes || 0;
@@ -178,7 +190,7 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
     payment_status: needsPayment ? 'pending' : 'none',
     amount_total_cents: serverTotalCents,
     amount_paid_cents: 0,
-    amount_due_cents: needsPayment ? (totalPriceCents || serverTotalCents) : 0,
+    amount_due_cents: needsPayment ? serverTotalCents : 0, // SEC-018: always use server-side calculated value
     notes: services.length > 1 ? combinedServiceName : null,
   }).eq('id', bookingId);
 

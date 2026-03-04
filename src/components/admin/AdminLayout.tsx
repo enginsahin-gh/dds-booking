@@ -9,6 +9,7 @@ import { Button } from '../ui/Button';
 import { useToast } from '../ui/Toast';
 import { NotificationCenter } from './NotificationCenter';
 import { useNotifications } from '../../hooks/useNotifications';
+import type { Salon } from '../../lib/types';
 
 function PasswordModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user } = useAuth();
@@ -198,6 +199,82 @@ function ProfileMenu() {
   );
 }
 
+function SubscriptionBanner({ salon }: { salon: Salon | null }) {
+  const [dismissed, setDismissed] = useState(false);
+
+  if (dismissed || !salon) return null;
+
+  const status = salon.subscription_status;
+
+  // Trial banner (yellow)
+  if (status === 'trial' && salon.trial_ends_at) {
+    const daysLeft = Math.max(0, Math.ceil((new Date(salon.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+    const expired = daysLeft === 0;
+
+    if (expired) {
+      // Expired trial = treat as paused
+      return (
+        <div className="mx-4 lg:mx-6 mt-3 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-500 flex-shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div className="flex-1 text-[13px] text-red-800">
+            Je proefperiode is verlopen. Klanten kunnen geen afspraken boeken.{' '}
+            <Link to="/admin/settings" className="font-semibold underline hover:no-underline">Activeer je abonnement</Link> om weer online te gaan.
+          </div>
+          <button onClick={() => setDismissed(true)} className="text-red-400 hover:text-red-600 p-1 flex-shrink-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mx-4 lg:mx-6 mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-500 flex-shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div className="flex-1 text-[13px] text-amber-800">
+          Proefperiode: nog {daysLeft} {daysLeft === 1 ? 'dag' : 'dagen'}. <Link to="/admin/settings" className="font-semibold underline hover:no-underline">Activeer je abonnement</Link> voor ononderbroken service.
+        </div>
+        <button onClick={() => setDismissed(true)} className="text-amber-400 hover:text-amber-600 p-1 flex-shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    );
+  }
+
+  // Past due banner (orange-red)
+  if (status === 'past_due') {
+    return (
+      <div className="mx-4 lg:mx-6 mt-3 p-3 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-3">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-500 flex-shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div className="flex-1 text-[13px] text-orange-800">
+          Betaling mislukt. Je account wordt over enkele dagen gepauzeerd als de betaling niet wordt bijgewerkt.{' '}
+          <Link to="/admin/settings" className="font-semibold underline hover:no-underline">Betaling bijwerken</Link>
+        </div>
+        <button onClick={() => setDismissed(true)} className="text-orange-400 hover:text-orange-600 p-1 flex-shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    );
+  }
+
+  // Paused banner (red)
+  if (status === 'paused') {
+    return (
+      <div className="mx-4 lg:mx-6 mt-3 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-500 flex-shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div className="flex-1 text-[13px] text-red-800">
+          Je account is gepauzeerd. Klanten kunnen geen afspraken boeken.{' '}
+          <Link to="/admin/settings" className="inline-flex items-center gap-1 font-semibold underline hover:no-underline">Activeer je abonnement</Link> om weer online te gaan.
+        </div>
+        <button onClick={() => setDismissed(true)} className="text-red-400 hover:text-red-600 p-1 flex-shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 export function AdminLayout() {
   const { user, signOut, salonId, isOwner, role } = useAuth();
   const { salon } = useSalon(undefined, undefined, salonId ?? undefined);
@@ -248,6 +325,8 @@ export function AdminLayout() {
             <ProfileMenu />
           </div>
         </header>
+
+        <SubscriptionBanner salon={salon} />
 
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
           <div className="p-4 lg:p-6 max-w-6xl">

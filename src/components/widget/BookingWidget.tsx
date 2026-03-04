@@ -354,7 +354,11 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
 
       if (!res.ok) {
         const err = result.error || '';
-        if (err === 'SLOT_TAKEN') {
+        if (err === 'SALON_PAUSED') {
+          setError('Online boeken is op dit moment niet beschikbaar. Neem contact op met de salon.');
+          setBookingLoading(false);
+          return;
+        } else if (err === 'SLOT_TAKEN') {
           setBookingError('Dit tijdslot is zojuist geboekt. Kies een ander tijdstip.');
           goToStep(3);
         } else if (err === 'RATE_LIMITED') {

@@ -26,6 +26,10 @@ export interface Salon {
   mollie_organization_id: string | null;
   mollie_organization_name: string | null;
   mollie_connected_at: string | null;
+  subscription_status: 'none' | 'trial' | 'active' | 'paused' | 'cancelled';
+  trial_started_at: string | null;
+  trial_ends_at: string | null;
+  plan_type: string | null;
   created_at: string;
 }
 

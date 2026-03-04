@@ -1,18 +1,47 @@
-import { useMemo } from 'react';
-import { useOutletContext, Link } from 'react-router-dom';
+import { useMemo, useEffect, useState } from 'react';
+import { useOutletContext, Link, useNavigate } from 'react-router-dom';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { useAuth } from '../../hooks/useAuth';
 import { useBookings } from '../../hooks/useBookings';
 import { useServices } from '../../hooks/useServices';
 import { useStaff } from '../../hooks/useStaff';
+import { supabase } from '../../lib/supabase';
 import { StatCard } from '../../components/ui/Card';
 import { DashboardSkeleton } from '../../components/ui/Skeleton';
 import type { Salon } from '../../lib/types';
 
 export function DashboardPage() {
   const { salon } = useOutletContext<{ salon: Salon | null }>();
-  const { canSeeRevenue } = useAuth();
+  const { canSeeRevenue, isOwner } = useAuth();
+  const navigate = useNavigate();
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+
+  // Check if onboarding is needed (owner only)
+  useEffect(() => {
+    if (!salon?.id || !isOwner) { setOnboardingChecked(true); return; }
+    async function check() {
+      const [{ count: svcCount }, { count: staffCount }] = await Promise.all([
+        supabase.from('services').select('id', { count: 'exact', head: true }).eq('salon_id', salon!.id),
+        supabase.from('staff').select('id', { count: 'exact', head: true }).eq('salon_id', salon!.id),
+      ]);
+      if ((svcCount ?? 0) === 0 || (staffCount ?? 0) === 0) {
+        navigate('/admin/onboarding', { replace: true });
+        return;
+      }
+      // Check schedules
+      const { data: staffRows } = await supabase.from('staff').select('id').eq('salon_id', salon!.id).limit(1);
+      if (staffRows?.length) {
+        const { count: sc } = await supabase.from('staff_schedules').select('id', { count: 'exact', head: true }).eq('staff_id', staffRows[0].id);
+        if ((sc ?? 0) === 0) {
+          navigate('/admin/onboarding', { replace: true });
+          return;
+        }
+      }
+      setOnboardingChecked(true);
+    }
+    check();
+  }, [salon?.id, isOwner, navigate]);
   const today = useMemo(() => new Date(), []);
   const dateRange = useMemo(() => ({
     start: startOfDay(today).toISOString(),
@@ -32,7 +61,7 @@ export function DashboardPage() {
   }, 0);
   const paidOnline = confirmed.reduce((sum, b) => sum + (b.amount_paid_cents || 0), 0);
 
-  if (loading) return <DashboardSkeleton />;
+  if (loading || !onboardingChecked) return <DashboardSkeleton />;
 
   const greeting = today.getHours() < 12 ? 'Goedemorgen' : today.getHours() < 18 ? 'Goedemiddag' : 'Goedenavond';
 

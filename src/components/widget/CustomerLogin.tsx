@@ -16,7 +16,6 @@ export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [otpCode, setOtpCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +27,26 @@ export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed
 
   useEffect(() => {
     if (!enabled) return;
+
+    const handleCallback = async () => {
+      // Handle magic link hash tokens
+      if (window.location.hash.includes('access_token')) {
+        const params = new URLSearchParams(window.location.hash.replace('#', ''));
+        const access_token = params.get('access_token');
+        const refresh_token = params.get('refresh_token');
+        if (access_token && refresh_token) {
+          await supabase.auth.setSession({ access_token, refresh_token });
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+      }
+
+      // Handle PKCE code flows
+      const code = new URLSearchParams(window.location.search).get('code');
+      if (code) {
+        await supabase.auth.exchangeCodeForSession(code);
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    };
 
     const loadSession = async () => {
       const { data } = await supabase.auth.getSession();
@@ -47,7 +66,7 @@ export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed
       }
     });
 
-    loadSession();
+    handleCallback().then(loadSession);
 
     return () => { sub?.subscription?.unsubscribe(); };
   }, [enabled, salonId]);
@@ -107,30 +126,17 @@ export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed
 
   const handleSendOtp = async () => {
     setLoading(true); setError(null);
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+    const redirectTo = `${window.location.origin}${window.location.pathname}`;
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true, emailRedirectTo: redirectTo },
+    });
     if (error) {
-      setError('Kon e‑mailcode niet versturen.');
+      setError('Kon e‑maillink niet versturen.');
       setLoading(false);
       return;
     }
     setOtpSent(true);
-    setLoading(false);
-  };
-
-  const handleVerifyOtp = async () => {
-    setLoading(true); setError(null);
-    const { data, error } = await supabase.auth.verifyOtp({ email, token: otpCode, type: 'email' });
-    if (error || !data?.session) {
-      setError('Code ongeldig of verlopen.');
-      setLoading(false);
-      return;
-    }
-    // Optionally create profile if name is provided
-    if (name.trim()) {
-      await ensureProfile(data.session);
-    }
-    setSession(data.session);
-    await fetchProfile(data.session);
     setLoading(false);
   };
 
@@ -169,7 +175,7 @@ export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed
 
       <div className="bellure-login-actions">
         <button className="bellure-login-action primary" onClick={() => { setCollapsed(false); setMode('login'); }}>Terugkomer?</button>
-        <button className="bellure-login-action" onClick={() => { setCollapsed(false); setMode('otp'); }}>Code per e‑mail</button>
+        <button className="bellure-login-action" onClick={() => { setCollapsed(false); setMode('otp'); }}>Link per e‑mail</button>
         {hasPassword && (
           <button className={`bellure-login-link ${mode === 'signup' ? 'active' : ''}`} onClick={() => { setCollapsed(false); setMode('signup'); }}>Nieuw? Maak account</button>
         )}
@@ -202,14 +208,11 @@ export function CustomerLogin({ salonId, apiBase, enabled, methods, guestAllowed
         <div className="bellure-login-form">
           <input className="bellure-form-input" placeholder="E-mailadres" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           {!otpSent ? (
-            <button className="bellure-btn bellure-btn-primary" onClick={handleSendOtp} disabled={loading}>Stuur code</button>
+            <button className="bellure-btn bellure-btn-primary" onClick={handleSendOtp} disabled={loading}>Stuur link</button>
           ) : (
-            <>
-              <input className="bellure-form-input" placeholder="Code uit e‑mail" type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} />
-              <input className="bellure-form-input" placeholder="Naam (optioneel)" type="text" value={name} onChange={(e) => setName(e.target.value)} />
-              <input className="bellure-form-input" placeholder="Telefoon (optioneel)" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              <button className="bellure-btn bellure-btn-primary" onClick={handleVerifyOtp} disabled={loading}>Verifiëren</button>
-            </>
+            <div className="bellure-login-note">
+              Open de link in je e‑mail om in te loggen. Je komt automatisch terug in de boeking.
+            </div>
           )}
         </div>
       )}

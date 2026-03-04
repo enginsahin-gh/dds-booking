@@ -867,6 +867,14 @@
   color: var(--bellure-color-error);
 }
 
+.bellure-login-note {
+  background: var(--bellure-color-primary-light);
+  color: var(--bellure-color-text);
+  padding: 12px 14px;
+  border-radius: var(--bellure-radius);
+  font-size: 0.8rem;
+}
+
 .bellure-login-required {
   background: #FEF2F2;
   color: #DC2626;

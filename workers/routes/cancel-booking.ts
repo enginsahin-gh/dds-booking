@@ -1,12 +1,18 @@
 import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
+import { verifyAuth } from '../lib/auth';
+import { logAudit } from '../lib/audit';
 import { deleteBookingFromGoogle } from '../lib/google-calendar';
 import { notifyNextWaitlisted } from './waitlist';
 
 const MOLLIE_API_BASE = 'https://api.mollie.com/v2';
 
 export async function cancelBooking(c: Context<{ Bindings: Env }>) {
+  // SEC-003: Require owner authentication
+  const owner = await verifyAuth(c);
+  if (!owner) return c.json({ error: 'Unauthorized' }, 401);
+
   const supabase = getSupabase(c.env);
   const { bookingId, reason, refund = true } = await c.req.json();
 
@@ -17,6 +23,12 @@ export async function cancelBooking(c: Context<{ Bindings: Env }>) {
     .eq('id', bookingId).single();
 
   if (!booking) return c.json({ error: 'Booking not found' }, 404);
+
+  // Verify the booking belongs to the owner's salon
+  if (booking.salon_id !== owner.salonId) {
+    return c.json({ error: 'Unauthorized' }, 403);
+  }
+
   if (booking.status === 'cancelled') return c.json({ error: 'Already cancelled' }, 400);
 
   await supabase.from('bookings').update({ status: 'cancelled', cancelled_at: new Date().toISOString() }).eq('id', bookingId);
@@ -87,6 +99,20 @@ export async function cancelBooking(c: Context<{ Bindings: Env }>) {
         .catch(err => console.error('Waitlist notify after cancel error:', err))
     );
   }
+
+  // Audit log: booking cancellation (non-blocking)
+  c.executionCtx.waitUntil(
+    logAudit(c.env, {
+      salonId: owner.salonId,
+      action: 'booking.cancel',
+      actorType: 'user',
+      actorId: owner.userId,
+      targetType: 'booking',
+      targetId: bookingId,
+      details: { reason, refund, customerName: booking.customer_name },
+      ip: c.req.header('cf-connecting-ip') || undefined,
+    })
+  );
 
   return c.json({ success: true, bookingId, refund: refundResult });
 }

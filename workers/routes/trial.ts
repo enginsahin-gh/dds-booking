@@ -1,5 +1,6 @@
 import { Context } from 'hono';
 import type { Env } from '../api';
+import { verifyAuth } from '../lib/auth';
 
 // Slugify helper
 function slugify(text: string): string {
@@ -28,12 +29,51 @@ export async function trialRegister(c: Context<{ Bindings: Env }>) {
     if (!ownerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail)) {
       return c.json({ error: 'Ongeldig e-mailadres' }, 400);
     }
-    if (!password || password.length < 8) {
-      return c.json({ error: 'Wachtwoord moet minimaal 8 tekens zijn' }, 400);
+    // SEC-024: Stronger password policy
+    if (!password || password.length < 10) {
+      return c.json({ error: 'Wachtwoord moet minimaal 10 tekens zijn' }, 400);
+    }
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+      return c.json({ error: 'Wachtwoord moet letters (hoofd + klein) en cijfers bevatten' }, 400);
     }
 
     const supabaseUrl = c.env.SUPABASE_URL;
     const serviceKey = c.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    // SEC-006: Rate limiting — max 3 registrations per hour (global, checked via DB)
+    const rateLimitRes = await fetch(
+      `${supabaseUrl}/rest/v1/rpc/count_recent_salons`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      }
+    );
+    // Fallback: direct query if RPC not available
+    if (!rateLimitRes.ok) {
+      const countRes = await fetch(
+        `${supabaseUrl}/rest/v1/salons?select=id&created_at=gte.${new Date(Date.now() - 3600000).toISOString()}&limit=4`,
+        {
+          headers: {
+            'apikey': serviceKey,
+            'Authorization': `Bearer ${serviceKey}`,
+          },
+        }
+      );
+      const recentSalons = await countRes.json() as any[];
+      if (recentSalons && recentSalons.length > 3) {
+        return c.json({ error: 'Te veel registraties, probeer later opnieuw' }, 429);
+      }
+    } else {
+      const count = await rateLimitRes.json() as number;
+      if (count > 3) {
+        return c.json({ error: 'Te veel registraties, probeer later opnieuw' }, 429);
+      }
+    }
 
     // Check duplicate email
     const existingRes = await fetch(`${supabaseUrl}/rest/v1/salon_users?email=eq.${encodeURIComponent(ownerEmail.trim())}`, {
@@ -139,10 +179,20 @@ export async function trialRegister(c: Context<{ Bindings: Env }>) {
 }
 
 // GET /api/trial/status?salon_id=xxx — Check trial status
+// SEC-021: Requires owner authentication
 export async function trialStatus(c: Context<{ Bindings: Env }>) {
+  // SEC-021: Require owner authentication
+  const owner = await verifyAuth(c);
+  if (!owner) return c.json({ error: 'Unauthorized' }, 401);
+
   const salonId = c.req.query('salon_id');
   if (!salonId) {
     return c.json({ error: 'salon_id is verplicht' }, 400);
+  }
+
+  // Verify the salon belongs to the authenticated owner
+  if (salonId !== owner.salonId) {
+    return c.json({ error: 'Unauthorized' }, 403);
   }
 
   const supabaseUrl = c.env.SUPABASE_URL;
@@ -169,9 +219,9 @@ export async function trialStatus(c: Context<{ Bindings: Env }>) {
     ? Math.max(0, Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;
 
+  // SEC-021: Return only minimal fields
   return c.json({
     status: salon.subscription_status || 'none',
     daysRemaining,
-    trialEndsAt: salon.trial_ends_at,
   });
 }

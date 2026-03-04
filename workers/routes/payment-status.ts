@@ -8,18 +8,20 @@ export async function paymentStatus(c: Context<{ Bindings: Env }>) {
 
   const supabase = getSupabase(c.env);
 
+  // SEC-009: Only return minimal payment info — no customer data or service details
   const { data: payment } = await supabase.from('payments')
-    .select('status, amount, currency, method, mollie_payment_id, paid_at, created_at')
+    .select('status, amount')
     .eq('booking_id', bookingId).order('created_at', { ascending: false }).limit(1).single();
 
   if (!payment) return c.json({ error: 'No payment found' }, 404);
 
   const { data: booking } = await supabase.from('bookings')
-    .select('id, start_at, end_at, customer_name, payment_status, services:service_id (name, price_cents, duration_min), staff:staff_id (name)')
+    .select('payment_status')
     .eq('id', bookingId).single();
 
   return c.json({
-    payment: { status: payment.status, amount: payment.amount, currency: payment.currency, method: payment.method, paidAt: payment.paid_at },
-    booking: booking || null,
+    status: payment.status,
+    amount: payment.amount,
+    paymentStatus: booking?.payment_status || null,
   });
 }

@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
+import { logAudit } from '../lib/audit';
 import { createClient } from '@supabase/supabase-js';
 
 // Simple in-memory rate limiter (per-isolate, resets on deploy)
@@ -40,23 +41,16 @@ async function verifyOwner(c: Context<{ Bindings: Env }>) {
   if (!authHeader?.startsWith('Bearer ')) return null;
 
   const token = authHeader.slice(7);
-  
-  // Create a client with the user's token to check their identity
-  const userClient = createClient(c.env.SUPABASE_URL, token, {
-    auth: { persistSession: false },
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
 
   // Use service role to look up the user's salon_users record
   const supabase = getSupabase(c.env);
   
-  // First decode the JWT to get user_id (Supabase JWTs are standard)
+  // SEC-013: Server-side JWT signature verification via Supabase
   try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1]));
-    const userId = payload.sub;
-    if (!userId) return null;
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) return null;
+
+    const userId = user.id;
 
     const { data: salonUser } = await supabase
       .from('salon_users')
@@ -216,6 +210,20 @@ export async function inviteUser(c: Context<{ Bindings: Env }>) {
     return c.json({ success: true, userId, inviteSent: false });
   }
 
+  // Audit log: user invited (non-blocking)
+  c.executionCtx.waitUntil(
+    logAudit(c.env, {
+      salonId: owner.salonId,
+      action: 'user.invite',
+      actorType: 'user',
+      actorId: owner.userId,
+      targetType: 'user',
+      targetId: userId,
+      details: { email, role },
+      ip: c.req.header('cf-connecting-ip') || undefined,
+    })
+  );
+
   return c.json({ success: true, userId, inviteSent: true });
 }
 
@@ -276,6 +284,20 @@ export async function removeUser(c: Context<{ Bindings: Env }>) {
     await supabase.auth.admin.deleteUser(userId);
   }
 
+  // Audit log: user removed (non-blocking)
+  c.executionCtx.waitUntil(
+    logAudit(c.env, {
+      salonId: owner.salonId,
+      action: 'user.remove',
+      actorType: 'user',
+      actorId: owner.userId,
+      targetType: 'user',
+      targetId: userId,
+      details: { removedRole: targetUser.role },
+      ip: c.req.header('cf-connecting-ip') || undefined,
+    })
+  );
+
   return c.json({ success: true });
 }
 
@@ -318,6 +340,20 @@ export async function updateUserRole(c: Context<{ Bindings: Env }>) {
   }
 
   await supabase.from('salon_users').update({ role }).eq('id', targetUser.id);
+
+  // Audit log: role changed (non-blocking)
+  c.executionCtx.waitUntil(
+    logAudit(c.env, {
+      salonId: owner.salonId,
+      action: 'user.role_change',
+      actorType: 'user',
+      actorId: owner.userId,
+      targetType: 'user',
+      targetId: userId,
+      details: { previousRole: targetUser.role, newRole: role },
+      ip: c.req.header('cf-connecting-ip') || undefined,
+    })
+  );
 
   return c.json({ success: true });
 }

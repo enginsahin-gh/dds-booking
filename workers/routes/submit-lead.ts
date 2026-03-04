@@ -61,6 +61,16 @@ export const submitLead = async (c: Context<{ Bindings: Env }>) => {
   }
 };
 
+// SEC-019: HTML escape helper to prevent XSS in email content
+function esc(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function sendNotification(env: Env, lead: LeadPayload) {
   await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -71,16 +81,16 @@ async function sendNotification(env: Env, lead: LeadPayload) {
     body: JSON.stringify({
       from: 'Bellure <noreply@bellure.nl>',
       to: 'hello@ensalabs.nl',
-      subject: `Nieuwe aanvraag: ${lead.salon_name}`,
+      subject: `Nieuwe aanvraag: ${esc(lead.salon_name)}`,
       html: `
         <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:500px;margin:0 auto;padding:20px;">
           <h2 style="color:#1E293B;margin-bottom:16px;">Nieuwe aanvraag via bellure.nl</h2>
           <table style="border-collapse:collapse;width:100%;">
-            <tr><td style="padding:8px 16px 8px 0;font-weight:600;color:#475569;">Salon:</td><td style="padding:8px 0;color:#1E293B;">${lead.salon_name}</td></tr>
-            <tr><td style="padding:8px 16px 8px 0;font-weight:600;color:#475569;">Contact:</td><td style="padding:8px 0;color:#1E293B;">${lead.contact_person}</td></tr>
-            <tr><td style="padding:8px 16px 8px 0;font-weight:600;color:#475569;">Bereikbaar op:</td><td style="padding:8px 0;color:#1E293B;">${lead.contact_method}</td></tr>
-            ${lead.current_website ? `<tr><td style="padding:8px 16px 8px 0;font-weight:600;color:#475569;">Huidige website:</td><td style="padding:8px 0;color:#1E293B;">${lead.current_website}</td></tr>` : ''}
-            ${lead.message ? `<tr><td style="padding:8px 16px 8px 0;font-weight:600;color:#475569;">Bericht:</td><td style="padding:8px 0;color:#1E293B;">${lead.message}</td></tr>` : ''}
+            <tr><td style="padding:8px 16px 8px 0;font-weight:600;color:#475569;">Salon:</td><td style="padding:8px 0;color:#1E293B;">${esc(lead.salon_name)}</td></tr>
+            <tr><td style="padding:8px 16px 8px 0;font-weight:600;color:#475569;">Contact:</td><td style="padding:8px 0;color:#1E293B;">${esc(lead.contact_person)}</td></tr>
+            <tr><td style="padding:8px 16px 8px 0;font-weight:600;color:#475569;">Bereikbaar op:</td><td style="padding:8px 0;color:#1E293B;">${esc(lead.contact_method)}</td></tr>
+            ${lead.current_website ? `<tr><td style="padding:8px 16px 8px 0;font-weight:600;color:#475569;">Huidige website:</td><td style="padding:8px 0;color:#1E293B;">${esc(lead.current_website)}</td></tr>` : ''}
+            ${lead.message ? `<tr><td style="padding:8px 16px 8px 0;font-weight:600;color:#475569;">Bericht:</td><td style="padding:8px 0;color:#1E293B;">${esc(lead.message)}</td></tr>` : ''}
           </table>
           <hr style="border:none;border-top:1px solid #E2E8F0;margin:24px 0;" />
           <p style="color:#CBD5E1;font-size:11px;">Powered by Bellure</p>

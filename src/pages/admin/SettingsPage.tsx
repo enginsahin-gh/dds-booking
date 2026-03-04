@@ -111,6 +111,12 @@ export function SettingsPage() {
       setSearchParams({}, { replace: true });
       setActiveTab('payments');
     }
+
+    // Handle Google Calendar OAuth callback
+    const googleStatus = searchParams.get('google');
+    if (googleStatus === 'connected' || googleStatus === 'error') {
+      setActiveTab('integrations');
+    }
   }, [searchParams]);
 
   // Sync state from salon

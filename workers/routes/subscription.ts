@@ -2,6 +2,7 @@ import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
 import { verifyAuth } from '../lib/auth';
+import { logAudit } from '../lib/audit';
 
 // Plan prices in EUR (string format for Mollie)
 const PLAN_PRICES: Record<string, string> = {
@@ -133,6 +134,20 @@ export async function subscriptionActivate(c: Context<{ Bindings: Env }>) {
     webhookUrl: `${siteUrl}/api/subscription/webhook`,
     metadata: { salonId, planType },
   });
+
+  // Audit log: subscription activation initiated (non-blocking)
+  c.executionCtx.waitUntil(
+    logAudit(c.env, {
+      salonId,
+      action: 'subscription.activate',
+      actorType: 'user',
+      actorId: owner.userId,
+      targetType: 'salon',
+      targetId: salonId,
+      details: { planType },
+      ip: c.req.header('cf-connecting-ip') || undefined,
+    })
+  );
 
   return c.json({ paymentUrl: payment._links.checkout.href });
 }
@@ -436,6 +451,20 @@ export async function subscriptionCancel(c: Context<{ Bindings: Env }>) {
 
   // Send cancellation email
   await sendSubscriptionEmail(c.env, owner.salonId, 'cancelled');
+
+  // Audit log: subscription cancelled (non-blocking)
+  c.executionCtx.waitUntil(
+    logAudit(c.env, {
+      salonId: owner.salonId,
+      action: 'subscription.cancel',
+      actorType: 'user',
+      actorId: owner.userId,
+      targetType: 'salon',
+      targetId: owner.salonId,
+      details: { previousStatus: salon.subscription_status },
+      ip: c.req.header('cf-connecting-ip') || undefined,
+    })
+  );
 
   return c.json({ success: true });
 }

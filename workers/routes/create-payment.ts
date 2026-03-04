@@ -17,9 +17,21 @@ function calculateDepositCents(paymentMode: string, depositType: string, deposit
 
 export async function createPayment(c: Context<{ Bindings: Env }>) {
   const supabase = getSupabase(c.env);
-  const { bookingId, redirectUrl } = await c.req.json();
+  let { bookingId, redirectUrl } = await c.req.json();
 
   if (!bookingId || !redirectUrl) return c.json({ error: 'Missing required fields' }, 400);
+
+  // SEC-011: Validate redirectUrl to prevent open redirect
+  const allowedRedirectPrefixes = [
+    'https://mijn.bellure.nl',
+    'https://bellure.nl',
+  ];
+  const isAllowedRedirect = allowedRedirectPrefixes.some(p => redirectUrl.startsWith(p))
+    || /^https:\/\/[a-z0-9-]+\.bellure\.nl/.test(redirectUrl)
+    || /^https:\/\/[a-z0-9-]+\.netlify\.app/.test(redirectUrl);
+  if (!isAllowedRedirect) {
+    redirectUrl = `${c.env.FRONTEND_URL || 'https://mijn.bellure.nl'}/boeking/bevestiging`;
+  }
 
   const { data: booking } = await supabase.from('bookings').select('id, status, payment_status, salon_id, service_id, amount_total_cents').eq('id', bookingId).single();
   if (!booking) return c.json({ error: 'Booking not found' }, 404);

@@ -4,7 +4,8 @@ import { getSupabase } from './supabase';
 
 /**
  * Verify the request is from an authenticated salon owner.
- * Parses Bearer JWT, decodes user_id from payload, looks up salon_users.
+ * Uses Supabase auth.getUser() for server-side JWT signature verification,
+ * then looks up salon_users to confirm owner role.
  * Returns { userId, salonId } or null if unauthorized.
  */
 export async function verifyAuth(
@@ -16,14 +17,13 @@ export async function verifyAuth(
   const token = authHeader.slice(7);
 
   try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-
-    const payload = JSON.parse(atob(parts[1]));
-    const userId = payload.sub;
-    if (!userId) return null;
-
     const supabase = getSupabase(c.env);
+
+    // Server-side JWT signature verification via Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) return null;
+
+    const userId = user.id;
 
     const { data: salonUser } = await supabase
       .from('salon_users')

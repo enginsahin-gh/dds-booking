@@ -1,6 +1,8 @@
 import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
+import { verifyAuth } from '../lib/auth';
+import { logAudit } from '../lib/audit';
 
 const MOLLIE_AUTH_URL = 'https://my.mollie.com/oauth2/authorize';
 const MOLLIE_TOKEN_URL = 'https://api.mollie.com/oauth2/tokens';
@@ -16,18 +18,31 @@ const SCOPES = [
 /**
  * Step 1: Redirect salon admin to Mollie OAuth authorize page.
  * GET /api/mollie/connect?salon_id=xxx
+ * SEC-004: Requires owner authentication.
+ * SEC-005: Generates a signed state token with nonce and expiry for CSRF protection.
  */
 export async function mollieConnect(c: Context<{ Bindings: Env }>) {
+  // SEC-004: Require owner authentication
+  const owner = await verifyAuth(c);
+  if (!owner) return c.text('Unauthorized', 401);
+
   const salonId = c.req.query('salon_id');
   if (!salonId) return c.text('Missing salon_id', 400);
+
+  // Verify the salon belongs to the authenticated owner
+  if (salonId !== owner.salonId) return c.text('Unauthorized', 403);
 
   const clientId = c.env.MOLLIE_APP_ID;
   if (!clientId) return c.text('Mollie Connect not configured', 500);
 
   const redirectUri = `${c.env.SITE_URL || 'https://api.bellure.nl'}/api/mollie/callback`;
 
-  // Use salon_id as state parameter for CSRF protection and to identify the salon
-  const state = salonId;
+  // SEC-005: Generate signed state token with nonce and expiry (10 min)
+  const state = btoa(JSON.stringify({
+    salonId,
+    nonce: crypto.randomUUID(),
+    exp: Date.now() + 600000,
+  }));
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -43,11 +58,12 @@ export async function mollieConnect(c: Context<{ Bindings: Env }>) {
 
 /**
  * Step 2: Handle Mollie OAuth callback.
- * GET /api/mollie/callback?code=xxx&state=salon_id
+ * GET /api/mollie/callback?code=xxx&state=signed_token
+ * SEC-005: Verifies the signed state token (expiry + nonce).
  */
 export async function mollieCallback(c: Context<{ Bindings: Env }>) {
   const code = c.req.query('code');
-  const state = c.req.query('state'); // salon_id
+  const state = c.req.query('state');
   const error = c.req.query('error');
 
   const frontendUrl = c.env.FRONTEND_URL || 'https://mijn.bellure.nl';
@@ -61,7 +77,20 @@ export async function mollieCallback(c: Context<{ Bindings: Env }>) {
     return c.redirect(`${frontendUrl}/admin/payments?mollie=error&reason=missing_params`);
   }
 
-  const salonId = state;
+  // SEC-005: Verify the signed state token
+  let salonId: string;
+  try {
+    const stateData = JSON.parse(atob(state));
+    if (!stateData.salonId || !stateData.nonce || !stateData.exp) {
+      return c.redirect(`${frontendUrl}/admin/payments?mollie=error&reason=invalid_state`);
+    }
+    if (Date.now() > stateData.exp) {
+      return c.redirect(`${frontendUrl}/admin/payments?mollie=error&reason=state_expired`);
+    }
+    salonId = stateData.salonId;
+  } catch {
+    return c.redirect(`${frontendUrl}/admin/payments?mollie=error&reason=invalid_state`);
+  }
   const clientId = c.env.MOLLIE_APP_ID;
   const clientSecret = c.env.MOLLIE_APP_SECRET;
   const redirectUri = `${c.env.SITE_URL || 'https://api.bellure.nl'}/api/mollie/callback`;
@@ -156,16 +185,37 @@ export async function mollieCallback(c: Context<{ Bindings: Env }>) {
     return c.redirect(`${frontendUrl}/admin/payments?mollie=error&reason=db_error`);
   }
 
+  // Audit log: Mollie connected (non-blocking)
+  c.executionCtx.waitUntil(
+    logAudit(c.env, {
+      salonId,
+      action: 'mollie.connect',
+      actorType: 'system',
+      targetType: 'salon',
+      targetId: salonId,
+      details: { organizationId, organizationName },
+      ip: c.req.header('cf-connecting-ip') || undefined,
+    })
+  );
+
   return c.redirect(`${frontendUrl}/admin/payments?mollie=success`);
 }
 
 /**
  * Disconnect Mollie account from salon.
  * POST /api/mollie/disconnect { salonId }
+ * SEC-004: Requires owner authentication.
  */
 export async function mollieDisconnect(c: Context<{ Bindings: Env }>) {
+  // SEC-004: Require owner authentication
+  const owner = await verifyAuth(c);
+  if (!owner) return c.json({ error: 'Unauthorized' }, 401);
+
   const { salonId } = await c.req.json();
   if (!salonId) return c.json({ error: 'Missing salonId' }, 400);
+
+  // Verify the salon belongs to the authenticated owner
+  if (salonId !== owner.salonId) return c.json({ error: 'Unauthorized' }, 403);
 
   const supabase = getSupabase(c.env);
   await supabase.from('salon_secrets').delete().eq('salon_id', salonId);
@@ -175,6 +225,19 @@ export async function mollieDisconnect(c: Context<{ Bindings: Env }>) {
     mollie_organization_name: null,
     mollie_connected_at: null,
   }).eq('id', salonId);
+
+  // Audit log: Mollie disconnected (non-blocking)
+  c.executionCtx.waitUntil(
+    logAudit(c.env, {
+      salonId,
+      action: 'mollie.disconnect',
+      actorType: 'user',
+      actorId: owner.userId,
+      targetType: 'salon',
+      targetId: salonId,
+      ip: c.req.header('cf-connecting-ip') || undefined,
+    })
+  );
 
   return c.json({ success: true });
 }

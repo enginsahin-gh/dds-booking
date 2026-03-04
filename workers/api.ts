@@ -33,12 +33,34 @@ export type Env = {
 
 const app = new Hono<{ Bindings: Env }>();
 
-// CORS for widget embeds
+// SEC-007: Restrict CORS to allowed origins (no wildcard)
 app.use('/api/*', cors({
-  origin: '*',
-  allowHeaders: ['Content-Type', 'Authorization', 'x-email-secret'],
+  origin: (origin) => {
+    const allowed = [
+      'https://mijn.bellure.nl',
+      'https://bellure.nl',
+      'https://salon-amara.bellure.nl',
+    ];
+    // Widget can be embedded on any salon domain
+    if (origin && (allowed.includes(origin) || origin.endsWith('.bellure.nl') || origin.endsWith('.netlify.app'))) {
+      return origin;
+    }
+    return 'https://mijn.bellure.nl'; // default
+  },
+  // SEC-010: Removed x-email-secret from allowHeaders
+  allowHeaders: ['Content-Type', 'Authorization'],
   allowMethods: ['GET', 'POST', 'OPTIONS'],
 }));
+
+// SEC-017: Security headers middleware
+app.use('*', async (c, next) => {
+  await next();
+  c.header('X-Content-Type-Options', 'nosniff');
+  c.header('X-Frame-Options', 'DENY');
+  c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+  c.header('X-XSS-Protection', '0');
+  c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+});
 
 // Health check
 app.get('/api/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));

@@ -1,5 +1,6 @@
 import type { Env } from './api';
 import { getSupabase } from './lib/supabase';
+import { getGoogleTokens, syncGoogleToStaffBlocks } from './lib/google-calendar';
 
 /**
  * Scheduled handler: runs every 15 minutes via CF Workers cron trigger.
@@ -154,4 +155,43 @@ export async function handleScheduled(env: Env): Promise<void> {
       console.log(`Sent ${reviewTasks.length} review requests`);
     }
   }
+
+  // --- Google Calendar sync: every 30 min (run on even 15-min slots: :00 and :30) ---
+  const currentMinute = now.getMinutes();
+  if (currentMinute < 15 || (currentMinute >= 30 && currentMinute < 45)) {
+    await syncAllGoogleCalendars(env);
+  }
+}
+
+/**
+ * Sync Google Calendar → staff blocks for all connected salons.
+ * Runs as part of the scheduled handler (every ~30 min).
+ */
+async function syncAllGoogleCalendars(env: Env): Promise<void> {
+  const supabase = getSupabase(env);
+
+  // Find salons with Google Calendar connected and sync enabled
+  const { data: connectedSalons } = await supabase
+    .from('salons')
+    .select('id')
+    .not('google_calendar_connected_at', 'is', null)
+    .eq('google_calendar_sync_enabled', true);
+
+  if (!connectedSalons || connectedSalons.length === 0) return;
+
+  const syncTasks = connectedSalons.map(async (salon) => {
+    try {
+      const tokens = await getGoogleTokens(env, salon.id);
+      if (!tokens) return;
+
+      const result = await syncGoogleToStaffBlocks(env, salon.id, tokens);
+      if (result.created > 0 || result.deleted > 0 || result.updated > 0) {
+        console.log(`[Google Calendar] Scheduled sync for ${salon.id}:`, result);
+      }
+    } catch (err) {
+      console.error(`[Google Calendar] Scheduled sync error for ${salon.id}:`, err);
+    }
+  });
+
+  await Promise.allSettled(syncTasks);
 }

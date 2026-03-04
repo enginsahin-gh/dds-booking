@@ -12,8 +12,10 @@ import { mollieConnect, mollieCallback, mollieDisconnect } from './routes/mollie
 import { inviteUser, removeUser, updateUserRole, updateUserPermissions, listUsers } from './routes/admin-users';
 import { trialRegister, trialStatus } from './routes/trial';
 import { subscriptionActivate, subscriptionWebhook, subscriptionPaymentWebhook, subscriptionStatus, subscriptionCancel } from './routes/subscription';
+import { googleConnect, googleCallback, googleDisconnect, googleStatus, googleSyncToggle, googleWebhook } from './routes/google-calendar';
 import { handleScheduled } from './scheduled';
 import { handleTrialPause } from './scheduled-trial-pause';
+import { waitlistJoin, waitlistNotify, waitlistEntries, waitlistCancel, handleExpiredWaitlist } from './routes/waitlist';
 
 export type Env = {
   SUPABASE_URL: string;
@@ -25,6 +27,8 @@ export type Env = {
   RESEND_API_KEY: string;
   SITE_URL: string;      // Worker API base URL
   FRONTEND_URL: string;  // Pages frontend URL (admin dashboard)
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
 };
 
 const app = new Hono<{ Bindings: Env }>();
@@ -64,6 +68,20 @@ app.post('/api/subscription/payment-webhook', subscriptionPaymentWebhook);
 app.get('/api/subscription/status', subscriptionStatus);
 app.post('/api/subscription/cancel', subscriptionCancel);
 
+// Waitlist
+app.post('/api/waitlist/join', waitlistJoin);
+app.post('/api/waitlist/notify', waitlistNotify);
+app.get('/api/waitlist/entries', waitlistEntries);
+app.post('/api/waitlist/cancel', waitlistCancel);
+
+// Google Calendar integration
+app.get('/api/google/connect', googleConnect);
+app.get('/api/google/callback', googleCallback);
+app.post('/api/google/disconnect', googleDisconnect);
+app.get('/api/google/status', googleStatus);
+app.post('/api/google/sync-toggle', googleSyncToggle);
+app.post('/api/google/webhook', googleWebhook);
+
 // Admin user management (requires owner auth)
 app.get('/api/admin/users', listUsers);
 app.post('/api/admin/invite-user', inviteUser);
@@ -78,8 +96,9 @@ export default {
     if (event.cron === '0 6 * * *') {
       ctx.waitUntil(handleTrialPause(env));
     } else {
-      // Every 15 min: appointment reminders
+      // Every 15 min: appointment reminders + expired waitlist cleanup
       ctx.waitUntil(handleScheduled(env));
+      ctx.waitUntil(handleExpiredWaitlist(env));
     }
   },
 };

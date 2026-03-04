@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
+import { syncBookingToGoogle } from '../lib/google-calendar';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -219,6 +220,11 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
       booking_id: bookingId,
     }).then(({ error }) => { if (error) console.error('Notification insert error:', error.message); })
   );
+
+  // Sync to Google Calendar (non-blocking) — only for confirmed bookings
+  if (!needsPayment) {
+    c.executionCtx.waitUntil(syncBookingToGoogle(c.env, bookingId, salonId));
+  }
 
   // Send emails (non-blocking) — only for confirmed bookings (not pending_payment)
   if (!needsPayment) {

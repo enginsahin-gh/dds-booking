@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
+import { syncBookingToGoogle } from '../lib/google-calendar';
 
 const MOLLIE_API_BASE = 'https://api.mollie.com/v2';
 
@@ -133,6 +134,14 @@ export async function mollieWebhook(c: Context<{ Bindings: Env }>) {
             booking_id: bookingId,
           }).then(({ error }) => { if (error) console.error('Notification insert error:', error.message); })
         );
+      }
+    }
+
+    // Sync to Google Calendar on payment success (booking is now confirmed)
+    if (mp.status === 'paid') {
+      const { data: paidBookingForGcal } = await supabase.from('bookings').select('salon_id').eq('id', bookingId).single();
+      if (paidBookingForGcal) {
+        c.executionCtx.waitUntil(syncBookingToGoogle(c.env, bookingId, paidBookingForGcal.salon_id));
       }
     }
 

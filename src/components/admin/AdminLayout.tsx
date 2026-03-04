@@ -8,6 +8,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { useToast } from '../ui/Toast';
 import { NotificationCenter } from './NotificationCenter';
+import { SearchBar } from './SearchBar';
 import { useNotifications } from '../../hooks/useNotifications';
 import type { Salon } from '../../lib/types';
 
@@ -295,6 +296,7 @@ export function AdminLayout() {
             )}
           </div>
           <div className="flex items-center gap-1">
+            <SearchBar salonId={salon?.id} />
             <NotificationCenter
               notifications={notifications}
               unreadCount={unreadCount}
@@ -314,6 +316,7 @@ export function AdminLayout() {
             {salon && <h2 className="text-[14px] font-bold text-gray-900 truncate">{salon.name}</h2>}
           </div>
           <div className="flex items-center gap-0.5">
+            <SearchBar salonId={salon?.id} />
             <NotificationCenter
               notifications={notifications}
               unreadCount={unreadCount}

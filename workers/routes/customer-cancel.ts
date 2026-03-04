@@ -1,6 +1,8 @@
 import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
+import { deleteBookingFromGoogle } from '../lib/google-calendar';
+import { notifyNextWaitlisted } from './waitlist';
 
 /**
  * Customer-facing cancellation via unique token.
@@ -51,7 +53,7 @@ export async function customerCancel(c: Context<{ Bindings: Env }>) {
 
   const { data: booking } = await supabase
     .from('bookings')
-    .select('id, status, salon_id')
+    .select('id, status, salon_id, service_id, staff_id, start_at')
     .eq('cancel_token', token)
     .single();
 
@@ -64,6 +66,9 @@ export async function customerCancel(c: Context<{ Bindings: Env }>) {
     cancelled_at: new Date().toISOString(),
     cancel_token: null, // Invalidate token after use
   }).eq('id', booking.id);
+
+  // Delete Google Calendar event (non-blocking)
+  c.executionCtx.waitUntil(deleteBookingFromGoogle(c.env, booking.id, booking.salon_id));
 
   // Send cancellation emails non-blocking (to customer + salon notification)
   const apiBase = c.env.SITE_URL || 'https://api.bellure.nl';
@@ -80,6 +85,15 @@ export async function customerCancel(c: Context<{ Bindings: Env }>) {
       }),
     ])
   );
+
+  // Notify next waitlisted customer (non-blocking)
+  if (booking.start_at && booking.service_id) {
+    const cancelDate = booking.start_at.split('T')[0];
+    c.executionCtx.waitUntil(
+      notifyNextWaitlisted(c.env, booking.salon_id, cancelDate, booking.service_id, booking.staff_id)
+        .catch(err => console.error('Waitlist notify after customer cancel error:', err))
+    );
+  }
 
   return c.json({ success: true });
 }

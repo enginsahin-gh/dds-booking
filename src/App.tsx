@@ -22,6 +22,7 @@ const SettingsPage = lazy(() => import('./pages/admin/SettingsPage').then(m => (
 const CustomersPage = lazy(() => import('./pages/admin/CustomersPage').then(m => ({ default: m.CustomersPage })));
 const UsersPage = lazy(() => import('./pages/admin/UsersPage').then(m => ({ default: m.UsersPage })));
 const StatsPage = lazy(() => import('./pages/admin/StatsPage').then(m => ({ default: m.StatsPage })));
+const WaitlistPage = lazy(() => import('./pages/admin/WaitlistPage').then(m => ({ default: m.WaitlistPage })));
 const BookingPage = lazy(() => import('./pages/BookingPage').then(m => ({ default: m.BookingPage })));
 const PaymentReturnPage = lazy(() => import('./pages/PaymentReturnPage').then(m => ({ default: m.PaymentReturnPage })));
 
@@ -66,6 +67,7 @@ export function App() {
                 <Route path="staff/:staffId/blocks" element={<OwnerRoute><BlocksPage /></OwnerRoute>} />
                 <Route path="settings" element={<OwnerRoute><SettingsPage /></OwnerRoute>} />
                 <Route path="customers" element={<CustomersPage />} />
+                <Route path="waitlist" element={<WaitlistPage />} />
                 <Route path="stats" element={<OwnerRoute><StatsPage /></OwnerRoute>} />
                 <Route path="users" element={<OwnerRoute><UsersPage /></OwnerRoute>} />
                 <Route path="payments" element={<Navigate to="/admin/settings" replace />} />

@@ -1,6 +1,8 @@
 import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
+import { deleteBookingFromGoogle } from '../lib/google-calendar';
+import { notifyNextWaitlisted } from './waitlist';
 
 const MOLLIE_API_BASE = 'https://api.mollie.com/v2';
 
@@ -11,13 +13,16 @@ export async function cancelBooking(c: Context<{ Bindings: Env }>) {
   if (!bookingId) return c.json({ error: 'Missing bookingId' }, 400);
 
   const { data: booking } = await supabase.from('bookings')
-    .select('id, status, payment_status, amount_paid_cents, salon_id, customer_email, customer_name')
+    .select('id, status, payment_status, amount_paid_cents, salon_id, customer_email, customer_name, service_id, staff_id, start_at')
     .eq('id', bookingId).single();
 
   if (!booking) return c.json({ error: 'Booking not found' }, 404);
   if (booking.status === 'cancelled') return c.json({ error: 'Already cancelled' }, 400);
 
   await supabase.from('bookings').update({ status: 'cancelled', cancelled_at: new Date().toISOString() }).eq('id', bookingId);
+
+  // Delete Google Calendar event (non-blocking)
+  c.executionCtx.waitUntil(deleteBookingFromGoogle(c.env, bookingId, booking.salon_id));
 
   // Insert in-app notification
   c.executionCtx.waitUntil(
@@ -73,6 +78,15 @@ export async function cancelBooking(c: Context<{ Bindings: Env }>) {
       body: JSON.stringify({ type: 'cancellation', bookingId, salonId: booking.salon_id }),
     }).catch(err => console.error('Cancel email error:', err))
   );
+
+  // Notify next waitlisted customer (non-blocking)
+  if (booking.start_at && booking.service_id) {
+    const cancelDate = booking.start_at.split('T')[0];
+    c.executionCtx.waitUntil(
+      notifyNextWaitlisted(c.env, booking.salon_id, cancelDate, booking.service_id, booking.staff_id)
+        .catch(err => console.error('Waitlist notify after cancel error:', err))
+    );
+  }
 
   return c.json({ success: true, bookingId, refund: refundResult });
 }

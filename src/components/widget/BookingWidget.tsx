@@ -625,6 +625,9 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
             timezone={timezone}
             workingDays={workingDays}
             maxDate={maxBookingDate}
+            salonId={salon?.id}
+            serviceId={selectedServices[0]?.id}
+            staffId={selectedStaffId}
           />
           <div className="bellure-btn-group">
             <button className="bellure-btn bellure-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>

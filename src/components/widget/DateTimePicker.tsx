@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { startOfMonth } from 'date-fns';
+import { startOfMonth, format } from 'date-fns';
 import { CalendarGrid } from './CalendarGrid';
 import { TimeSlotList } from './TimeSlotList';
+import { WaitlistForm } from './WaitlistForm';
 import type { TimeSlot } from '../../lib/types';
 
 interface DateTimePickerProps {
@@ -14,6 +15,10 @@ interface DateTimePickerProps {
   timezone: string;
   workingDays?: Set<number>;
   maxDate?: Date | null;
+  // Waitlist props
+  salonId?: string;
+  serviceId?: string;
+  staffId?: string | null;
 }
 
 export function DateTimePicker({
@@ -26,6 +31,9 @@ export function DateTimePicker({
   timezone,
   workingDays,
   maxDate,
+  salonId,
+  serviceId,
+  staffId,
 }: DateTimePickerProps) {
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
 
@@ -55,6 +63,15 @@ export function DateTimePicker({
             timezone={timezone}
             dateSelected={!!selectedDate}
           />
+          {/* Show waitlist form when no slots available */}
+          {selectedDate && !slotsLoading && slots.length === 0 && salonId && serviceId && (
+            <WaitlistForm
+              salonId={salonId}
+              serviceId={serviceId}
+              staffId={staffId || null}
+              selectedDate={format(selectedDate, 'yyyy-MM-dd')}
+            />
+          )}
         </div>
       </div>
     </div>

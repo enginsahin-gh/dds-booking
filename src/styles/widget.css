@@ -776,10 +776,10 @@
 }
 
 .bellure-calendar-day--selected {
-  background: transparent !important;
+  background: color-mix(in srgb, var(--bellure-color-primary) 12%, #fff) !important;
   color: var(--bellure-color-primary) !important;
   font-weight: 700;
-  border: 1px solid color-mix(in srgb, var(--bellure-color-primary) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bellure-color-primary) 70%, transparent);
 }
 
 .bellure-calendar-day--disabled {
@@ -808,7 +808,7 @@
 }
 
 .bellure-calendar-day--selected::after {
-  background: white;
+  background: var(--bellure-color-primary);
 }
 
 .bellure-calendar-day--closed {
@@ -879,7 +879,13 @@
 
 .bellure-day-pill.active {
   border-color: var(--bellure-color-primary);
-  background: var(--bellure-color-primary-subtle);
+  background: color-mix(in srgb, var(--bellure-color-primary) 14%, #fff);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--bellure-color-primary) 18%, transparent);
+}
+
+.bellure-day-pill.active .bellure-day-name,
+.bellure-day-pill.active .bellure-day-num {
+  color: var(--bellure-color-primary);
 }
 
 .bellure-day-name {

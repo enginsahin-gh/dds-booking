@@ -10,6 +10,14 @@
   padding: 32px 16px 48px;
 }
 
+.bellure-booking-page .bellure-shadow-host {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  max-width: 760px;
+}
+
 /* Root selector: works in Shadow DOM (.bellure-shadow-host), new prefix, and legacy dds- prefix */
 .bellure-shadow-host,
 [id^="bellure-booking-widget"],
@@ -132,6 +140,48 @@
   color: var(--bellure-color-text-muted);
   margin: 0 0 24px;
   letter-spacing: 0.01em;
+}
+
+.bellure-salon-header {
+  text-align: center;
+  padding: 12px 0 18px;
+}
+
+.bellure-salon-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--bellure-color-text);
+}
+
+.bellure-salon-meta {
+  font-size: 0.85rem;
+  color: var(--bellure-color-text-muted);
+  margin-top: 4px;
+}
+
+.bellure-salon-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.bellure-salon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--bellure-color-border);
+  font-size: 0.8rem;
+  color: var(--bellure-color-text);
+  background: var(--bellure-color-bg);
+  transition: all var(--bellure-transition);
+}
+
+.bellure-salon-action:hover {
+  border-color: var(--bellure-color-primary);
+  color: var(--bellure-color-primary);
 }
 
 /* Service Cards */
@@ -705,6 +755,8 @@
   letter-spacing: 0.03em;
   opacity: 0.7;
   transition: opacity 0.3s ease;
+  width: 100%;
+  text-align: center;
 }
 
 .bellure-powered-by:hover {

@@ -15,6 +15,7 @@ import type { Salon, Service, ServiceCategory, Staff, StaffService, TimeSlot, Bo
 
 interface BookingWidgetProps {
   salonSlug: string;
+  showSalonHeader?: boolean;
 }
 
 const FUNCTIONS_BASE = import.meta.env.VITE_API_URL
@@ -30,7 +31,7 @@ function BellureBadge() {
   );
 }
 
-export function BookingWidget({ salonSlug }: BookingWidgetProps) {
+export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWidgetProps) {
   const [step, setStep] = useState<BookingStep>(1);
   const [salon, setSalon] = useState<Salon | null>(null);
   const [services, setServices] = useState<Service[]>([]);
@@ -606,8 +607,28 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
     price_cents: totalPriceCents,
   } : selectedServices[0];
 
+  const addressLine = salon
+    ? [salon.address, [salon.postal_code, salon.city].filter(Boolean).join(' ')].filter(Boolean).join(', ')
+    : '';
+  const mapUrl = addressLine ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressLine)}` : '';
+
   return (
     <div>
+      {showSalonHeader && salon && (
+        <div className="bellure-salon-header">
+          <div className="bellure-salon-name">{salon.name}</div>
+          {addressLine && <div className="bellure-salon-meta">{addressLine}</div>}
+          <div className="bellure-salon-actions">
+            {salon.phone && (
+              <a className="bellure-salon-action" href={`tel:${salon.phone}`}>Bel</a>
+            )}
+            {mapUrl && (
+              <a className="bellure-salon-action" href={mapUrl} target="_blank" rel="noopener">Route</a>
+            )}
+          </div>
+        </div>
+      )}
+
       <StepIndicator currentStep={step} totalSteps={needsPayment ? 6 : 5} />
 
       {bookingError && step < 5 && (

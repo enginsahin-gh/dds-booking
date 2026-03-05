@@ -13,7 +13,7 @@ export function BookingPage() {
   return (
     <div className="bellure-booking-page">
       <div id="bellure-booking-widget" className="bellure-shadow-host">
-        <BookingWidget salonSlug={salon} />
+        <BookingWidget salonSlug={salon} showSalonHeader />
       </div>
     </div>
   );

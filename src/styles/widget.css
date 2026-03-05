@@ -126,19 +126,19 @@
 /* Step title */
 .bellure-step-title {
   text-align: center;
-  font-size: 1.35rem;
-  font-weight: 600;
+  font-size: 1.4rem;
+  font-weight: 700;
   color: var(--bellure-color-text);
   margin: 0 0 6px;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
 }
 
 .bellure-step-subtitle {
   text-align: center;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   font-weight: 400;
   color: var(--bellure-color-text-muted);
-  margin: 0 0 24px;
+  margin: 0 0 22px;
   letter-spacing: 0.01em;
 }
 
@@ -188,67 +188,84 @@
 .bellure-services-grid {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   padding: 0 4px;
 }
 
 .bellure-service-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 16px;
   padding: 18px 20px;
-  background: var(--bellure-color-bg);
-  border: 1.5px solid var(--bellure-color-border);
-  border-radius: var(--bellure-radius);
+  background: #fff;
+  border: 1px solid #ECE7E2;
+  border-radius: 16px;
   cursor: pointer;
   transition: all var(--bellure-transition-smooth);
   user-select: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .bellure-service-card:hover {
-  border-color: color-mix(in srgb, var(--bellure-color-primary) 40%, transparent);
-  box-shadow: var(--bellure-shadow-lg);
+  border-color: color-mix(in srgb, var(--bellure-color-primary) 45%, #ECE7E2);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.08);
   transform: translateY(-2px);
 }
 
 .bellure-service-card--selected {
   border-color: var(--bellure-color-primary);
   background: var(--bellure-color-primary-subtle);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bellure-color-primary) 10%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bellure-color-primary) 20%, transparent);
 }
 
 .bellure-service-name {
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 0.98rem;
 }
 
 .bellure-service-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 4px;
-  font-size: 0.8125rem;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.78rem;
   color: var(--bellure-color-text-muted);
+}
+
+.bellure-service-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #F6F4F0;
+  border-radius: 999px;
+  border: 1px solid #EEEAE4;
 }
 
 .bellure-service-price {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--bellure-color-text);
   white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #F8F6F2;
+  border: 1px solid #EEEAE4;
 }
 
 /* Service checkbox */
 .bellure-service-check {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
   border: 2px solid var(--bellure-color-border);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--bellure-transition);
   flex-shrink: 0;
+  background: #fff;
 }
 
 .bellure-service-check--active {
@@ -265,10 +282,12 @@
   gap: 16px;
   margin-top: 24px;
   padding: 18px 20px;
-  background: var(--bellure-color-bg-secondary);
-  border-radius: var(--bellure-radius-lg);
-  border: 1.5px solid var(--bellure-color-border);
-  box-shadow: var(--bellure-shadow-lg);
+  background: #fff;
+  border-radius: 18px;
+  border: 1px solid #ECE7E2;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.08);
+  position: sticky;
+  bottom: 12px;
 }
 
 .bellure-selection-footer .bellure-btn {
@@ -297,24 +316,25 @@
 .bellure-categories {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   padding: 0 4px;
 }
 
 .bellure-category {
-  border: 1px solid var(--bellure-color-border);
-  border-radius: var(--bellure-radius);
+  border: 1px solid #ECE7E2;
+  border-radius: 18px;
   overflow: hidden;
-  background: var(--bellure-color-bg);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .bellure-category-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  padding: 14px 16px;
-  background: none;
+  padding: 16px 18px;
+  background: #FBFAF8;
   border: none;
   cursor: pointer;
   font-family: inherit;
@@ -323,7 +343,7 @@
 }
 
 .bellure-category-header:hover {
-  background: rgba(0,0,0,0.02);
+  background: #F6F4F0;
 }
 
 .bellure-category-header--static {
@@ -332,37 +352,37 @@
 
 .bellure-category-name {
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 0.95rem;
   color: var(--bellure-color-text);
   flex: 1;
 }
 
 .bellure-category-count {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--bellure-color-text-muted);
-  background: var(--bellure-color-border);
-  padding: 1px 8px;
+  background: #EEEAE4;
+  padding: 2px 8px;
   border-radius: 999px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .bellure-category-services {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 0 8px 10px;
+  gap: 10px;
+  padding: 10px 12px 14px;
 }
 
 .bellure-category-services .bellure-service-card {
   border-width: 1px;
-  padding: 12px 14px;
+  padding: 14px 16px;
 }
 
 /* Staff Cards */
 .bellure-staff-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
   padding: 0 4px;
 }
 
@@ -370,37 +390,38 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px 16px;
-  background: var(--bellure-color-bg);
-  border: 1.5px solid var(--bellure-color-border);
-  border-radius: var(--bellure-radius);
+  padding: 20px 16px 18px;
+  background: #fff;
+  border: 1px solid #ECE7E2;
+  border-radius: 18px;
   cursor: pointer;
   transition: all var(--bellure-transition-smooth);
   text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .bellure-staff-card:hover {
-  border-color: color-mix(in srgb, var(--bellure-color-primary) 40%, transparent);
-  box-shadow: var(--bellure-shadow-lg);
+  border-color: color-mix(in srgb, var(--bellure-color-primary) 40%, #ECE7E2);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.08);
   transform: translateY(-2px);
 }
 
 .bellure-staff-card--selected {
   border-color: var(--bellure-color-primary);
   background: var(--bellure-color-primary-subtle);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bellure-color-primary) 10%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bellure-color-primary) 20%, transparent);
 }
 
 .bellure-staff-avatar {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   background: var(--bellure-color-primary-light);
   color: var(--bellure-color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 700;
   margin-bottom: 10px;
   overflow: hidden;
@@ -414,11 +435,18 @@
 
 .bellure-staff-name {
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.92rem;
+}
+
+.bellure-staff-role {
+  font-size: 0.75rem;
+  color: var(--bellure-color-text-muted);
+  margin-top: 4px;
 }
 
 .bellure-no-preference {
   border-style: dashed;
+  background: #FBFAF8;
 }
 
 /* Calendar */

@@ -5,6 +5,11 @@ interface PerServiceStaffInfo {
   availableStaff: Staff[];
 }
 
+interface StaffAvailability {
+  label: string;
+  time: string;
+}
+
 interface StaffPickerProps {
   staff: Staff[];
   selectedId: string | null;
@@ -12,9 +17,10 @@ interface StaffPickerProps {
   noStaffForCombo?: boolean;
   perServiceStaff?: PerServiceStaffInfo[];
   onBack?: () => void;
+  availability?: Record<string, StaffAvailability | null>;
 }
 
-export function StaffPicker({ staff, selectedId, onSelect, noStaffForCombo, perServiceStaff, onBack }: StaffPickerProps) {
+export function StaffPicker({ staff, selectedId, onSelect, noStaffForCombo, perServiceStaff, onBack, availability }: StaffPickerProps) {
   // Show info when no single staff member can do the full combination
   if (noStaffForCombo && perServiceStaff && perServiceStaff.length > 0) {
     return (
@@ -91,6 +97,11 @@ export function StaffPicker({ staff, selectedId, onSelect, noStaffForCombo, perS
             </div>
             <div className="bellure-staff-name">{member.name}</div>
             <div className="bellure-staff-role">Stylist</div>
+            {availability?.[member.id] && (
+              <div className="bellure-staff-availability">
+                {availability[member.id]?.label} · {availability[member.id]?.time}
+              </div>
+            )}
           </div>
         ))}
       </div>

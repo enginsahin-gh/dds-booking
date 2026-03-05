@@ -469,6 +469,16 @@
   margin-top: 4px;
 }
 
+.bellure-staff-availability {
+  font-size: 0.72rem;
+  color: var(--bellure-color-text-muted);
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: #F8F6F2;
+  border: 1px solid #EEEAE4;
+  border-radius: 999px;
+}
+
 .bellure-no-preference {
   border-style: dashed;
   background: #FBFAF8;

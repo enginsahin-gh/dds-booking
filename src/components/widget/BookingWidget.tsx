@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { addMinutes, addWeeks } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import { calculateDepositCents, requiresPayment, formatCents } from '../../lib/payment';
@@ -124,6 +124,19 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
     timezone,
     bufferMinutes
   );
+
+  const staffAvailability = useMemo(() => {
+    const map: Record<string, { label: string; time: string } | null> = {};
+    if (!selectedDate || slots.length === 0) return map;
+    const sorted = [...slots].sort((a, b) => a.time.localeCompare(b.time));
+    for (const slot of sorted) {
+      if (!map[slot.staffId]) {
+        const time = new Date(slot.time).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone });
+        map[slot.staffId] = { label: 'Eerstvolgende', time };
+      }
+    }
+    return map;
+  }, [slots, selectedDate, timezone]);
 
   // Payment return state
   const [paymentReturn, setPaymentReturn] = useState(false);
@@ -678,6 +691,7 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
             onSelect={handleStaffSelect}
             noStaffForCombo={noStaffForCombo}
             perServiceStaff={perServiceStaff}
+            availability={staffAvailability}
             onBack={handleBack}
           />
           {!noStaffForCombo && (

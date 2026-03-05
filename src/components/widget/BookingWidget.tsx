@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { addMinutes, addWeeks, addDays, startOfDay, isAfter } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 import { supabase } from '../../lib/supabase';
 import { calculateDepositCents, requiresPayment, formatCents } from '../../lib/payment';
 import { StepIndicator } from './StepIndicator';
@@ -341,8 +342,8 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
   }, []);
 
   const findNextSelectableDate = useCallback((from: Date) => {
-    const start = startOfDay(from);
-    const max = maxBookingDate ? startOfDay(maxBookingDate) : null;
+    const start = startOfDay(toZonedTime(from, timezone));
+    const max = maxBookingDate ? startOfDay(toZonedTime(maxBookingDate, timezone)) : null;
     for (let i = 0; i < 56; i++) {
       const candidate = addDays(start, i);
       if (max && isAfter(candidate, max)) return null;
@@ -351,14 +352,14 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
       if (isWorkDay) return candidate;
     }
     return null;
-  }, [workingDays, maxBookingDate]);
+  }, [workingDays, maxBookingDate, timezone]);
 
   useEffect(() => {
     if (step !== 3 || dateTouched) return;
     if (!selectedDate) {
-      setSelectedDate(startOfDay(new Date()));
+      setSelectedDate(startOfDay(toZonedTime(new Date(), timezone)));
     }
-  }, [step, selectedDate, dateTouched]);
+  }, [step, selectedDate, dateTouched, timezone]);
 
   useEffect(() => {
     if (step !== 3 || !selectedDate || slotsLoading) return;

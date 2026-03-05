@@ -889,12 +889,23 @@
     flex: 0 0 auto;
     min-width: 280px;
   }
-
-  .bellure-datetime-slots {
-    flex: 1;
-    min-width: 0;
-  }
 }
+
+.bellure-datetime-calendar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bellure-datetime-toggle {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.bellure-day-strip {
+  justify-content: center;
+}
+
 
 .bellure-slots {
   margin-top: 20px;

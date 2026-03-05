@@ -324,11 +324,12 @@
 /* Step title */
 .bellure-step-title {
   text-align: center;
-  font-size: 1.4rem;
-  font-weight: 700;
+  font-size: 1.45rem;
+  font-weight: 600;
   color: var(--bellure-color-text);
   margin: 0 0 6px;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.5px;
+  font-family: 'Playfair Display', serif;
 }
 
 .bellure-step-subtitle {
@@ -681,10 +682,10 @@
 /* Calendar */
 .bellure-calendar {
   padding: 12px;
-  background: #fff;
+  background: transparent;
   border: 1px solid #ECE7E2;
-  border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  border-radius: 16px;
+  box-shadow: none;
 }
 
 .bellure-calendar-header {
@@ -695,8 +696,10 @@
 }
 
 .bellure-calendar-title {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 1rem;
+  letter-spacing: -0.5px;
+  font-family: 'Playfair Display', serif;
 }
 
 .bellure-calendar-nav {
@@ -756,11 +759,11 @@
   align-items: center;
   justify-content: center;
   font-size: 0.85rem;
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all var(--bellure-transition);
-  border: 1px solid #EEEAE4;
-  background: #fff;
+  border: 1px solid transparent;
+  background: transparent;
   font-weight: 600;
 }
 
@@ -771,10 +774,10 @@
 }
 
 .bellure-calendar-day--selected {
-  background: var(--bellure-color-primary) !important;
-  color: white !important;
+  background: transparent !important;
+  color: var(--bellure-color-primary) !important;
   font-weight: 700;
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--bellure-color-primary) 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bellure-color-primary) 60%, transparent);
 }
 
 .bellure-calendar-day--disabled {
@@ -812,7 +815,6 @@
 }
 
 .bellure-calendar-day:hover:not(.bellure-calendar-day--disabled):not(.bellure-calendar-day--closed) {
-  background: #F6F4F0;
   border-color: #EEEAE4;
 }
 
@@ -1233,10 +1235,12 @@
 }
 
 .bellure-section-title {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   margin-bottom: 12px;
   color: var(--bellure-color-text);
+  letter-spacing: -0.5px;
+  font-family: 'Playfair Display', serif;
 }
 
 .bellure-form {

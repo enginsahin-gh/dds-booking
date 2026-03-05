@@ -76,6 +76,7 @@ export function SettingsPage() {
   const [customerLoginEnabled, setCustomerLoginEnabled] = useState(false);
   const [guestBookingAllowed, setGuestBookingAllowed] = useState(true);
   const [customerLoginMethods, setCustomerLoginMethods] = useState<string[]>(['password', 'otp']);
+  const [waitlistEnabled, setWaitlistEnabled] = useState(true);
   const [googlePlaceId, setGooglePlaceId] = useState('');
   const [reviewEnabled, setReviewEnabled] = useState(false);
   const [reviewAfterVisit, setReviewAfterVisit] = useState(3);
@@ -139,6 +140,7 @@ export function SettingsPage() {
       setCustomerLoginEnabled((salon as any).customer_login_enabled ?? false);
       setGuestBookingAllowed((salon as any).guest_booking_allowed ?? true);
       setCustomerLoginMethods((salon as any).customer_login_methods || ['password', 'otp']);
+      setWaitlistEnabled((salon as any).waitlist_enabled ?? true);
       setGooglePlaceId((salon as any).google_place_id || '');
       setReviewEnabled((salon as any).review_enabled ?? false);
       setReviewAfterVisit((salon as any).review_after_visit ?? 3);
@@ -171,6 +173,7 @@ export function SettingsPage() {
         customer_login_enabled: customerLoginEnabled,
         customer_login_methods: customerLoginMethods,
         guest_booking_allowed: guestBookingAllowed,
+        waitlist_enabled: waitlistEnabled,
         buffer_minutes: bufferMinutes, max_booking_weeks: maxBookingWeeks,
         google_place_id: googlePlaceId || null,
         review_enabled: reviewEnabled, review_after_visit: reviewAfterVisit,
@@ -249,6 +252,7 @@ export function SettingsPage() {
             customerLoginEnabled={customerLoginEnabled} setCustomerLoginEnabled={setCustomerLoginEnabled}
             guestBookingAllowed={guestBookingAllowed} setGuestBookingAllowed={setGuestBookingAllowed}
             customerLoginMethods={customerLoginMethods} setCustomerLoginMethods={setCustomerLoginMethods}
+            waitlistEnabled={waitlistEnabled} setWaitlistEnabled={setWaitlistEnabled}
           />
         </TabPanel>
 

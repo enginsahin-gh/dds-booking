@@ -17,6 +17,8 @@ interface AppointmentsTabProps {
   setGuestBookingAllowed: (v: boolean) => void;
   customerLoginMethods: string[];
   setCustomerLoginMethods: (v: string[]) => void;
+  waitlistEnabled: boolean;
+  setWaitlistEnabled: (v: boolean) => void;
 }
 
 export function AppointmentsTab({
@@ -27,6 +29,7 @@ export function AppointmentsTab({
   customerLoginEnabled, setCustomerLoginEnabled,
   guestBookingAllowed, setGuestBookingAllowed,
   customerLoginMethods, setCustomerLoginMethods,
+  waitlistEnabled, setWaitlistEnabled,
 }: AppointmentsTabProps) {
   const hasMethod = (method: string) => customerLoginMethods.includes(method);
   const toggleMethod = (method: string, enabled: boolean) => {
@@ -123,14 +126,27 @@ export function AppointmentsTab({
               <Toggle
                 checked={hasMethod('otp')}
                 onChange={(v) => toggleMethod('otp', v)}
-                label="Inloggen met e‑mailcode"
-                description="Eenmalige code via e‑mail."
+                label="Inloggen met e‑maillink"
+                description="Bevestigen via e‑mail."
                 disabled={!customerLoginEnabled}
               />
             </div>
             <p className="text-[12px] text-gray-500">
               Tip: zet beide methodes aan voor maximale flexibiliteit.
             </p>
+          </div>
+        </CardSection>
+      </Card>
+
+      <Card padding="lg">
+        <CardSection title="Wachtlijst" description="Bied klanten een alternatief als er geen plekken zijn.">
+          <div className="space-y-4">
+            <Toggle
+              checked={waitlistEnabled}
+              onChange={setWaitlistEnabled}
+              label="Wachtlijst inschakelen"
+              description="Toont een wachtlijst‑optie wanneer er geen tijdsloten zijn."
+            />
           </div>
         </CardSection>
       </Card>

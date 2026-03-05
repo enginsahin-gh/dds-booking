@@ -19,6 +19,7 @@ interface DateTimePickerProps {
   salonId?: string;
   serviceId?: string;
   staffId?: string | null;
+  waitlistEnabled?: boolean;
 }
 
 export function DateTimePicker({
@@ -34,8 +35,10 @@ export function DateTimePicker({
   salonId,
   serviceId,
   staffId,
+  waitlistEnabled,
 }: DateTimePickerProps) {
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
+  const [showWaitlist, setShowWaitlist] = useState(false);
 
   return (
     <div className="bellure-animate-in">
@@ -63,14 +66,25 @@ export function DateTimePicker({
             timezone={timezone}
             dateSelected={!!selectedDate}
           />
-          {/* Show waitlist form when no slots available */}
-          {selectedDate && !slotsLoading && slots.length === 0 && salonId && serviceId && (
-            <WaitlistForm
-              salonId={salonId}
-              serviceId={serviceId}
-              staffId={staffId || null}
-              selectedDate={format(selectedDate, 'yyyy-MM-dd')}
-            />
+          {/* Show waitlist CTA when no slots available */}
+          {selectedDate && !slotsLoading && slots.length === 0 && salonId && serviceId && waitlistEnabled && (
+            <div className="bellure-waitlist">
+              {!showWaitlist ? (
+                <>
+                  <div className="bellure-waitlist-text">Geen beschikbare tijden op deze dag.</div>
+                  <button className="bellure-btn bellure-btn-secondary" onClick={() => setShowWaitlist(true)}>
+                    Zet me op de wachtlijst
+                  </button>
+                </>
+              ) : (
+                <WaitlistForm
+                  salonId={salonId}
+                  serviceId={serviceId}
+                  staffId={staffId || null}
+                  selectedDate={format(selectedDate, 'yyyy-MM-dd')}
+                />
+              )}
+            </div>
           )}
         </div>
       </div>

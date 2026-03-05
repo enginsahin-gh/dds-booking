@@ -747,6 +747,23 @@
   padding: 0 4px;
 }
 
+.bellure-waitlist {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: var(--bellure-radius);
+  border: 1px dashed var(--bellure-color-border);
+  background: var(--bellure-color-bg-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.bellure-waitlist-text {
+  font-size: 0.9rem;
+  color: var(--bellure-color-text-muted);
+}
+
 /* Customer login */
 .bellure-login {
   background: rgba(255,255,255,0.7);

@@ -24,6 +24,7 @@ export interface Salon {
   customer_login_enabled?: boolean;
   customer_login_methods?: string[];
   guest_booking_allowed?: boolean;
+  waitlist_enabled?: boolean;
   // Tokens moved to salon_secrets (not accessible from frontend)
   mollie_profile_id: string | null;
   mollie_organization_id: string | null;

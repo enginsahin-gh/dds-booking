@@ -109,6 +109,7 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
   const customerLoginEnabled = (salon as any)?.customer_login_enabled ?? false;
   const customerLoginMethods = (salon as any)?.customer_login_methods || ['password', 'otp'];
   const guestBookingAllowed = (salon as any)?.guest_booking_allowed ?? true;
+  const waitlistEnabled = (salon as any)?.waitlist_enabled ?? true;
   const loginRequired = customerLoginEnabled && !guestBookingAllowed;
 
   // Slots — use total duration for availability check (with buffer)
@@ -658,6 +659,7 @@ export function BookingWidget({ salonSlug }: BookingWidgetProps) {
             salonId={salon?.id}
             serviceId={selectedServices[0]?.id}
             staffId={selectedStaffId}
+            waitlistEnabled={waitlistEnabled}
           />
           <div className="bellure-btn-group">
             <button className="bellure-btn bellure-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>

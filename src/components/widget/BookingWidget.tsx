@@ -125,18 +125,19 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
     bufferMinutes
   );
 
+  const sortedSlots = useMemo(() => [...slots].sort((a, b) => a.time.localeCompare(b.time)), [slots]);
+
   const staffAvailability = useMemo(() => {
     const map: Record<string, { label: string; time: string } | null> = {};
-    if (!selectedDate || slots.length === 0) return map;
-    const sorted = [...slots].sort((a, b) => a.time.localeCompare(b.time));
-    for (const slot of sorted) {
+    if (!selectedDate || sortedSlots.length === 0) return map;
+    for (const slot of sortedSlots) {
       if (!map[slot.staffId]) {
         const time = new Date(slot.time).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone });
         map[slot.staffId] = { label: 'Eerstvolgende', time };
       }
     }
     return map;
-  }, [slots, selectedDate, timezone]);
+  }, [sortedSlots, selectedDate, timezone]);
 
   // Payment return state
   const [paymentReturn, setPaymentReturn] = useState(false);
@@ -336,6 +337,13 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
     setSelectedDate(date);
     setSelectedSlot(null);
   }, []);
+
+  useEffect(() => {
+    if (!selectedDate || slotsLoading || sortedSlots.length === 0) return;
+    if (!selectedSlot) {
+      setSelectedSlot(sortedSlots[0]);
+    }
+  }, [selectedDate, slotsLoading, sortedSlots, selectedSlot]);
 
   const handleSlotSelect = useCallback((slot: TimeSlot) => {
     setSelectedSlot(slot);

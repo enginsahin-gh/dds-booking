@@ -67,10 +67,7 @@ function ServiceCard({ service, selected, onToggle }: { service: Service; select
 
 export function ServicePicker({ services, categories, selectedIds, onSelect, onContinue }: ServicePickerProps) {
   const hasCategories = categories.length > 0;
-  const [openCats, setOpenCats] = useState<Set<string>>(() => {
-    if (categories.length === 0) return new Set();
-    return new Set([categories[0].id]);
-  });
+  const [openCats, setOpenCats] = useState<Set<string>>(() => new Set());
 
   const grouped = useMemo(() => {
     if (!hasCategories) return null;

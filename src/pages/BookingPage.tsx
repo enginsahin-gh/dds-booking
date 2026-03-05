@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { BookingWidget } from '../components/widget/BookingWidget';
 import '../styles/widget.css';

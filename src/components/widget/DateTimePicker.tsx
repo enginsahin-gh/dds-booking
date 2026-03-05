@@ -111,6 +111,7 @@ export function DateTimePicker({
             loading={slotsLoading}
             timezone={timezone}
             dateSelected={!!selectedDate}
+            selectedDate={selectedDate}
           />
           {/* Show waitlist CTA when no slots available */}
           {selectedDate && !slotsLoading && slots.length === 0 && salonId && serviceId && waitlistEnabled && (

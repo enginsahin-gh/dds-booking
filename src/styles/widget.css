@@ -988,11 +988,34 @@
   }
 }
 
+.bellure-slots-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
 .bellure-slots-label {
   font-size: 0.85rem;
   font-weight: 600;
+  color: var(--bellure-color-text);
+}
+
+.bellure-slots-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bellure-color-primary-subtle);
+  color: var(--bellure-color-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.bellure-slots-date {
+  font-size: 0.78rem;
   color: var(--bellure-color-text-muted);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  text-transform: capitalize;
 }
 
 .bellure-slot-quick {
@@ -1162,16 +1185,27 @@
   letter-spacing: -0.02em;
 }
 
-.bellure-brief-deposit {
-  font-size: 0.8rem;
-  color: var(--bellure-color-text-muted);
-  text-align: right;
-  padding-top: 4px;
+.bellure-brief-pay {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
 }
 
-.bellure-brief-deposit strong {
+.bellure-brief-pay-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--bellure-color-text);
+}
+
+.bellure-brief-pay-row strong {
   color: var(--bellure-color-primary);
   font-weight: 600;
+}
+
+.bellure-brief-pay-row.muted {
+  color: var(--bellure-color-text-muted);
 }
 
 /* Powered by Bellure badge */

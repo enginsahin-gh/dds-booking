@@ -842,8 +842,17 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
                         <span className="bellure-brief-total-price">{formatCents(totalPriceCents)}</span>
                       </div>
                       {needsPayment && (
-                        <div className="bellure-brief-deposit">
-                          {salon?.payment_mode === 'deposit' ? 'Aanbetaling' : 'Te betalen'}: <strong>{formatCents(depositCents)}</strong>
+                        <div className="bellure-brief-pay">
+                          <div className="bellure-brief-pay-row">
+                            <span>Nu te betalen</span>
+                            <strong>{formatCents(depositCents)}</strong>
+                          </div>
+                          {salon?.payment_mode === 'deposit' && (
+                            <div className="bellure-brief-pay-row muted">
+                              <span>Resterend in salon</span>
+                              <span>{formatCents(Math.max(totalPriceCents - depositCents, 0))}</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

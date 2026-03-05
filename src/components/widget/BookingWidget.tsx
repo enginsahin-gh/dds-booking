@@ -271,9 +271,17 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
     init();
   }, [salonSlug]);
 
+  // Apply salon branding to the widget root (booking page)
+  useEffect(() => {
+    if (!salon) return;
+    const host = document.querySelector('.bellure-shadow-host') as HTMLElement | null;
+    if (!host) return;
+    const primary = (salon as any).brand_gradient_from || salon.brand_color || '#8B5CF6';
+    host.style.setProperty('--bellure-color-primary', primary);
+  }, [salon]);
+
   // Scroll to the booking section header (above the widget) for better context
   const scrollToWidget = useCallback(() => {
-    // Try to find the parent section or heading first (e.g. #booking)
     const section = document.getElementById('booking')
       || document.querySelector('.booking')
       || document.getElementById('bellure-booking-widget') || document.getElementById('dds-booking-widget')
@@ -282,6 +290,10 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
       section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, []);
+
+  useEffect(() => {
+    setTimeout(scrollToWidget, 100);
+  }, [scrollToWidget]);
 
   const goToStep = useCallback((s: BookingStep) => {
     setStep(s);
@@ -616,7 +628,12 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
     <div>
       {showSalonHeader && salon && (
         <div className="bellure-salon-header">
-          <div className="bellure-salon-name">{salon.name}</div>
+          <div className="bellure-salon-name">
+            {salon.logo_url && (
+              <img className="bellure-salon-logo" src={salon.logo_url} alt={`${salon.name} logo`} />
+            )}
+            <span>{salon.name}</span>
+          </div>
           {addressLine && <div className="bellure-salon-meta">{addressLine}</div>}
           <div className="bellure-salon-actions">
             {salon.phone && (

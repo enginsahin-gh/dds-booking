@@ -650,9 +650,6 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
       {showSalonHeader && salon && (
         <div className="bellure-salon-header">
           <div className="bellure-salon-name">
-            {salon.logo_url && (
-              <img className="bellure-salon-logo" src={salon.logo_url} alt={`${salon.name} logo`} />
-            )}
             <span>{salon.name}</span>
           </div>
           {addressLine && <div className="bellure-salon-meta">{addressLine}</div>}

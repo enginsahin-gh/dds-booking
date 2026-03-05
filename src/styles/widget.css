@@ -324,7 +324,7 @@
 /* Step title */
 .bellure-step-title {
   text-align: center;
-  font-size: 1.45rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: var(--bellure-color-text);
   margin: 0 0 6px;
@@ -347,12 +347,14 @@
 }
 
 .bellure-salon-name {
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: 1.6rem;
+  font-weight: 600;
   color: var(--bellure-color-text);
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  letter-spacing: -0.5px;
+  font-family: 'Playfair Display', serif;
 }
 
 .bellure-salon-logo {

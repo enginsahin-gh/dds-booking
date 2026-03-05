@@ -343,7 +343,13 @@
 
 .bellure-salon-header {
   text-align: center;
-  padding: 12px 0 18px;
+  padding: 18px 18px 20px;
+  background: #fff;
+  border: 1px solid #ECE7E2;
+  border-radius: 20px;
+  box-shadow: 0 14px 36px rgba(0,0,0,0.06);
+  margin: 8px auto 18px;
+  max-width: 520px;
 }
 
 .bellure-salon-name {
@@ -373,20 +379,21 @@
   display: flex;
   gap: 10px;
   justify-content: center;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .bellure-salon-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 14px;
+  padding: 8px 18px;
   border-radius: 999px;
-  border: 1px solid var(--bellure-color-border);
-  font-size: 0.8rem;
+  border: 1px solid #E7E2DC;
+  font-size: 0.82rem;
   color: var(--bellure-color-text);
-  background: var(--bellure-color-bg);
+  background: #FBFAF8;
   transition: all var(--bellure-transition);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
 }
 
 .bellure-salon-action:hover {

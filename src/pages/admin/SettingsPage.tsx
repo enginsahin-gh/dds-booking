@@ -65,6 +65,7 @@ export function SettingsPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [slug, setSlug] = useState('');
   const [bufferMinutes, setBufferMinutes] = useState(0);
   const [maxBookingWeeks, setMaxBookingWeeks] = useState(4);
   const [address, setAddress] = useState('');
@@ -129,6 +130,7 @@ export function SettingsPage() {
       setName(salon.name);
       setEmail(salon.email);
       setPhone(salon.phone || '');
+      setSlug((salon as any).slug || '');
       setBufferMinutes(salon.buffer_minutes || 0);
       setMaxBookingWeeks((salon as any).max_booking_weeks ?? 4);
       setAddress((salon as any).address || '');
@@ -220,6 +222,7 @@ export function SettingsPage() {
             name={name} setName={setName}
             email={email} setEmail={setEmail}
             phone={phone} setPhone={setPhone}
+            slug={slug}
           />
         </TabPanel>
 

@@ -1,5 +1,7 @@
-import { Input, Textarea } from '../../../components/ui/Input';
+import { useState } from 'react';
+import { Input } from '../../../components/ui/Input';
 import { Card, CardSection } from '../../../components/ui/Card';
+import { Button } from '../../../components/ui/Button';
 
 interface GeneralTabProps {
   name: string;
@@ -8,9 +10,25 @@ interface GeneralTabProps {
   setEmail: (v: string) => void;
   phone: string;
   setPhone: (v: string) => void;
+  slug: string;
 }
 
-export function GeneralTab({ name, setName, email, setEmail, phone, setPhone }: GeneralTabProps) {
+export function GeneralTab({ name, setName, email, setEmail, phone, setPhone, slug }: GeneralTabProps) {
+  const [copied, setCopied] = useState(false);
+  const bookingUrl = slug
+    ? `${typeof window !== 'undefined' ? window.location.origin : 'https://mijn.bellure.nl'}/?salon=${slug}`
+    : '';
+
+  const handleCopy = async () => {
+    if (!bookingUrl) return;
+    try {
+      await navigator.clipboard.writeText(bookingUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // ignore
+    }
+  };
   return (
     <Card padding="lg">
       <CardSection title="Salongegevens" description="De basisinformatie van je salon.">
@@ -32,6 +50,21 @@ export function GeneralTab({ name, setName, email, setEmail, phone, setPhone }: 
               placeholder="071 - 234 5678"
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>}
             />
+          </div>
+
+          <div className="pt-2">
+            <label className="block text-[13px] font-semibold text-gray-700 tracking-tight mb-1.5">Directe boekingslink</label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                className="w-full rounded-xl text-[14px] text-gray-900 px-4 py-3 bg-white border border-gray-200"
+                value={bookingUrl}
+                readOnly
+              />
+              <Button variant="secondary" size="md" onClick={handleCopy} disabled={!bookingUrl}>
+                {copied ? 'Gekopieerd' : 'Kopieer link'}
+              </Button>
+            </div>
+            <p className="text-[12px] text-gray-500 mt-2">Gebruik deze link in je Instagram‑bio, WhatsApp of andere socials.</p>
           </div>
         </div>
       </CardSection>

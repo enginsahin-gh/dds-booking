@@ -878,16 +878,29 @@
   color: var(--bellure-color-text);
 }
 
+.bellure-datetime-layout.strip {
+  flex-direction: column;
+}
+
+.bellure-datetime-layout.strip .bellure-datetime-slots {
+  width: 100%;
+}
+
 @media (min-width: 640px) {
-  .bellure-datetime-layout {
+  .bellure-datetime-layout.calendar {
     flex-direction: row;
     gap: 24px;
     align-items: flex-start;
   }
 
-  .bellure-datetime-calendar {
+  .bellure-datetime-layout.calendar .bellure-datetime-calendar {
     flex: 0 0 auto;
     min-width: 280px;
+  }
+
+  .bellure-datetime-layout.calendar .bellure-datetime-slots {
+    flex: 1;
+    min-width: 0;
   }
 }
 

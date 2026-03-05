@@ -66,7 +66,7 @@ export function DateTimePicker({
       <h2 className="bellure-step-title">Kies datum & tijd</h2>
       <p className="bellure-step-subtitle">Wanneer wil je langskomen?</p>
 
-      <div className="bellure-datetime-layout">
+      <div className={`bellure-datetime-layout ${viewMode === 'strip' ? 'strip' : 'calendar'}`}>
         <div className="bellure-datetime-calendar">
           <div className="bellure-datetime-toggle">
             <button className={`bellure-toggle ${viewMode === 'strip' ? 'active' : ''}`} onClick={() => setViewMode('strip')}>Snelle dagen</button>

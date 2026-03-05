@@ -1168,10 +1168,10 @@
 
 /* Powered by Bellure badge */
 .bellure-powered-by {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   padding: 20px 0 4px;
   font-size: 0.72rem;
   color: var(--bellure-color-text-muted);
@@ -1180,6 +1180,14 @@
   transition: opacity 0.3s ease;
   width: 100%;
   text-align: center;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.bellure-powered-by span,
+.bellure-powered-by a {
+  display: inline-block;
 }
 
 .bellure-powered-by:hover {

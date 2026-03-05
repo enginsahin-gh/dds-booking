@@ -25,6 +25,7 @@ const UsersPage = lazy(() => import('./pages/admin/UsersPage').then(m => ({ defa
 const StatsPage = lazy(() => import('./pages/admin/StatsPage').then(m => ({ default: m.StatsPage })));
 const WaitlistPage = lazy(() => import('./pages/admin/WaitlistPage').then(m => ({ default: m.WaitlistPage })));
 const BookingPage = lazy(() => import('./pages/BookingPage').then(m => ({ default: m.BookingPage })));
+const CustomerPortalPage = lazy(() => import('./pages/CustomerPortalPage').then(m => ({ default: m.CustomerPortalPage })));
 const PaymentReturnPage = lazy(() => import('./pages/PaymentReturnPage').then(m => ({ default: m.PaymentReturnPage })));
 
 function PageLoader() {
@@ -55,6 +56,7 @@ export function App() {
             <Routes>
               {/* Public booking page */}
               <Route path="/" element={<RootRedirect />} />
+              <Route path="/mijn-afspraken" element={<CustomerPortalPage />} />
               <Route path="/:salonSlug" element={<BookingPage />} />
               <Route path="/boeking/bevestiging" element={<PaymentReturnPage />} />
               {/* Admin routes */}

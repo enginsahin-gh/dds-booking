@@ -10,6 +10,123 @@
   padding: 32px 16px 48px;
 }
 
+.bellure-portal-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr 200px;
+  gap: 12px;
+  align-items: center;
+}
+
+.bellure-filter-group {
+  display: flex;
+  gap: 8px;
+}
+
+.bellure-filter {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #ECE7E2;
+  background: #FBFAF8;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.bellure-filter.active {
+  border-color: var(--bellure-color-primary);
+  background: var(--bellure-color-primary-subtle);
+  color: var(--bellure-color-primary);
+}
+
+.bellure-filter-input {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #ECE7E2;
+  background: #fff;
+  font-size: 0.85rem;
+}
+
+.bellure-filter-select {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #ECE7E2;
+  background: #fff;
+  font-size: 0.85rem;
+}
+
+.bellure-portal-group {
+  margin-top: 18px;
+}
+
+.bellure-portal-month {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bellure-color-text-muted);
+  margin: 12px 0;
+}
+
+.bellure-portal-list {
+  display: grid;
+  gap: 12px;
+}
+
+.bellure-portal-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #ECE7E2;
+  border-radius: 18px;
+  padding: 16px 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.bellure-portal-salon {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.bellure-portal-service {
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.bellure-portal-meta {
+  font-size: 0.8rem;
+  color: var(--bellure-color-text-muted);
+}
+
+.bellure-portal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bellure-portal-btn {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #ECE7E2;
+  background: #FBFAF8;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.bellure-portal-btn.danger {
+  color: #DC2626;
+  border-color: rgba(220,38,38,0.2);
+  background: #FEF2F2;
+}
+
+@media (max-width: 768px) {
+  .bellure-portal-filters {
+    grid-template-columns: 1fr;
+  }
+  .bellure-portal-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
 .bellure-booking-page .bellure-shadow-host {
   background: transparent;
   box-shadow: none;

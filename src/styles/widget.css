@@ -907,16 +907,25 @@
 .bellure-datetime-calendar {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
 }
 
 .bellure-datetime-toggle {
+  align-self: center;
   margin-left: auto;
   margin-right: auto;
 }
 
 .bellure-day-strip {
-  justify-content: center;
+  width: 100%;
+  justify-content: flex-start;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+}
+
+.bellure-day-pill {
+  scroll-snap-align: start;
 }
 
 

@@ -538,15 +538,25 @@
 .bellure-category-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  padding: 16px 18px;
-  background: #FBFAF8;
+  padding: 18px 20px;
+  background: #F9F7F3;
   border: none;
   cursor: pointer;
   font-family: inherit;
   text-align: left;
   transition: background 150ms ease;
+}
+
+.bellure-category-header::before {
+  content: '';
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #F3EFEA;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 .bellure-category-header:hover {
@@ -597,14 +607,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 16px 18px;
+  padding: 22px 16px 20px;
   background: #fff;
   border: 1px solid #ECE7E2;
   border-radius: 18px;
   cursor: pointer;
   transition: all var(--bellure-transition-smooth);
   text-align: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
 }
 
 .bellure-staff-card:hover {
@@ -620,18 +630,20 @@
 }
 
 .bellure-staff-avatar {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
-  background: var(--bellure-color-primary-light);
+  background: radial-gradient(circle at 30% 30%, #FFFFFF, var(--bellure-color-primary-light));
   color: var(--bellure-color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   overflow: hidden;
+  border: 1px solid #EEEAE4;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 
 .bellure-staff-avatar img {
@@ -845,14 +857,15 @@
 }
 
 .bellure-day-pill {
-  min-width: 64px;
-  padding: 10px 8px;
-  border-radius: 14px;
+  min-width: 72px;
+  padding: 12px 10px;
+  border-radius: 16px;
   border: 1px solid #ECE7E2;
   background: #fff;
   text-align: center;
   cursor: pointer;
   transition: all var(--bellure-transition);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
 }
 
 .bellure-day-pill:disabled {
@@ -1226,13 +1239,12 @@
 
 /* Customer login */
 .bellure-login {
-  background: rgba(255,255,255,0.7);
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: var(--bellure-radius);
-  padding: 14px 16px;
+  background: #FBFAF8;
+  border: 1px solid #ECE7E2;
+  border-radius: 16px;
+  padding: 12px 14px;
   margin-bottom: 16px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  box-shadow: none;
 }
 
 .bellure-login-card {

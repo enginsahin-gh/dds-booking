@@ -1,13 +1,18 @@
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { BookingWidget } from '../components/widget/BookingWidget';
 import '../styles/widget.css';
 
 export function BookingPage() {
+  const { salonSlug } = useParams();
   const [params] = useSearchParams();
-  const salon = params.get('salon');
+  const salon = salonSlug || params.get('salon') || '';
 
   if (!salon) {
-    return null;
+    return (
+      <div style={{ maxWidth: '520px', margin: '4rem auto', textAlign: 'center', color: '#6B7280' }}>
+        Geen salon gevonden. Controleer de link.
+      </div>
+    );
   }
 
   return (

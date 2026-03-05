@@ -54,6 +54,7 @@ export function App() {
             <Routes>
               {/* Public booking page */}
               <Route path="/" element={<RootRedirect />} />
+              <Route path="/:salonSlug" element={<BookingPage />} />
               <Route path="/boeking/bevestiging" element={<PaymentReturnPage />} />
               {/* Admin routes */}
               <Route path="/admin/login" element={<LoginPage />} />

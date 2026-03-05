@@ -356,10 +356,9 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
   useEffect(() => {
     if (step !== 3 || dateTouched) return;
     if (!selectedDate) {
-      const next = findNextSelectableDate(new Date());
-      if (next) setSelectedDate(next);
+      setSelectedDate(startOfDay(new Date()));
     }
-  }, [step, selectedDate, dateTouched, findNextSelectableDate]);
+  }, [step, selectedDate, dateTouched]);
 
   useEffect(() => {
     if (step !== 3 || !selectedDate || slotsLoading) return;
@@ -371,8 +370,11 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
       }
       return;
     }
-    if (!selectedSlot) {
-      setSelectedSlot(sortedSlots[0]);
+    if (sortedSlots.length > 0) {
+      const stillValid = selectedSlot && sortedSlots.some((slot) => slot.time === selectedSlot.time && slot.staffId === selectedSlot.staffId);
+      if (!stillValid) {
+        setSelectedSlot(sortedSlots[0]);
+      }
     }
   }, [step, selectedDate, slotsLoading, sortedSlots, selectedSlot, findNextSelectableDate, dateTouched]);
 

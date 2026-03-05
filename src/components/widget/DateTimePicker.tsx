@@ -69,7 +69,7 @@ export function DateTimePicker({
       <div className={`bellure-datetime-layout ${viewMode === 'strip' ? 'strip' : 'calendar'}`}>
         <div className="bellure-datetime-calendar">
           <div className="bellure-datetime-toggle">
-            <button className={`bellure-toggle ${viewMode === 'strip' ? 'active' : ''}`} onClick={() => setViewMode('strip')}>Snelle dagen</button>
+            <button className={`bellure-toggle ${viewMode === 'strip' ? 'active' : ''}`} onClick={() => setViewMode('strip')}>Dagen</button>
             <button className={`bellure-toggle ${viewMode === 'calendar' ? 'active' : ''}`} onClick={() => setViewMode('calendar')}>Kalender</button>
           </div>
 

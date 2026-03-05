@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { addMinutes, addWeeks } from 'date-fns';
+import { addMinutes, addWeeks, addDays, startOfDay, isAfter } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import { calculateDepositCents, requiresPayment, formatCents } from '../../lib/payment';
 import { StepIndicator } from './StepIndicator';
@@ -50,6 +50,7 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
   const [staffConfirmed, setStaffConfirmed] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [dateTouched, setDateTouched] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
@@ -334,16 +335,46 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
   }, [goToStep]);
 
   const handleDateSelect = useCallback((date: Date) => {
+    setDateTouched(true);
     setSelectedDate(date);
     setSelectedSlot(null);
   }, []);
 
+  const findNextSelectableDate = useCallback((from: Date) => {
+    const start = startOfDay(from);
+    const max = maxBookingDate ? startOfDay(maxBookingDate) : null;
+    for (let i = 0; i < 56; i++) {
+      const candidate = addDays(start, i);
+      if (max && isAfter(candidate, max)) return null;
+      const jsDay = candidate.getDay();
+      const isWorkDay = workingDays.size === 0 || workingDays.has(jsDay);
+      if (isWorkDay) return candidate;
+    }
+    return null;
+  }, [workingDays, maxBookingDate]);
+
   useEffect(() => {
-    if (!selectedDate || slotsLoading || sortedSlots.length === 0) return;
+    if (step !== 3 || dateTouched) return;
+    if (!selectedDate) {
+      const next = findNextSelectableDate(new Date());
+      if (next) setSelectedDate(next);
+    }
+  }, [step, selectedDate, dateTouched, findNextSelectableDate]);
+
+  useEffect(() => {
+    if (step !== 3 || !selectedDate || slotsLoading) return;
+    if (sortedSlots.length === 0 && !dateTouched) {
+      const next = findNextSelectableDate(addDays(selectedDate, 1));
+      if (next && next.toDateString() !== selectedDate.toDateString()) {
+        setSelectedDate(next);
+        setSelectedSlot(null);
+      }
+      return;
+    }
     if (!selectedSlot) {
       setSelectedSlot(sortedSlots[0]);
     }
-  }, [selectedDate, slotsLoading, sortedSlots, selectedSlot]);
+  }, [step, selectedDate, slotsLoading, sortedSlots, selectedSlot, findNextSelectableDate, dateTouched]);
 
   const handleSlotSelect = useCallback((slot: TimeSlot) => {
     setSelectedSlot(slot);

@@ -646,7 +646,13 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
         </div>
       )}
 
-      <StepIndicator currentStep={step} totalSteps={needsPayment ? 6 : 5} />
+      <StepIndicator
+        currentStep={step}
+        totalSteps={needsPayment ? 6 : 5}
+        labels={needsPayment
+          ? ['Behandeling', 'Medewerker', 'Tijd', 'Gegevens', 'Betaling', 'Bevestiging']
+          : ['Behandeling', 'Medewerker', 'Tijd', 'Gegevens', 'Bevestiging']}
+      />
 
       {bookingError && step < 5 && (
         <div style={{ padding: '8px 16px', marginBottom: 12, background: '#FEF2F2', borderRadius: 8, color: '#DC2626', fontSize: '0.875rem', textAlign: 'center' }}>

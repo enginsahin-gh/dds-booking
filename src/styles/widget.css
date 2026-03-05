@@ -935,6 +935,32 @@
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: x mandatory;
+  position: relative;
+  padding: 2px 4px 10px;
+  scrollbar-width: none;
+}
+
+.bellure-day-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.bellure-day-strip::before,
+.bellure-day-strip::after {
+  content: '';
+  position: sticky;
+  top: 0;
+  width: 24px;
+  flex: 0 0 24px;
+}
+
+.bellure-day-strip::before {
+  left: 0;
+  background: linear-gradient(90deg, #F7F5F0, transparent);
+}
+
+.bellure-day-strip::after {
+  right: 0;
+  background: linear-gradient(270deg, #F7F5F0, transparent);
 }
 
 .bellure-day-pill {
@@ -1198,8 +1224,8 @@
   background: #fff;
   border: 1px solid #ECE7E2;
   border-radius: 18px;
-  padding: 18px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  padding: 20px;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.06);
 }
 
 .bellure-section-card--summary {

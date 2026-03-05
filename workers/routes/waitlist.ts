@@ -154,23 +154,17 @@ export async function waitlistNotify(c: Context<{ Bindings: Env }>) {
           <span style="color:#16A34A;font-size:24px;">&#10003;</span>
         </div>
       </div>
-      <h2 style="color:${brandColor};font-size:22px;margin:0 0 16px;text-align:center;">Er is een plek vrijgekomen!</h2>
-      <p style="font-size:15px;color:#475569;line-height:1.6;">
-        Hoi ${esc(entry.customer_name)},
-      </p>
-      <p style="font-size:15px;color:#475569;line-height:1.6;">
-        Goed nieuws! Er is een plek vrijgekomen voor <strong>${esc(service.name)}</strong> bij <strong>${esc(salon.name)}</strong> op <strong>${dateFormatted}</strong>.
-      </p>
-      <p style="font-size:15px;color:#475569;line-height:1.6;">
-        Je hebt <strong>24 uur</strong> om te boeken voordat de plek naar de volgende wachtende gaat.
-      </p>
-      <div style="margin:28px 0;text-align:center;">
-        <a href="${bookingUrl}" style="display:inline-block;padding:14px 28px;${btnBg}color:${brandColorText};border-radius:8px;text-decoration:none;font-size:16px;font-weight:600;">
-          Nu boeken
+      <h2 style="color:${brandColor};font-size:22px;margin:0 0 12px;text-align:center;">Er is een plek vrijgekomen</h2>
+      <p style="font-size:15px;color:#475569;line-height:1.6;">Hoi ${esc(entry.customer_name)},</p>
+      <p style="font-size:15px;color:#475569;line-height:1.6;">Voor <strong>${esc(service.name)}</strong> bij <strong>${esc(salon.name)}</strong> op <strong>${dateFormatted}</strong> is er een plek vrij.</p>
+      <p style="font-size:14px;color:#64748B;line-height:1.6;">Je hebt 24 uur om te boeken. Daarna gaat de plek naar de volgende wachtende.</p>
+      <div style="margin:24px 0;text-align:center;">
+        <a href="${bookingUrl}" style="display:inline-block;padding:12px 24px;${btnBg}color:${brandColorText};border-radius:10px;text-decoration:none;font-size:15px;font-weight:600;">
+          Boek je afspraak
         </a>
       </div>
-      <p style="font-size:13px;color:#94A3B8;text-align:center;">
-        Deze link is geldig tot ${expiresAt.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })} om ${expiresAt.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' })}.
+      <p style="font-size:12px;color:#94A3B8;text-align:center;">
+        Link geldig tot ${expiresAt.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })} om ${expiresAt.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' })}.
       </p>
     </div>`;
 

@@ -249,52 +249,48 @@ function cancellationNotificationHtml(d: any): string {
 }
 
 function reminder24hHtml(d: any): string {
-  return `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;">
-    <h2 style="color:${d.brandColor};">Herinnering: morgen je afspraak</h2>
-    <p>Hoi ${d.customerName},</p>
-    <p>Even een herinnering: morgen heb je een afspraak bij <strong>${d.salonName}</strong>.</p>
-    <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-      <tr><td style="padding:8px 0;color:#666;">Behandeling</td><td><strong>${d.serviceName}</strong></td></tr>
-      <tr><td style="padding:8px 0;color:#666;">Bij</td><td><strong>${d.staffName}</strong></td></tr>
-      <tr><td style="padding:8px 0;color:#666;">Datum</td><td><strong>${d.date}</strong></td></tr>
-      <tr><td style="padding:8px 0;color:#666;">Tijd</td><td><strong>${d.startTime}</strong></td></tr>
-    </table>
+  return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:500px;margin:0 auto;color:#1E293B;">
+    <h2 style="color:${d.brandColor};font-size:20px;margin:0 0 12px;">Herinnering: je afspraak is morgen</h2>
+    <p style="font-size:15px;">Hoi ${d.customerName},</p>
+    <p style="font-size:15px;color:#475569;">We zien je morgen bij <strong>${d.salonName}</strong>. Hieronder je afspraak:</p>
+    <div style="margin:16px 0;padding:14px;background:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr><td style="padding:6px 0;color:#64748B;font-size:14px;width:120px;">Behandeling</td><td style="font-size:14px;"><strong>${d.serviceName}</strong></td></tr>
+        <tr><td style="padding:6px 0;color:#64748B;font-size:14px;">Bij</td><td style="font-size:14px;"><strong>${d.staffName}</strong></td></tr>
+        <tr><td style="padding:6px 0;color:#64748B;font-size:14px;">Datum</td><td style="font-size:14px;"><strong>${d.date}</strong></td></tr>
+        <tr><td style="padding:6px 0;color:#64748B;font-size:14px;">Tijd</td><td style="font-size:14px;"><strong>${d.startTime}</strong></td></tr>
+      </table>
+    </div>
     ${d.cancelUrl
-      ? `<p style="margin-top:16px;text-align:center;"><a href="${d.cancelUrl}" style="color:#DC2626;font-size:13px;text-decoration:underline;">Kan je niet? Annuleer je afspraak</a></p>`
-      : `<p style="margin-top:16px;color:#666;font-size:13px;">Kan je niet komen? Neem contact op met ${d.salonName}.</p>`}
-    <hr style="margin:24px 0;border:none;border-top:1px solid #eee;"/>
-    <p style="color:#999;font-size:12px;">${d.salonName} · Powered by Bellure</p>
+      ? `<p style="margin-top:12px;text-align:center;"><a href="${d.cancelUrl}" style="color:#DC2626;font-size:13px;text-decoration:underline;">Kan je niet? Annuleer je afspraak</a></p>`
+      : `<p style="margin-top:12px;color:#64748B;font-size:13px;">Kan je niet komen? Neem contact op met ${d.salonName}.</p>`}
   </div>`;
 }
 
 function reviewRequestHtml(d: any): string {
-  return `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;">
-    <h2 style="color:${d.brandColor};">Hoe was je bezoek?</h2>
-    <p>Hoi ${d.customerName},</p>
-    <p>Bedankt voor je bezoek aan <strong>${d.salonName}</strong>! We hopen dat je tevreden bent.</p>
-    <p>Zou je een moment willen nemen om een review achter te laten? Het helpt ons enorm en andere klanten weten dan ook wat ze kunnen verwachten.</p>
-    <div style="margin:24px 0;text-align:center;">
-      <a href="${d.reviewUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:14px 28px;${d.brandBg}color:${d.brandColorText};text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">
-        Laat een review achter
+  return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:500px;margin:0 auto;color:#1E293B;">
+    <h2 style="color:${d.brandColor};font-size:20px;margin:0 0 12px;">Hoe was je bezoek?</h2>
+    <p style="font-size:15px;">Hoi ${d.customerName},</p>
+    <p style="font-size:15px;color:#475569;">Bedankt voor je bezoek aan <strong>${d.salonName}</strong>. We hopen dat je tevreden bent.</p>
+    <p style="font-size:14px;color:#64748B;">Een korte review helpt ons enorm en geeft andere klanten vertrouwen.</p>
+    <div style="margin:20px 0;text-align:center;">
+      <a href="${d.reviewUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:13px 26px;${d.brandBg}color:${d.brandColorText};text-decoration:none;border-radius:10px;font-weight:600;font-size:15px;">
+        Review plaatsen
       </a>
     </div>
-    <p style="color:#666;font-size:13px;">Het kost maar een minuutje. Alvast bedankt!</p>
-    <hr style="margin:24px 0;border:none;border-top:1px solid #eee;"/>
-    <p style="color:#999;font-size:12px;">${d.salonName} · Powered by Bellure</p>
+    <p style="color:#64748B;font-size:13px;">Kost je minder dan een minuut. Dank je wel!</p>
   </div>`;
 }
 
 function reminder1hHtml(d: any): string {
-  return `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;">
-    <h2 style="color:${d.brandColor};">Over een uur: je afspraak</h2>
-    <p>Hoi ${d.customerName},</p>
-    <p>Over een uur word je verwacht bij <strong>${d.salonName}</strong> voor <strong>${d.serviceName}</strong> bij ${d.staffName}.</p>
-    <p style="margin:16px 0;padding:12px;background:#F5F3FF;border-radius:8px;text-align:center;font-size:16px;font-weight:500;">
+  return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:500px;margin:0 auto;color:#1E293B;">
+    <h2 style="color:${d.brandColor};font-size:20px;margin:0 0 12px;">Over een uur zien we je</h2>
+    <p style="font-size:15px;">Hoi ${d.customerName},</p>
+    <p style="font-size:15px;color:#475569;">Je wordt over een uur verwacht bij <strong>${d.salonName}</strong> voor <strong>${d.serviceName}</strong> bij ${d.staffName}.</p>
+    <div style="margin:16px 0;padding:12px;background:#F8FAFC;border-radius:10px;text-align:center;font-size:16px;font-weight:600;">
       Vandaag om <strong>${d.startTime}</strong>
-    </p>
-    <p style="color:#666;font-size:14px;">Tot zo!</p>
-    <hr style="margin:24px 0;border:none;border-top:1px solid #eee;"/>
-    <p style="color:#999;font-size:12px;">${d.salonName} · Powered by Bellure</p>
+    </div>
+    <p style="color:#64748B;font-size:14px;">Tot zo!</p>
   </div>`;
 }
 

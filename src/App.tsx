@@ -32,17 +32,18 @@ function PageLoader() {
   return <Spinner className="min-h-[50vh]" />;
 }
 
-/** Root route: if ?salon= param present, show booking widget. Otherwise redirect to admin. */
+/** Root route: booking domain goes to customer portal, admin domain goes to admin. */
 function RootRedirect() {
   const [params] = useSearchParams();
   const isBookingDomain = typeof window !== 'undefined' && window.location.hostname.startsWith('booking.');
-  if (params.get('salon') || params.get('payment_return') || isBookingDomain) {
+  if (params.get('salon') || params.get('payment_return')) {
     return (
       <Suspense fallback={<PageLoader />}>
         <BookingPage />
       </Suspense>
     );
   }
+  if (isBookingDomain) return <Navigate to="/mijn-afspraken" replace />;
   return <Navigate to="/admin" replace />;
 }
 

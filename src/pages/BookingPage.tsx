@@ -11,8 +11,10 @@ export function BookingPage() {
   }
 
   return (
-    <div style={{ maxWidth: '600px', margin: '2rem auto', padding: '0 1rem' }}>
-      <BookingWidget salonSlug={salon} />
+    <div className="bellure-booking-page">
+      <div id="bellure-booking-widget" className="bellure-shadow-host">
+        <BookingWidget salonSlug={salon} />
+      </div>
     </div>
   );
 }

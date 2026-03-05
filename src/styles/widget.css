@@ -3,6 +3,13 @@
 
 /* Widget reads theme from data attributes or CSS custom properties set by host site.
    Host site can override: --bellure-color-primary, --bellure-color-bg, --bellure-color-text, --bellure-font */
+/* Booking page wrapper */
+.bellure-booking-page {
+  min-height: 100vh;
+  background: #F7F5F0;
+  padding: 32px 16px 48px;
+}
+
 /* Root selector: works in Shadow DOM (.bellure-shadow-host), new prefix, and legacy dds- prefix */
 .bellure-shadow-host,
 [id^="bellure-booking-widget"],

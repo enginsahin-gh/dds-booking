@@ -1,3 +1,1 @@
-# Booking subdomain routing
-/ :/index.html 200
-/:salonSlug /index.html 200
+/* /index.html 200

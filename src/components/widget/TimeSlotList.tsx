@@ -55,11 +55,6 @@ export function TimeSlotList({ slots, selectedSlot, onSelect, loading, timezone,
   return (
     <div className="bellure-slots bellure-animate-in">
       <div className="bellure-slots-label">Beschikbare tijden</div>
-      {firstSlot && (
-        <button className="bellure-slot-quick" onClick={() => onSelect(firstSlot)}>
-          Eerstvolgende tijd: {format(toZonedTime(parseISO(firstSlot.time), timezone), 'HH:mm')}
-        </button>
-      )}
 
       {groups.map((group) => (
         group.items.length > 0 ? (

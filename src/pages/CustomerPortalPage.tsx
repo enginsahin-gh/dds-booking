@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { format, isAfter } from 'date-fns';
+import { format, isAfter, isSameDay, differenceInMinutes, differenceInDays } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import '../styles/widget.css';
 
@@ -106,6 +106,24 @@ export function CustomerPortalPage() {
     });
     return Array.from(map.entries());
   }, [filtered]);
+
+  const getCountdown = (startAt: string) => {
+    const now = new Date();
+    const date = new Date(startAt);
+    if (!isAfter(date, now)) return null;
+
+    if (isSameDay(date, now)) {
+      const diffMin = Math.max(0, differenceInMinutes(date, now));
+      if (diffMin < 60) return `Over ${diffMin} min`;
+      const hours = Math.floor(diffMin / 60);
+      const minutes = diffMin % 60;
+      return minutes > 0 ? `Over ${hours} uur ${minutes} min` : `Over ${hours} uur`;
+    }
+
+    const days = Math.max(1, differenceInDays(date, now));
+    return `Nog ${days} dag${days === 1 ? '' : 'en'}`;
+  };
+
 
   const handleLogin = async () => {
     if (!loginEmail) return;
@@ -235,6 +253,9 @@ export function CustomerPortalPage() {
                         <div className="bellure-portal-salon">{a.salon?.name || 'Salon'}</div>
                         <div className="bellure-portal-service">{services}</div>
                         <div className="bellure-portal-meta">{dateStr} · {time} · {a.staff?.name || 'Geen voorkeur'}</div>
+                        {isAfter(date, new Date()) && (
+                          <div className="bellure-portal-countdown">{getCountdown(a.start_at)}</div>
+                        )}
                       </div>
                       <div className="bellure-portal-actions">
                         <a className="bellure-portal-btn" href={bookingUrl}>Opnieuw boeken</a>

@@ -150,6 +150,18 @@
   color: var(--bellure-color-text-muted);
 }
 
+.bellure-portal-countdown {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #F8F6F2;
+  border: 1px solid #EEEAE4;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--bellure-color-text);
+}
+
 .bellure-portal-actions {
   display: flex;
   gap: 8px;

@@ -39,6 +39,7 @@ app.use('/api/*', cors({
   origin: (origin) => {
     const allowed = [
       'https://mijn.bellure.nl',
+      'https://booking.bellure.nl',
       'https://bellure.nl',
       'https://salon-amara.bellure.nl',
     ];

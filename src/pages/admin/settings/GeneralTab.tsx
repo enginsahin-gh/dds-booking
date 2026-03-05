@@ -15,9 +15,8 @@ interface GeneralTabProps {
 
 export function GeneralTab({ name, setName, email, setEmail, phone, setPhone, slug }: GeneralTabProps) {
   const [copied, setCopied] = useState(false);
-  const bookingUrl = slug
-    ? `${typeof window !== 'undefined' ? window.location.origin : 'https://mijn.bellure.nl'}/?salon=${slug}`
-    : '';
+  const bookingBase = 'https://booking.bellure.nl';
+  const bookingUrl = slug ? `${bookingBase}/${slug}` : '';
 
   const handleCopy = async () => {
     if (!bookingUrl) return;

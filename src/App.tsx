@@ -34,7 +34,8 @@ function PageLoader() {
 /** Root route: if ?salon= param present, show booking widget. Otherwise redirect to admin. */
 function RootRedirect() {
   const [params] = useSearchParams();
-  if (params.get('salon') || params.get('payment_return')) {
+  const isBookingDomain = typeof window !== 'undefined' && window.location.hostname.startsWith('booking.');
+  if (params.get('salon') || params.get('payment_return') || isBookingDomain) {
     return (
       <Suspense fallback={<PageLoader />}>
         <BookingPage />

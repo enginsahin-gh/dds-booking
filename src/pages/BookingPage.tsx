@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
 import { BookingWidget } from '../components/widget/BookingWidget';
+import '../styles/widget.css';
 
 export function BookingPage() {
   const [params] = useSearchParams();

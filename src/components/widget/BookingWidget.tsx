@@ -718,77 +718,76 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
           <div className="bellure-step4-layout">
             {/* Left: customer form */}
             <div className="bellure-step4-form">
-              {customerLoginEnabled && salon && (
-                <CustomerLogin
-                  salonId={salon.id}
-                  apiBase={FUNCTIONS_BASE}
-                  enabled={customerLoginEnabled}
-                  methods={customerLoginMethods}
-                  guestAllowed={guestBookingAllowed}
-                  onAuthenticated={handleCustomerAuth}
-                />
-              )}
+              <div className="bellure-section-card">
+                <div className="bellure-section-title">Jouw gegevens</div>
 
-              {(!loginRequired || customerSession) ? (
-                <CustomerForm
-                  onSubmit={handleBooking}
-                  loading={bookingLoading}
-                  submitLabel={needsPayment ? 'Verder naar betaling' : 'Bevestig afspraak'}
-                  initial={{
-                    name: customerProfile?.name || customerData?.name || '',
-                    email: customerProfile?.email || customerSession?.user?.email || customerData?.email || '',
-                    phone: customerProfile?.phone || customerData?.phone || '',
-                  }}
-                  lockEmail={!!customerSession}
-                />
-              ) : (
-                <div className="bellure-login-required">
-                  Log in om verder te gaan met boeken.
-                </div>
-              )}
+                {customerLoginEnabled && salon && (
+                  <CustomerLogin
+                    salonId={salon.id}
+                    apiBase={FUNCTIONS_BASE}
+                    enabled={customerLoginEnabled}
+                    methods={customerLoginMethods}
+                    guestAllowed={guestBookingAllowed}
+                    onAuthenticated={handleCustomerAuth}
+                  />
+                )}
+
+                {(!loginRequired || customerSession) ? (
+                  <CustomerForm
+                    onSubmit={handleBooking}
+                    loading={bookingLoading}
+                    submitLabel={needsPayment ? 'Verder naar betaling' : 'Bevestig afspraak'}
+                    initial={{
+                      name: customerProfile?.name || customerData?.name || '',
+                      email: customerProfile?.email || customerSession?.user?.email || customerData?.email || '',
+                      phone: customerProfile?.phone || customerData?.phone || '',
+                    }}
+                    lockEmail={!!customerSession}
+                  />
+                ) : (
+                  <div className="bellure-login-required">
+                    Log in om verder te gaan met boeken.
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Right: premium summary brief */}
+            {/* Right: summary */}
             {selectedServices.length > 0 && selectedSlot && (
               <div className="bellure-step4-summary">
-                <div className="bellure-brief">
-                  <div className="bellure-brief-header">
-                    <div className="bellure-brief-icon">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                      </svg>
-                    </div>
-                    <span className="bellure-brief-title">Overzicht</span>
-                  </div>
-                  <div className="bellure-brief-body">
-                    <div className="bellure-brief-item">
-                      <span className="bellure-brief-label">Behandeling{selectedServices.length > 1 ? 'en' : ''}</span>
-                      <span className="bellure-brief-value">{combinedServiceName}</span>
-                    </div>
-                    <div className="bellure-brief-divider" />
-                    <div className="bellure-brief-item">
-                      <span className="bellure-brief-label">Stylist</span>
-                      <span className="bellure-brief-value">{staff.find(s => s.id === selectedSlot.staffId)?.name || 'Geen voorkeur'}</span>
-                    </div>
-                    <div className="bellure-brief-divider" />
-                    <div className="bellure-brief-item">
-                      <span className="bellure-brief-label">Wanneer</span>
-                      <span className="bellure-brief-value">
-                        {new Date(selectedSlot.time).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })}
-                        <br />
-                        {new Date(selectedSlot.time).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone })} &middot; {totalDuration} min
-                      </span>
-                    </div>
-                    <div className="bellure-brief-divider" />
-                    <div className="bellure-brief-total">
-                      <span className="bellure-brief-total-label">Totaal</span>
-                      <span className="bellure-brief-total-price">{formatCents(totalPriceCents)}</span>
-                    </div>
-                    {needsPayment && (
-                      <div className="bellure-brief-deposit">
-                        {salon?.payment_mode === 'deposit' ? 'Aanbetaling' : 'Te betalen'}: <strong>{formatCents(depositCents)}</strong>
+                <div className="bellure-section-card bellure-section-card--summary">
+                  <div className="bellure-section-title">Overzicht</div>
+                  <div className="bellure-brief">
+                    <div className="bellure-brief-body">
+                      <div className="bellure-brief-item">
+                        <span className="bellure-brief-label">Behandeling{selectedServices.length > 1 ? 'en' : ''}</span>
+                        <span className="bellure-brief-value">{combinedServiceName}</span>
                       </div>
-                    )}
+                      <div className="bellure-brief-divider" />
+                      <div className="bellure-brief-item">
+                        <span className="bellure-brief-label">Stylist</span>
+                        <span className="bellure-brief-value">{staff.find(s => s.id === selectedSlot.staffId)?.name || 'Geen voorkeur'}</span>
+                      </div>
+                      <div className="bellure-brief-divider" />
+                      <div className="bellure-brief-item">
+                        <span className="bellure-brief-label">Wanneer</span>
+                        <span className="bellure-brief-value">
+                          {new Date(selectedSlot.time).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })}
+                          <br />
+                          {new Date(selectedSlot.time).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone })} &middot; {totalDuration} min
+                        </span>
+                      </div>
+                      <div className="bellure-brief-divider" />
+                      <div className="bellure-brief-total">
+                        <span className="bellure-brief-total-label">Totaal</span>
+                        <span className="bellure-brief-total-price">{formatCents(totalPriceCents)}</span>
+                      </div>
+                      {needsPayment && (
+                        <div className="bellure-brief-deposit">
+                          {salon?.payment_mode === 'deposit' ? 'Aanbetaling' : 'Te betalen'}: <strong>{formatCents(depositCents)}</strong>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

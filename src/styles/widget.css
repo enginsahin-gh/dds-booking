@@ -460,70 +460,74 @@
 
 /* Calendar */
 .bellure-calendar {
-  padding: 0 4px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #ECE7E2;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
 }
 
 .bellure-calendar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .bellure-calendar-title {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1rem;
 }
 
 .bellure-calendar-nav {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .bellure-calendar-btn {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--bellure-color-border);
-  border-radius: var(--bellure-radius-sm);
-  background: var(--bellure-color-bg);
+  border: 1px solid #ECE7E2;
+  border-radius: 10px;
+  background: #FBFAF8;
   cursor: pointer;
   color: var(--bellure-color-text);
   transition: all var(--bellure-transition);
 }
 
 .bellure-calendar-btn:hover {
-  background: var(--bellure-color-bg-secondary);
+  background: #F3EFEA;
 }
 
 .bellure-calendar-btn:disabled {
-  opacity: 0.3;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
 .bellure-calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-  margin-bottom: 4px;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
 .bellure-calendar-weekday {
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--bellure-color-text-muted);
-  padding: 8px 0;
+  padding: 6px 0;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 
 .bellure-calendar-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: 6px;
 }
 
 .bellure-calendar-day {
@@ -531,23 +535,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.875rem;
-  border-radius: var(--bellure-radius-sm);
+  font-size: 0.85rem;
+  border-radius: 12px;
   cursor: pointer;
   transition: all var(--bellure-transition);
-  border: 2px solid transparent;
-  font-weight: 500;
+  border: 1px solid #EEEAE4;
+  background: #fff;
+  font-weight: 600;
 }
 
 .bellure-calendar-day--today {
   font-weight: 700;
   color: var(--bellure-color-primary);
+  border-color: color-mix(in srgb, var(--bellure-color-primary) 30%, #EEEAE4);
 }
 
 .bellure-calendar-day--selected {
   background: var(--bellure-color-primary) !important;
   color: white !important;
   font-weight: 700;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--bellure-color-primary) 35%, transparent);
 }
 
 .bellure-calendar-day--disabled {
@@ -566,32 +573,29 @@
 .bellure-calendar-day--available::after {
   content: '';
   position: absolute;
-  bottom: 4px;
+  bottom: 5px;
   left: 50%;
   transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--bellure-color-primary);
-  opacity: 0.5;
 }
 
 .bellure-calendar-day--selected::after {
   background: white;
-  opacity: 0.8;
 }
 
 .bellure-calendar-day--closed {
-  opacity: 0.3;
+  opacity: 0.25;
   cursor: not-allowed;
-  text-decoration: line-through;
 }
 
 .bellure-calendar-day:hover:not(.bellure-calendar-day--disabled):not(.bellure-calendar-day--closed) {
-  background: var(--bellure-color-primary-subtle);
+  background: #F6F4F0;
+  border-color: #EEEAE4;
 }
 
-/* Time Slots */
 /* Desktop: calendar left, timeslots right */
 .bellure-datetime-layout {
   display: flex;
@@ -834,6 +838,25 @@
     flex: 1;
     min-width: 0;
   }
+}
+
+.bellure-section-card {
+  background: #fff;
+  border: 1px solid #ECE7E2;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.bellure-section-card--summary {
+  background: #FBFAF8;
+}
+
+.bellure-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--bellure-color-text);
 }
 
 .bellure-form {

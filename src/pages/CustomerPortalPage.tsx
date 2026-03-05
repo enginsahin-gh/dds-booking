@@ -27,6 +27,9 @@ export function CustomerPortalPage() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginMode, setLoginMode] = useState<'password' | 'otp'>('otp');
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
+  const [profile, setProfile] = useState<{ name: string; email: string; phone?: string | null } | null>(null);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -56,7 +59,16 @@ export function CustomerPortalPage() {
       setLoading(false);
     };
 
+    const fetchProfile = async () => {
+      const res = await fetch('https://api.bellure.nl/api/customers/profile-global', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const data = await res.json();
+      if (data.profile) setProfile(data.profile);
+    };
+
     fetchAppointments();
+    fetchProfile();
   }, [session]);
 
   const salons = useMemo(() => {
@@ -109,6 +121,25 @@ export function CustomerPortalPage() {
     }
   };
 
+  const handleProfileSave = async () => {
+    if (!profile) return;
+    setProfileSaving(true);
+    setProfileMessage(null);
+    const res = await fetch('https://api.bellure.nl/api/customers/profile-global', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ name: profile.name, phone: profile.phone || '' }),
+    });
+    const data = await res.json();
+    setProfileSaving(false);
+    setProfileMessage(res.ok ? 'Gegevens opgeslagen' : (data.error || 'Opslaan mislukt'));
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+  };
+
   if (!session) {
     return (
       <div className="bellure-booking-page">
@@ -136,22 +167,48 @@ export function CustomerPortalPage() {
 
   return (
     <div className="bellure-booking-page">
-      <div className="bellure-shadow-host" style={{ maxWidth: 860, margin: '0 auto', background: 'transparent' }}>
-        <div className="bellure-section-card" style={{ marginBottom: 16 }}>
-          <div className="bellure-section-title">Mijn afspraken</div>
-          <div className="bellure-portal-filters">
-            <div className="bellure-filter-group">
-              <button className={`bellure-filter ${filter === 'upcoming' ? 'active' : ''}`} onClick={() => setFilter('upcoming')}>Aankomend</button>
-              <button className={`bellure-filter ${filter === 'history' ? 'active' : ''}`} onClick={() => setFilter('history')}>Geschiedenis</button>
-              <button className={`bellure-filter ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Alles</button>
+      <div className="bellure-shadow-host" style={{ maxWidth: 920, margin: '0 auto', background: 'transparent' }}>
+        <div className="bellure-portal-hero">
+          <div className="bellure-portal-title">Mijn afspraken</div>
+          <div className="bellure-portal-sub">Overzicht van je bezoeken en geplande afspraken.</div>
+          <div className="bellure-portal-actions">
+            <button className="bellure-portal-logout" onClick={handleLogout}>Uitloggen</button>
+            <a className="bellure-portal-book" href="https://booking.bellure.nl">Nieuwe afspraak</a>
+          </div>
+        </div>
+
+        <div className="bellure-portal-grid">
+          <div className="bellure-section-card">
+            <div className="bellure-section-title">Jouw gegevens</div>
+            {profile ? (
+              <div className="bellure-portal-profile">
+                <input className="bellure-form-input" value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
+                <input className="bellure-form-input" value={profile.email} readOnly />
+                <input className="bellure-form-input" placeholder="Telefoon" value={profile.phone || ''} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} />
+                <button className="bellure-btn bellure-btn-primary" onClick={handleProfileSave} disabled={profileSaving}>{profileSaving ? 'Opslaan...' : 'Gegevens opslaan'}</button>
+                {profileMessage && <div className="bellure-login-note">{profileMessage}</div>}
+              </div>
+            ) : (
+              <div className="bellure-portal-profile">Geen profiel gevonden.</div>
+            )}
+          </div>
+
+          <div className="bellure-section-card">
+            <div className="bellure-section-title">Filter</div>
+            <div className="bellure-portal-filters">
+              <div className="bellure-filter-group">
+                <button className={`bellure-filter ${filter === 'upcoming' ? 'active' : ''}`} onClick={() => setFilter('upcoming')}>Aankomend</button>
+                <button className={`bellure-filter ${filter === 'history' ? 'active' : ''}`} onClick={() => setFilter('history')}>Geschiedenis</button>
+                <button className={`bellure-filter ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Alles</button>
+              </div>
+              <input className="bellure-filter-input" placeholder="Zoek salon, behandeling, stylist" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <select className="bellure-filter-select" value={salonFilter} onChange={(e) => setSalonFilter(e.target.value)}>
+                <option value="all">Alle salons</option>
+                {salons.map(([slug, name]) => (
+                  <option key={slug} value={slug}>{name}</option>
+                ))}
+              </select>
             </div>
-            <input className="bellure-filter-input" placeholder="Zoek salon, behandeling, stylist" value={search} onChange={(e) => setSearch(e.target.value)} />
-            <select className="bellure-filter-select" value={salonFilter} onChange={(e) => setSalonFilter(e.target.value)}>
-              <option value="all">Alle salons</option>
-              {salons.map(([slug, name]) => (
-                <option key={slug} value={slug}>{name}</option>
-              ))}
-            </select>
           </div>
         </div>
 

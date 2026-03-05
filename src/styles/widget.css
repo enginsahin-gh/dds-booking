@@ -10,9 +10,63 @@
   padding: 32px 16px 48px;
 }
 
+.bellure-portal-hero {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.bellure-portal-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.bellure-portal-sub {
+  font-size: 0.9rem;
+  color: var(--bellure-color-text-muted);
+}
+
+.bellure-portal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.bellure-portal-logout {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #ECE7E2;
+  background: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.bellure-portal-book {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--bellure-color-primary);
+  background: var(--bellure-color-primary);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.bellure-portal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.bellure-portal-profile {
+  display: grid;
+  gap: 10px;
+}
+
 .bellure-portal-filters {
   display: grid;
-  grid-template-columns: 1fr 1fr 200px;
+  grid-template-columns: 1fr;
   gap: 12px;
   align-items: center;
 }
@@ -117,7 +171,7 @@
 }
 
 @media (max-width: 768px) {
-  .bellure-portal-filters {
+  .bellure-portal-grid {
     grid-template-columns: 1fr;
   }
   .bellure-portal-card {
@@ -126,7 +180,6 @@
     gap: 12px;
   }
 }
-
 .bellure-booking-page .bellure-shadow-host {
   background: transparent;
   box-shadow: none;

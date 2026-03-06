@@ -13,6 +13,7 @@ export interface Salon {
   deposit_type: DepositType;
   deposit_value: number; // percentage (25 = 25%) or fixed cents-equivalent in euros (10.00 = €10)
   buffer_minutes: number; // minutes between appointments (0, 5, 10, 15)
+  slot_step_minutes?: number; // 15 or 30 (admin calendar granularity)
   max_booking_weeks: number; // 0 = unlimited, otherwise max weeks ahead
   google_place_id: string | null;
   address: string | null;

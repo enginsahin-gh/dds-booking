@@ -14,6 +14,7 @@ interface Props {
   salon: Salon;
   services: Service[];
   staff: Staff[];
+  slotStepMinutes?: number;
   prefillDate?: Date;
   prefillStaffId?: string;
   prefillTime?: string;
@@ -44,7 +45,7 @@ function SelectChevron() {
 }
 
 export function CreateBookingModal({
-  open, onClose, onCreated, salon, services, staff,
+  open, onClose, onCreated, salon, services, staff, slotStepMinutes = 15,
   prefillDate, prefillStaffId, prefillTime,
 }: Props) {
   const [serviceId, setServiceId] = useState('');
@@ -158,13 +159,13 @@ export function CreateBookingModal({
   const timeOptions = useMemo(() => {
     const options: string[] = [];
     for (let h = 7; h <= 21; h++) {
-      for (let m = 0; m < 60; m += 15) {
+      for (let m = 0; m < 60; m += slotStepMinutes) {
         if (h === 21 && m > 0) break;
         options.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
       }
     }
     return options;
-  }, []);
+  }, [slotStepMinutes]);
 
   const endTime = useMemo(() => {
     if (!selectedService || !time || !date) return null;

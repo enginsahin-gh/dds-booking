@@ -67,6 +67,7 @@ export function SettingsPage() {
   const [phone, setPhone] = useState('');
   const [slug, setSlug] = useState('');
   const [bufferMinutes, setBufferMinutes] = useState(0);
+  const [slotStepMinutes, setSlotStepMinutes] = useState(15);
   const [maxBookingWeeks, setMaxBookingWeeks] = useState(4);
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
@@ -132,6 +133,7 @@ export function SettingsPage() {
       setPhone(salon.phone || '');
       setSlug((salon as any).slug || '');
       setBufferMinutes(salon.buffer_minutes || 0);
+      setSlotStepMinutes((salon as any).slot_step_minutes ?? 15);
       setMaxBookingWeeks((salon as any).max_booking_weeks ?? 4);
       setAddress((salon as any).address || '');
       setCity((salon as any).city || '');
@@ -176,7 +178,9 @@ export function SettingsPage() {
         customer_login_methods: customerLoginMethods,
         guest_booking_allowed: guestBookingAllowed,
         waitlist_enabled: waitlistEnabled,
-        buffer_minutes: bufferMinutes, max_booking_weeks: maxBookingWeeks,
+        buffer_minutes: bufferMinutes,
+        slot_step_minutes: slotStepMinutes,
+        max_booking_weeks: maxBookingWeeks,
         google_place_id: googlePlaceId || null,
         review_enabled: reviewEnabled, review_after_visit: reviewAfterVisit,
         brand_color: brandColor || '#8B5CF6',
@@ -249,6 +253,7 @@ export function SettingsPage() {
         <TabPanel active={activeTab === 'booking'}>
           <AppointmentsTab
             bufferMinutes={bufferMinutes} setBufferMinutes={setBufferMinutes}
+            slotStepMinutes={slotStepMinutes} setSlotStepMinutes={setSlotStepMinutes}
             maxBookingWeeks={maxBookingWeeks} setMaxBookingWeeks={setMaxBookingWeeks}
             cancellationPolicy={cancellationPolicy} setCancellationPolicy={setCancellationPolicy}
             rescheduleEnabled={rescheduleEnabled} setRescheduleEnabled={setRescheduleEnabled}

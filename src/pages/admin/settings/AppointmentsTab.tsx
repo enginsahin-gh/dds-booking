@@ -5,6 +5,8 @@ import { Card, CardSection } from '../../../components/ui/Card';
 interface AppointmentsTabProps {
   bufferMinutes: number;
   setBufferMinutes: (v: number) => void;
+  slotStepMinutes: number;
+  setSlotStepMinutes: (v: number) => void;
   maxBookingWeeks: number;
   setMaxBookingWeeks: (v: number) => void;
   cancellationPolicy: string;
@@ -23,6 +25,7 @@ interface AppointmentsTabProps {
 
 export function AppointmentsTab({
   bufferMinutes, setBufferMinutes,
+  slotStepMinutes, setSlotStepMinutes,
   maxBookingWeeks, setMaxBookingWeeks,
   cancellationPolicy, setCancellationPolicy,
   rescheduleEnabled, setRescheduleEnabled,
@@ -55,6 +58,16 @@ export function AppointmentsTab({
                 { value: 0, label: 'Geen pauze' },
                 { value: 5, label: '5 minuten' },
                 { value: 10, label: '10 minuten' },
+                { value: 15, label: '15 minuten' },
+                { value: 30, label: '30 minuten' },
+              ]}
+            />
+            <Select
+              label="Kalender stapgrootte"
+              value={slotStepMinutes}
+              onChange={(e) => setSlotStepMinutes(parseInt(e.target.value))}
+              hint="Bepaalt de tijdstappen in de agenda (admin)."
+              options={[
                 { value: 15, label: '15 minuten' },
                 { value: 30, label: '30 minuten' },
               ]}

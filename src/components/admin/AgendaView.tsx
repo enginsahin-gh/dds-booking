@@ -11,6 +11,7 @@ interface Props {
   services: Service[];
   staff: Staff[];
   timezone: string;
+  slotStepMinutes?: number;
   onSelectBooking: (b: Booking) => void;
   onSlotClick: (staffId: string, time: string) => void;
   onBookingMoved: () => void;
@@ -19,7 +20,6 @@ interface Props {
 const HOUR_START = 7;
 const HOUR_END = 21;
 const SLOT_HEIGHT = 48;
-const MINUTES_PER_SLOT = 15;
 const TIME_COL_W = 48; // px
 const COL_MIN_W = 130; // px per staff column
 
@@ -31,14 +31,14 @@ const STATUS_COLORS: Record<string, string> = {
   completed: 'bg-blue-100 border-blue-400 text-blue-900',
 };
 
-function snapToQuarter(minutes: number): number {
-  return Math.round(minutes / MINUTES_PER_SLOT) * MINUTES_PER_SLOT;
+function snapToStep(minutes: number, step: number): number {
+  return Math.round(minutes / step) * step;
 }
 
-function getTimeFromY(e: React.DragEvent | React.MouseEvent, el: Element): string {
+function getTimeFromY(e: React.DragEvent | React.MouseEvent, el: Element, step: number): string {
   const rect = el.getBoundingClientRect();
   const y = e.clientY - rect.top;
-  const snapped = snapToQuarter((y / SLOT_HEIGHT) * 60);
+  const snapped = snapToStep((y / SLOT_HEIGHT) * 60, step);
   const totalMin = HOUR_START * 60 + snapped;
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
@@ -46,9 +46,10 @@ function getTimeFromY(e: React.DragEvent | React.MouseEvent, el: Element): strin
 }
 
 export function AgendaView({
-  date, bookings, services, staff: allStaff, timezone,
+  date, bookings, services, staff: allStaff, timezone, slotStepMinutes = 15,
   onSelectBooking, onSlotClick, onBookingMoved,
 }: Props) {
+  const stepMinutes = slotStepMinutes;
   const { getReadableStaffIds, canEditStaff } = useAuth();
   const [dragBooking, setDragBooking] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ staffId: string; time: string } | null>(null);
@@ -93,7 +94,7 @@ export function AgendaView({
   const handleDragOver = (e: React.DragEvent, staffId: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    setDropTarget({ staffId, time: getTimeFromY(e, e.currentTarget) });
+    setDropTarget({ staffId, time: getTimeFromY(e, e.currentTarget, stepMinutes) });
   };
 
   const handleDrop = async (e: React.DragEvent, staffId: string) => {
@@ -122,7 +123,7 @@ export function AgendaView({
 
   const handleSlotClick = (e: React.MouseEvent, staffId: string) => {
     if ((e.target as HTMLElement).closest('[data-booking]')) return;
-    onSlotClick(staffId, getTimeFromY(e, e.currentTarget));
+    onSlotClick(staffId, getTimeFromY(e, e.currentTarget, stepMinutes));
   };
 
   // Current time

@@ -11,6 +11,7 @@ interface Props {
   services: Service[];
   staff: Staff[];
   timezone: string;
+  slotStepMinutes?: number;
   onSelectBooking: (b: Booking) => void;
   onSlotClick: (staffId: string, time: string) => void;
 }
@@ -32,9 +33,10 @@ const STAFF_COLORS = [
 ];
 
 export function WeekAgendaView({
-  date, bookings, services, staff: allStaff, timezone,
+  date, bookings, services, staff: allStaff, timezone, slotStepMinutes = 15,
   onSelectBooking, onSlotClick,
 }: Props) {
+  const stepMinutes = slotStepMinutes;
   const { getReadableStaffIds } = useAuth();
   const [filterStaffId, setFilterStaffId] = useState<string | 'all'>('all');
   const activeStaff = useMemo(() => {
@@ -214,7 +216,7 @@ export function WeekAgendaView({
                     // Calculate time from click position
                     const rect = e.currentTarget.getBoundingClientRect();
                     const y = e.clientY - rect.top;
-                    const snappedMin = Math.round(((y / SLOT_HEIGHT) * 60) / 15) * 15;
+                    const snappedMin = Math.round(((y / SLOT_HEIGHT) * 60) / stepMinutes) * stepMinutes;
                     const totalMin = HOUR_START * 60 + snappedMin;
                     const h = Math.floor(totalMin / 60);
                     const m = totalMin % 60;

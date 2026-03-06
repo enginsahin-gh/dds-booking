@@ -20,7 +20,6 @@ type ViewMode = 'day' | 'week' | 'agenda';
 
 export function BookingsPage() {
   const { salon } = useOutletContext<{ salon: Salon | null }>();
-  const { canSeeRevenue } = useAuth();
   const { addToast } = useToast();
   const [date, setDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('agenda');
@@ -40,7 +39,7 @@ export function BookingsPage() {
   const { bookings, loading, refetch, cancelBooking, completeBooking, noShowBooking } = useBookings(salon?.id, dateRange);
   const { services } = useServices(salon?.id);
   const { staff } = useStaff(salon?.id);
-  const { canEditStaff } = useAuth();
+  const { canEditStaff, canSeeRevenue } = useAuth();
 
   const handleCancel = async (id: string) => {
     try { await cancelBooking(id); addToast('success', 'Afspraak geannuleerd'); } catch { addToast('error', 'Annulering mislukt'); }
@@ -63,6 +62,7 @@ export function BookingsPage() {
 
   const selectedService = selectedBooking ? services.find(s => s.id === selectedBooking.service_id) || null : null;
   const selectedStaff = selectedBooking ? staff.find(s => s.id === selectedBooking.staff_id) || null : null;
+  const slotStepMinutes = (salon as any)?.slot_step_minutes ?? 15;
 
   // Week view grouping
   const weekDays = useMemo(() => {
@@ -81,20 +81,18 @@ export function BookingsPage() {
     return map;
   }, [bookings, weekDays, viewMode]);
 
-  // Stats
-  const confirmed = bookings.filter(b => b.status === 'confirmed');
-  const pendingPayment = bookings.filter(b => b.status === 'pending_payment');
-  const totalRevenue = confirmed.reduce((sum, b) => sum + (b.amount_total_cents || services.find(s => s.id === b.service_id)?.price_cents || 0), 0);
-
   return (
     <div>
-      {/* Header row */}
-      <div className="flex flex-col gap-3 mb-4">
+      {/* Header */}
+      <div className="flex flex-col gap-4 mb-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Boekingen</h1>
+          <div>
+            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">Boekingen</h1>
+            <p className="text-[12px] text-gray-500 mt-0.5">Overzicht, planning en beheer van afspraken</p>
+          </div>
           <button
             onClick={() => { setCreatePrefill({}); setShowCreateModal(true); }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 lg:px-4 text-sm font-medium bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-3.5 py-2 lg:px-4 text-sm font-medium bg-gray-900 text-white rounded-xl hover:bg-black transition-colors shadow-sm"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -103,10 +101,10 @@ export function BookingsPage() {
           </button>
         </div>
 
-        {/* View toggle + date nav */}
-        <div className="flex items-center justify-between gap-3">
+        {/* Controls */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 bg-white border border-gray-200/70 rounded-2xl px-3 py-2.5 shadow-[0_6px_18px_rgba(15,23,42,0.04)]">
           {/* View mode */}
-          <div className="flex rounded-xl bg-gray-100 p-0.5">
+          <div className="flex rounded-xl bg-gray-100/70 p-0.5">
             {(['agenda', 'day', 'week'] as ViewMode[]).map(mode => (
               <button
                 key={mode}
@@ -126,36 +124,18 @@ export function BookingsPage() {
               <button onClick={() => setDate(d => subWeeks(d, 1))} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
               </button>
-              <span className="text-xs font-medium text-gray-600 min-w-[120px] text-center">
+              <span className="text-xs font-medium text-gray-700 min-w-[120px] text-center">
                 {format(startOfWeek(date, { weekStartsOn: 1 }), 'd MMM', { locale: nl })} – {format(endOfWeek(date, { weekStartsOn: 1 }), 'd MMM', { locale: nl })}
               </span>
               <button onClick={() => setDate(d => addWeeks(d, 1))} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
-              <button onClick={() => setDate(new Date())} className="px-2 py-1 text-[10px] font-medium text-violet-600 bg-violet-50 rounded-lg">Nu</button>
+              <button onClick={() => setDate(new Date())} className="px-2.5 py-1 text-[10px] font-medium text-gray-900 bg-gray-100 rounded-lg">Nu</button>
             </div>
           ) : (
             <DateNavigator date={date} onChange={setDate} />
           )}
         </div>
-      </div>
-
-      {/* Quick stats - compact on mobile */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="bg-white rounded-xl border border-gray-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-2.5 lg:p-3.5 text-center">
-          <p className="text-lg lg:text-2xl font-bold text-gray-900">{confirmed.length}</p>
-          <p className="text-[10px] lg:text-[12px] text-gray-500 font-medium">Bevestigd</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-2.5 lg:p-3.5 text-center">
-          <p className="text-lg lg:text-2xl font-bold text-amber-600">{pendingPayment.length}</p>
-          <p className="text-[10px] lg:text-[12px] text-gray-500 font-medium">Wacht</p>
-        </div>
-        {canSeeRevenue && (
-          <div className="bg-white rounded-xl border border-gray-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-2.5 lg:p-3.5 text-center">
-            <p className="text-lg lg:text-2xl font-bold text-gray-900">€{(totalRevenue / 100).toFixed(0)}</p>
-            <p className="text-[10px] lg:text-[12px] text-gray-500 font-medium">Omzet</p>
-          </div>
-        )}
       </div>
 
       {/* Content */}
@@ -169,6 +149,7 @@ export function BookingsPage() {
             services={services}
             staff={staff}
             timezone={salon.timezone}
+            slotStepMinutes={slotStepMinutes}
             onSelectBooking={setSelectedBooking}
             onSlotClick={handleSlotClick}
             onBookingMoved={() => { addToast('success', 'Afspraak verplaatst'); refetch(); }}
@@ -183,6 +164,7 @@ export function BookingsPage() {
           services={services}
           staff={staff}
           timezone={salon.timezone}
+          slotStepMinutes={slotStepMinutes}
           onSelectBooking={setSelectedBooking}
           onSlotClick={handleSlotClick}
         />
@@ -210,6 +192,7 @@ export function BookingsPage() {
           salon={salon}
           services={services}
           staff={staff}
+          slotStepMinutes={slotStepMinutes}
           prefillDate={date}
           prefillStaffId={createPrefill.staffId}
           prefillTime={createPrefill.time}

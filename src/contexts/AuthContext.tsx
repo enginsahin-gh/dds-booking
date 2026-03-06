@@ -118,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Re-fetch salon user on new sign-in (fire-and-forget, non-blocking)
       if (_event === 'SIGNED_IN') {
+        setSalonUser(undefined); // prevent "geen toegang" flash while loading
         fetchSalonUserData(session.user.id).then((su) => {
           if (mounted) setSalonUser(su);
         });

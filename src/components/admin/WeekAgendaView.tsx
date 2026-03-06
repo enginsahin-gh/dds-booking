@@ -108,7 +108,7 @@ export function WeekAgendaView({
             color: staffColorMap.get(b.staff_id) || STAFF_COLORS[0],
           };
         })
-        .filter(b => b.topPx >= 0 && b.topPx < (totalMinutes / 60) * SLOT_HEIGHT);
+        .filter(b => b.topPx >= 0 && b.topPx < (totalMinutes / 60) * hourHeight);
       map.set(key, dayBookings);
     }
     return map;

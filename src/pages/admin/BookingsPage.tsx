@@ -83,24 +83,11 @@ export function BookingsPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex flex-col gap-2 mb-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">Boekingen</h1>
-          <button
-            onClick={() => { setCreatePrefill({}); setShowCreateModal(true); }}
-            className="inline-flex items-center gap-2 px-3.5 py-2 lg:px-4 text-sm font-medium bg-gray-900 text-white rounded-xl hover:bg-black transition-colors shadow-[0_10px_20px_rgba(15,23,42,0.18)]"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            <span className="hidden sm:inline">Nieuwe afspraak</span>
-          </button>
-        </div>
-
-        {/* Controls */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 bg-white border border-gray-200/70 rounded-2xl px-2.5 py-2 shadow-[0_6px_18px_rgba(15,23,42,0.04)]">
-          {/* View mode */}
+      {/* Combined Header & Controls */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 bg-white border border-gray-200/70 rounded-2xl px-3 py-2.5 mb-3 shadow-[0_6px_18px_rgba(15,23,42,0.04)]">
+        {/* Left Section: Title & View Mode Tabs */}
+        <div className="flex items-center justify-between lg:justify-start w-full lg:w-auto gap-3">
+          <h2 className="text-lg font-bold text-gray-900 tracking-tight whitespace-nowrap">Boekingen</h2>
           <div className="flex rounded-xl bg-gray-100/70 p-0.5">
             {(['agenda', 'day', 'week'] as ViewMode[]).map(mode => (
               <button
@@ -114,8 +101,10 @@ export function BookingsPage() {
               </button>
             ))}
           </div>
+        </div>
 
-          {/* Date nav */}
+        {/* Right Section: Date Navigation & New Appointment Button */}
+        <div className="flex flex-col sm:flex-row items-center justify-between lg:justify-end w-full lg:w-auto gap-3 mt-3 lg:mt-0">
           {viewMode === 'week' ? (
             <div className="flex items-center gap-2">
               <button onClick={() => setDate(d => subWeeks(d, 1))} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
@@ -132,6 +121,15 @@ export function BookingsPage() {
           ) : (
             <DateNavigator date={date} onChange={setDate} />
           )}
+          <button
+            onClick={() => { setCreatePrefill({}); setShowCreateModal(true); }}
+            className="inline-flex items-center gap-2 px-3.5 py-2 lg:px-4 text-sm font-medium bg-gray-900 text-white rounded-xl hover:bg-black transition-colors shadow-[0_10px_20px_rgba(15,23,42,0.18)] whitespace-nowrap"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span className="hidden sm:inline">Nieuwe afspraak</span>
+          </button>
         </div>
       </div>
 

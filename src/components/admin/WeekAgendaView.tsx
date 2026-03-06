@@ -160,7 +160,7 @@ export function WeekAgendaView({
       {/* Grid */}
       <div
         className="bg-white rounded-2xl border border-gray-200/70 overflow-auto overscroll-none shadow-[0_12px_32px_rgba(15,23,42,0.06)]"
-        style={{ height: 'calc(100dvh - 240px)' }}
+        style={{ height: 'calc(100dvh - 200px)' }}
       >
         <div style={{ minWidth: totalGridWidth }}>
           {/* Sticky header: day names */}

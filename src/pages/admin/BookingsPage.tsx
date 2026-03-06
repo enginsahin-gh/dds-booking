@@ -84,10 +84,10 @@ export function BookingsPage() {
   return (
     <div>
       {/* Combined Header & Controls */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 bg-white border border-gray-200/70 rounded-2xl px-3 py-2.5 mb-3 shadow-[0_6px_18px_rgba(15,23,42,0.04)]">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2 bg-white border border-gray-200/70 rounded-2xl px-2.5 py-2 lg:px-3 lg:py-2.5 mb-2 lg:mb-3 shadow-[0_6px_18px_rgba(15,23,42,0.04)]">
         {/* Left Section: Title & View Mode Tabs */}
-        <div className="flex items-center justify-between lg:justify-start w-full lg:w-auto gap-3">
-          <h2 className="text-lg font-bold text-gray-900 tracking-tight whitespace-nowrap">Boekingen</h2>
+        <div className="flex items-center justify-between lg:justify-start w-full lg:w-auto gap-2">
+          <h2 className="text-base lg:text-lg font-bold text-gray-900 tracking-tight whitespace-nowrap">Boekingen</h2>
           <div className="flex rounded-xl bg-gray-100/70 p-0.5">
             {(['agenda', 'day', 'week'] as ViewMode[]).map(mode => (
               <button
@@ -104,7 +104,7 @@ export function BookingsPage() {
         </div>
 
         {/* Right Section: Date Navigation & New Appointment Button */}
-        <div className="flex flex-col sm:flex-row items-center justify-between lg:justify-end w-full lg:w-auto gap-3 mt-3 lg:mt-0">
+        <div className="flex flex-col sm:flex-row items-center justify-between lg:justify-end w-full lg:w-auto gap-2 mt-0">
           {viewMode === 'week' ? (
             <div className="flex items-center gap-2">
               <button onClick={() => setDate(d => subWeeks(d, 1))} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
@@ -123,7 +123,7 @@ export function BookingsPage() {
           )}
           <button
             onClick={() => { setCreatePrefill({}); setShowCreateModal(true); }}
-            className="inline-flex items-center gap-2 px-3.5 py-2 lg:px-4 text-sm font-medium bg-gray-900 text-white rounded-xl hover:bg-black transition-colors shadow-[0_10px_20px_rgba(15,23,42,0.18)] whitespace-nowrap"
+            className="hidden lg:inline-flex items-center gap-2 px-3.5 py-2 lg:px-4 text-sm font-medium bg-gray-900 text-white rounded-xl hover:bg-black transition-colors shadow-[0_10px_20px_rgba(15,23,42,0.18)] whitespace-nowrap"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -193,6 +193,17 @@ export function BookingsPage() {
           prefillTime={createPrefill.time}
         />
       )}
+
+      {/* Mobile FAB */}
+      <button
+        onClick={() => { setCreatePrefill({}); setShowCreateModal(true); }}
+        className="lg:hidden fixed right-4 bottom-24 w-12 h-12 rounded-full bg-gray-900 text-white shadow-[0_12px_24px_rgba(15,23,42,0.28)] flex items-center justify-center z-40"
+        aria-label="Nieuwe afspraak"
+      >
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
     </div>
   );
 }

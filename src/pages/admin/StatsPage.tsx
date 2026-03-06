@@ -227,8 +227,9 @@ export function StatsPage() {
   const topCustomers = useMemo(() => {
     const map = new Map<string, { name: string; revenue: number; count: number }>();
     for (const b of confirmed) {
+      if (!b.customer_email) continue;
       const key = b.customer_email.toLowerCase();
-      const existing = map.get(key) || { name: b.customer_name, revenue: 0, count: 0 };
+      const existing = map.get(key) || { name: b.customer_name || 'Onbekend', revenue: 0, count: 0 };
       existing.revenue += getBookingRevenue(b, services);
       existing.count++;
       map.set(key, existing);

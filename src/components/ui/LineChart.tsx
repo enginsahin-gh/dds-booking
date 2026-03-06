@@ -38,6 +38,17 @@ export function LineChart({ data, color = '#8B5CF6', height = 200, formatValue =
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
+  // Handle mouse / touch interaction
+  const handleInteraction = useCallback((clientX: number) => {
+    const el = containerRef.current;
+    if (!el || data.length === 0) return;
+    const rect = el.getBoundingClientRect();
+    const x = clientX - rect.left - padding.left;
+    const stepWidth = chartWidth / Math.max(data.length - 1, 1);
+    const index = Math.round(x / stepWidth);
+    setHoveredIndex(Math.max(0, Math.min(data.length - 1, index)));
+  }, [data.length, chartWidth, padding.left]);
+
   if (data.length === 0 || width === 0) {
     return (
       <div ref={containerRef} style={{ height }} className="flex items-center justify-center text-[13px] text-gray-400">
@@ -63,17 +74,6 @@ export function LineChart({ data, color = '#8B5CF6', height = 200, formatValue =
     ` L ${getX(data.length - 1)},${padding.top + chartHeight} L ${getX(0)},${padding.top + chartHeight} Z`;
 
   const gradientId = `lineGrad-${color.replace('#', '')}`;
-
-  // Handle mouse / touch interaction
-  const handleInteraction = useCallback((clientX: number) => {
-    const el = containerRef.current;
-    if (!el || data.length === 0) return;
-    const rect = el.getBoundingClientRect();
-    const x = clientX - rect.left - padding.left;
-    const stepWidth = chartWidth / Math.max(data.length - 1, 1);
-    const index = Math.round(x / stepWidth);
-    setHoveredIndex(Math.max(0, Math.min(data.length - 1, index)));
-  }, [data.length, chartWidth, padding.left]);
 
   // Y-axis gridlines (4 lines)
   const gridLines = [0, 0.25, 0.5, 0.75, 1].map(pct => ({

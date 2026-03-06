@@ -37,21 +37,10 @@ export function BarChart({ data, color = '#8B5CF6', height = 200, formatValue = 
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
-  if (data.length === 0 || width === 0) {
-    return (
-      <div ref={containerRef} style={{ height }} className="flex items-center justify-center text-[13px] text-gray-400">
-        {data.length === 0 ? 'Geen data beschikbaar' : ''}
-      </div>
-    );
-  }
-
+  const safeLen = Math.max(1, data.length);
   const maxValue = Math.max(...data.map(d => d.value), 1);
-  const barGap = Math.max(2, Math.min(6, chartWidth / data.length * 0.15));
-  const barWidth = Math.max(4, (chartWidth - barGap * (data.length - 1)) / data.length);
-
-  const getBarHeight = (v: number) => (v / maxValue) * chartHeight;
-  const getX = (i: number) => padding.left + i * (barWidth + barGap);
-  const getY = (v: number) => padding.top + chartHeight - getBarHeight(v);
+  const barGap = Math.max(2, Math.min(6, chartWidth / safeLen * 0.15));
+  const barWidth = Math.max(4, (chartWidth - barGap * (safeLen - 1)) / safeLen);
 
   const handleInteraction = useCallback((clientX: number) => {
     const el = containerRef.current;
@@ -62,6 +51,18 @@ export function BarChart({ data, color = '#8B5CF6', height = 200, formatValue = 
     const index = Math.floor(x / totalBarWidth);
     setHoveredIndex(Math.max(0, Math.min(data.length - 1, index)));
   }, [data.length, barWidth, barGap, padding.left]);
+
+  if (data.length === 0 || width === 0) {
+    return (
+      <div ref={containerRef} style={{ height }} className="flex items-center justify-center text-[13px] text-gray-400">
+        {data.length === 0 ? 'Geen data beschikbaar' : ''}
+      </div>
+    );
+  }
+
+  const getBarHeight = (v: number) => (v / maxValue) * chartHeight;
+  const getX = (i: number) => padding.left + i * (barWidth + barGap);
+  const getY = (v: number) => padding.top + chartHeight - getBarHeight(v);
 
   return (
     <div ref={containerRef} className="w-full select-none" style={{ height }}>

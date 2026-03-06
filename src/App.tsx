@@ -24,6 +24,7 @@ const CustomersPage = lazy(() => import('./pages/admin/CustomersPage').then(m =>
 const UsersPage = lazy(() => import('./pages/admin/UsersPage').then(m => ({ default: m.UsersPage })));
 const StatsPage = lazy(() => import('./pages/admin/StatsPage').then(m => ({ default: m.StatsPage })));
 const WaitlistPage = lazy(() => import('./pages/admin/WaitlistPage').then(m => ({ default: m.WaitlistPage })));
+const CommunicationsPage = lazy(() => import('./pages/admin/CommunicationsPage').then(m => ({ default: m.CommunicationsPage })));
 const BookingPage = lazy(() => import('./pages/BookingPage').then(m => ({ default: m.BookingPage })));
 const CustomerPortalPage = lazy(() => import('./pages/CustomerPortalPage').then(m => ({ default: m.CustomerPortalPage })));
 const PaymentReturnPage = lazy(() => import('./pages/PaymentReturnPage').then(m => ({ default: m.PaymentReturnPage })));
@@ -68,6 +69,7 @@ export function App() {
               <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                 <Route index element={<DashboardPage />} />
                 <Route path="bookings" element={<BookingsPage />} />
+                <Route path="communicatie" element={<CommunicationsPage />} />
                 <Route path="services" element={<OwnerRoute><ServicesPage /></OwnerRoute>} />
                 <Route path="staff" element={<StaffPage />} />
                 <Route path="staff/:staffId/schedule" element={<OwnerRoute><SchedulePage /></OwnerRoute>} />

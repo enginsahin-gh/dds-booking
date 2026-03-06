@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
+import { buildEmailPreview, createEmailLog, updateEmailLog } from '../lib/email-logs';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('nl-NL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Amsterdam' });
@@ -299,7 +300,7 @@ function reminder1hHtml(d: any): string {
  * Email sending via Resend API
  * which is free for Cloudflare Workers (no API key needed, uses CF worker verification).
  */
-async function sendResend(apiKey: string, from: string, fromName: string, to: string, subject: string, html: string, replyTo?: string): Promise<boolean> {
+async function sendResend(apiKey: string, from: string, fromName: string, to: string, subject: string, html: string, replyTo?: string): Promise<{ success: boolean; id?: string; error?: string }> {
   const payload: any = {
     from: `${fromName} <${from}>`,
     to: [to],
@@ -319,12 +320,18 @@ async function sendResend(apiKey: string, from: string, fromName: string, to: st
     body: JSON.stringify(payload),
   });
 
+  const bodyText = await res.text();
   if (!res.ok) {
-    const errBody = await res.text();
-    console.error('Resend error:', res.status, errBody);
-    return false;
+    console.error('Resend error:', res.status, bodyText);
+    return { success: false, error: bodyText || `Resend error ${res.status}` };
   }
-  return true;
+
+  try {
+    const json = bodyText ? JSON.parse(bodyText) : {};
+    return { success: true, id: json?.id };
+  } catch {
+    return { success: true };
+  }
 }
 
 export async function sendEmail(c: Context<{ Bindings: Env }>) {
@@ -486,9 +493,45 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
     return c.json({ error: 'Invalid email type' }, 400);
   }
 
+  if (!to) return c.json({ error: 'Missing recipient email' }, 400);
+
+  const customerEmailTypes = new Set([
+    'confirmation',
+    'cancellation',
+    'reminder_24h',
+    'reminder_1h',
+    'review_request',
+  ]);
+
+  const shouldLog = customerEmailTypes.has(type);
+  let logId: string | null = null;
+
   // Check email preferences: if this email type is disabled, skip sending
   const emailPrefs = salon.email_preferences || {};
   if (emailPrefs[type] === false) {
+    if (shouldLog) {
+      const preview = buildEmailPreview(html);
+      await createEmailLog(supabase, {
+        salon_id: salonId,
+        booking_id: bookingId,
+        type,
+        status: 'skipped',
+        provider: 'resend',
+        to_email: to,
+        customer_name: booking.customer_name,
+        subject,
+        body_preview: preview,
+        body_html: html,
+        error_message: 'Email type disabled by salon',
+        meta: {
+          service_name: displayServiceName,
+          staff_name: staff.name,
+          date,
+          start_time: startTime,
+          end_time: endTime,
+        },
+      });
+    }
     return c.json({ success: true, skipped: true, reason: 'Email type disabled by salon' });
   }
 
@@ -506,6 +549,29 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
   };
   html = brandedEmailWrapper(branding, html);
 
+  if (shouldLog) {
+    const preview = buildEmailPreview(html);
+    logId = await createEmailLog(supabase, {
+      salon_id: salonId,
+      booking_id: bookingId,
+      type,
+      status: 'queued',
+      provider: 'resend',
+      to_email: to,
+      customer_name: booking.customer_name,
+      subject,
+      body_preview: preview,
+      body_html: html,
+      meta: {
+        service_name: displayServiceName,
+        staff_name: staff.name,
+        date,
+        start_time: startTime,
+        end_time: endTime,
+      },
+    });
+  }
+
   const fromEmail = 'noreply@bellure.nl';
   const fromName = ['notification', 'cancellation_notification'].includes(type)
     ? 'Bellure Boekingen'
@@ -522,7 +588,16 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
     return c.json({ success: false, error: 'Email not configured' }, 500);
   }
 
-  const success = await sendResend(resendKey, fromEmail, fromName, to, subject, html, replyTo);
+  const result = await sendResend(resendKey, fromEmail, fromName, to, subject, html, replyTo);
 
-  return c.json({ success });
+  if (logId) {
+    await updateEmailLog(supabase, logId, {
+      status: result.success ? 'sent' : 'failed',
+      provider_id: result.id,
+      error_message: result.success ? null : (result.error || 'Send failed'),
+      sent_at: result.success ? new Date().toISOString() : null,
+    });
+  }
+
+  return c.json({ success: result.success });
 }

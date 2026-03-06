@@ -2,6 +2,7 @@ import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
 import { verifyAuth } from '../lib/auth';
+import { buildEmailPreview, createEmailLog, updateEmailLog } from '../lib/email-logs';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const MAX_WAITLIST_PER_EMAIL = 3;
@@ -189,6 +190,27 @@ export async function waitlistNotify(c: Context<{ Bindings: Env }>) {
 </body>
 </html>`;
 
+  const subject = `Plek vrijgekomen: ${service.name} bij ${salon.name}`;
+  const preview = buildEmailPreview(html);
+
+  const logId = await createEmailLog(supabase, {
+    salon_id: entry.salon_id,
+    waitlist_id: entry.id,
+    type: 'waitlist',
+    status: 'queued',
+    provider: 'resend',
+    to_email: entry.customer_email,
+    customer_name: entry.customer_name,
+    subject,
+    body_preview: preview,
+    body_html: html,
+    meta: {
+      preferred_date: entry.preferred_date,
+      service_name: service.name,
+      salon_name: salon.name,
+    },
+  });
+
   const resendKey = c.env.RESEND_API_KEY;
   if (resendKey) {
     const res = await fetch('https://api.resend.com/emails', {
@@ -201,14 +223,31 @@ export async function waitlistNotify(c: Context<{ Bindings: Env }>) {
         from: `${salon.name} <noreply@bellure.nl>`,
         to: [entry.customer_email],
         reply_to: [salon.email],
-        subject: `Plek vrijgekomen: ${service.name} bij ${salon.name}`,
+        subject,
         html,
       }),
     });
 
+    const bodyText = await res.text();
     if (!res.ok) {
-      const errBody = await res.text();
-      console.error('Waitlist notification email error:', res.status, errBody);
+      console.error('Waitlist notification email error:', res.status, bodyText);
+      if (logId) {
+        await updateEmailLog(supabase, logId, {
+          status: 'failed',
+          error_message: bodyText || `Resend error ${res.status}`,
+        });
+      }
+    } else if (logId) {
+      let providerId: string | null = null;
+      try {
+        const json = bodyText ? JSON.parse(bodyText) : {};
+        providerId = json?.id || null;
+      } catch { /* ignore */ }
+      await updateEmailLog(supabase, logId, {
+        status: 'sent',
+        provider_id: providerId,
+        sent_at: new Date().toISOString(),
+      });
     }
   }
 

@@ -92,7 +92,7 @@ export function BookingsPage() {
           </div>
           <button
             onClick={() => { setCreatePrefill({}); setShowCreateModal(true); }}
-            className="inline-flex items-center gap-2 px-3.5 py-2 lg:px-4 text-sm font-medium bg-gray-900 text-white rounded-xl hover:bg-black transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-3.5 py-2 lg:px-4 text-sm font-medium bg-gray-900 text-white rounded-xl hover:bg-black transition-colors shadow-[0_10px_20px_rgba(15,23,42,0.18)]"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />

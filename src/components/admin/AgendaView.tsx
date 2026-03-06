@@ -24,11 +24,11 @@ const TIME_COL_W = 48; // px
 const COL_MIN_W = 130; // px per staff column
 
 const STATUS_COLORS: Record<string, string> = {
-  confirmed: 'bg-violet-100 border-violet-400 text-violet-900',
-  pending_payment: 'bg-amber-100 border-amber-400 text-amber-900',
-  cancelled: 'bg-gray-100 border-gray-300 text-gray-500 opacity-50',
-  no_show: 'bg-red-100 border-red-300 text-red-800',
-  completed: 'bg-blue-100 border-blue-400 text-blue-900',
+  confirmed: 'bg-violet-50 border-violet-500 text-violet-900',
+  pending_payment: 'bg-amber-50 border-amber-500 text-amber-900',
+  cancelled: 'bg-gray-50 border-gray-300 text-gray-500 opacity-60',
+  no_show: 'bg-rose-50 border-rose-500 text-rose-900',
+  completed: 'bg-emerald-50 border-emerald-500 text-emerald-900',
 };
 
 function snapToStep(minutes: number, step: number): number {
@@ -135,7 +135,7 @@ export function AgendaView({
 
   return (
     <div
-      className="bg-white rounded-xl border border-gray-200 overflow-auto overscroll-none"
+      className="bg-white rounded-2xl border border-gray-200/70 overflow-auto overscroll-none shadow-[0_12px_32px_rgba(15,23,42,0.06)]"
       style={{ maxHeight: 'calc(100dvh - 260px)' }}
     >
       {/*
@@ -145,22 +145,22 @@ export function AgendaView({
       */}
       <div style={{ minWidth: totalGridWidth }}>
         {/* Sticky header row */}
-        <div className="flex border-b border-gray-200 bg-white sticky top-0 z-20">
+        <div className="flex border-b border-gray-200/70 bg-white sticky top-0 z-20">
           <div className="border-r border-gray-100 flex-shrink-0" style={{ width: TIME_COL_W }} />
           {activeStaff.map(s => (
             <div
               key={s.id}
-              className="px-2 py-2.5 text-center border-r border-gray-100 last:border-r-0 flex-shrink-0"
+              className="px-2.5 py-3 text-center border-r border-gray-200/70 last:border-r-0 flex-shrink-0"
               style={{ width: COL_MIN_W }}
             >
               {s.photo_url ? (
-                <img src={s.photo_url} alt="" className="w-7 h-7 rounded-full mx-auto mb-1 object-cover" />
+                <img src={s.photo_url} alt="" className="w-8 h-8 rounded-full mx-auto mb-1 object-cover" />
               ) : (
-                <div className="w-7 h-7 rounded-full mx-auto mb-1 bg-violet-100 text-violet-600 flex items-center justify-center text-xs font-bold">
+                <div className="w-8 h-8 rounded-full mx-auto mb-1 bg-violet-100/80 text-violet-700 flex items-center justify-center text-[11px] font-bold">
                   {s.name.charAt(0)}
                 </div>
               )}
-              <p className="text-[11px] font-medium text-gray-900 truncate">{s.name}</p>
+              <p className="text-[12px] font-semibold text-gray-900 truncate">{s.name}</p>
             </div>
           ))}
         </div>
@@ -168,9 +168,9 @@ export function AgendaView({
         {/* Grid body */}
         <div className="flex relative" style={{ height: gridHeight }}>
           {/* Time column */}
-          <div className="flex-shrink-0 border-r border-gray-100" style={{ width: TIME_COL_W }}>
+          <div className="flex-shrink-0 border-r border-gray-200/70" style={{ width: TIME_COL_W }}>
             {hours.map(h => (
-              <div key={h} className="border-b border-gray-50 text-[10px] text-gray-400 pr-1.5 text-right" style={{ height: SLOT_HEIGHT }}>
+              <div key={h} className="border-b border-gray-200/60 text-[11px] font-medium text-gray-500 pr-1.5 text-right" style={{ height: SLOT_HEIGHT }}>
                 <span className="relative -top-1.5">{`${String(h).padStart(2, '0')}:00`}</span>
               </div>
             ))}
@@ -182,7 +182,7 @@ export function AgendaView({
             return (
               <div
                 key={staffMember.id}
-                className="relative border-r border-gray-100 last:border-r-0 cursor-pointer flex-shrink-0"
+                className="relative border-r border-gray-200/70 last:border-r-0 cursor-pointer flex-shrink-0"
                 style={{ height: gridHeight, width: COL_MIN_W }}
                 onClick={e => handleSlotClick(e, staffMember.id)}
                 onDragOver={e => handleDragOver(e, staffMember.id)}
@@ -190,8 +190,8 @@ export function AgendaView({
                 onDrop={e => handleDrop(e, staffMember.id)}
               >
                 {hours.map(h => (
-                  <div key={h} className="absolute w-full border-b border-gray-50" style={{ top: (h - HOUR_START) * SLOT_HEIGHT, height: SLOT_HEIGHT }}>
-                    <div className="absolute w-full border-b border-gray-50/50" style={{ top: SLOT_HEIGHT / 2 }} />
+                  <div key={h} className="absolute w-full border-b border-gray-200/60" style={{ top: (h - HOUR_START) * SLOT_HEIGHT, height: SLOT_HEIGHT }}>
+                    <div className="absolute w-full border-b border-gray-100" style={{ top: SLOT_HEIGHT / 2 }} />
                   </div>
                 ))}
 
@@ -213,7 +213,7 @@ export function AgendaView({
                     onDragStart={e => canEditStaff(booking.staff_id) && handleDragStart(e, booking.id)}
                     onDragEnd={() => { setDragBooking(null); setDropTarget(null); }}
                     onClick={e => { e.stopPropagation(); onSelectBooking(booking); }}
-                    className={`absolute left-0.5 right-0.5 rounded-md border-l-[3px] px-1.5 py-0.5 cursor-grab active:cursor-grabbing overflow-hidden transition-shadow hover:shadow-md z-10 ${
+                    className={`absolute left-0.5 right-0.5 rounded-lg border border-black/5 border-l-[4px] px-1.5 py-0.5 cursor-grab active:cursor-grabbing overflow-hidden transition-shadow shadow-[0_6px_16px_rgba(15,23,42,0.08)] hover:shadow-[0_10px_22px_rgba(15,23,42,0.12)] z-10 ${
                       STATUS_COLORS[booking.status] || STATUS_COLORS.confirmed
                     } ${dragBooking === booking.id ? 'opacity-40' : ''}`}
                     style={{ top: topPx, height: heightPx }}

@@ -19,7 +19,7 @@ interface Props {
 
 const HOUR_START = 7;
 const HOUR_END = 21;
-const SLOT_HEIGHT = 48;
+const BASE_SLOT_HEIGHT = 24; // px per step slot
 const TIME_COL_W = 48; // px
 const COL_MIN_W = 130; // px per staff column
 
@@ -35,10 +35,10 @@ function snapToStep(minutes: number, step: number): number {
   return Math.round(minutes / step) * step;
 }
 
-function getTimeFromY(e: React.DragEvent | React.MouseEvent, el: Element, step: number): string {
+function getTimeFromY(e: React.DragEvent | React.MouseEvent, el: Element, step: number, hourHeight: number): string {
   const rect = el.getBoundingClientRect();
   const y = e.clientY - rect.top;
-  const snapped = snapToStep((y / SLOT_HEIGHT) * 60, step);
+  const snapped = snapToStep((y / hourHeight) * 60, step);
   const totalMin = HOUR_START * 60 + snapped;
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
@@ -62,10 +62,11 @@ export function AgendaView({
   }, [allStaff, getReadableStaffIds]);
   const hours = useMemo(() => Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i), []);
   const totalMinutes = (HOUR_END - HOUR_START) * 60;
-  const gridHeight = hours.length * SLOT_HEIGHT;
-  const totalGridWidth = TIME_COL_W + activeStaff.length * COL_MIN_W;
   const segmentsPerHour = Math.max(1, Math.round(60 / stepMinutes));
-  const segmentHeight = SLOT_HEIGHT / segmentsPerHour;
+  const hourHeight = BASE_SLOT_HEIGHT * segmentsPerHour;
+  const gridHeight = hours.length * hourHeight;
+  const totalGridWidth = TIME_COL_W + activeStaff.length * COL_MIN_W;
+  const segmentHeight = BASE_SLOT_HEIGHT;
   const totalSegments = hours.length * segmentsPerHour;
 
   const positionedBookings = useMemo(() => {
@@ -79,8 +80,8 @@ export function AgendaView({
         const svc = services.find(s => s.id === b.service_id);
         return {
           booking: b, staffId: b.staff_id,
-          topPx: (startMin / 60) * SLOT_HEIGHT,
-          heightPx: Math.max((durationMin / 60) * SLOT_HEIGHT, 20),
+          topPx: (startMin / 60) * hourHeight,
+          heightPx: Math.max((durationMin / 60) * hourHeight, 20),
           timeLabel: `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`,
           serviceName: svc?.name || '', customerName: b.customer_name, startMin,
         };
@@ -97,7 +98,7 @@ export function AgendaView({
   const handleDragOver = (e: React.DragEvent, staffId: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    setDropTarget({ staffId, time: getTimeFromY(e, e.currentTarget, stepMinutes) });
+    setDropTarget({ staffId, time: getTimeFromY(e, e.currentTarget, stepMinutes, hourHeight) });
   };
 
   const handleDrop = async (e: React.DragEvent, staffId: string) => {
@@ -126,7 +127,7 @@ export function AgendaView({
 
   const handleSlotClick = (e: React.MouseEvent, staffId: string) => {
     if ((e.target as HTMLElement).closest('[data-booking]')) return;
-    onSlotClick(staffId, getTimeFromY(e, e.currentTarget, stepMinutes));
+    onSlotClick(staffId, getTimeFromY(e, e.currentTarget, stepMinutes, hourHeight));
   };
 
   // Current time
@@ -173,7 +174,7 @@ export function AgendaView({
           {/* Time column */}
           <div className="flex-shrink-0 border-r border-gray-200/70" style={{ width: TIME_COL_W }}>
             {hours.map(h => (
-              <div key={h} className="border-b border-gray-200/60 text-[11px] font-medium text-gray-500 pr-1.5 text-right" style={{ height: SLOT_HEIGHT }}>
+              <div key={h} className="border-b border-gray-200/60 text-[11px] font-medium text-gray-500 pr-1.5 text-right" style={{ height: hourHeight }}>
                 <span className={`relative ${h === HOUR_START ? 'top-0' : '-top-1.5'}`}>{`${String(h).padStart(2, '0')}:00`}</span>
               </div>
             ))}
@@ -207,8 +208,8 @@ export function AgendaView({
                   <div
                     className="absolute left-1 right-1 bg-violet-200/50 border-2 border-dashed border-violet-400 rounded z-10 pointer-events-none"
                     style={{
-                      top: (() => { const [h, m] = dropTarget.time.split(':').map(Number); return ((h * 60 + m - HOUR_START * 60) / 60) * SLOT_HEIGHT; })(),
-                      height: (() => { const b = bookings.find(x => x.id === dragBooking); const svc = b ? services.find(s => s.id === b.service_id) : null; return ((svc?.duration_min || 30) / 60) * SLOT_HEIGHT; })(),
+                      top: (() => { const [h, m] = dropTarget.time.split(':').map(Number); return ((h * 60 + m - HOUR_START * 60) / 60) * hourHeight; })(),
+                      height: (() => { const b = bookings.find(x => x.id === dragBooking); const svc = b ? services.find(s => s.id === b.service_id) : null; return ((svc?.duration_min || 30) / 60) * hourHeight; })(),
                     }}
                   />
                 )}
@@ -237,7 +238,7 @@ export function AgendaView({
           })}
 
           {showNowLine && (
-            <div className="absolute right-0 h-0.5 bg-rose-500 z-[15] pointer-events-none" style={{ top: (nowMin / 60) * SLOT_HEIGHT, left: TIME_COL_W }}>
+            <div className="absolute right-0 h-0.5 bg-rose-500 z-[15] pointer-events-none" style={{ top: (nowMin / 60) * hourHeight, left: TIME_COL_W }}>
               <div className="absolute -left-1 -top-1 w-2.5 h-2.5 rounded-full bg-rose-500" />
             </div>
           )}

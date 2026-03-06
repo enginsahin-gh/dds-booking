@@ -18,7 +18,7 @@ interface Props {
 
 const HOUR_START = 7;
 const HOUR_END = 21;
-const SLOT_HEIGHT = 48;
+const BASE_SLOT_HEIGHT = 24;
 const TIME_COL_W = 44;
 const DAY_MIN_W = 100;
 
@@ -47,10 +47,11 @@ export function WeekAgendaView({
   }, [allStaff, getReadableStaffIds]);
 
   const hours = useMemo(() => Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i), []);
-  const gridHeight = hours.length * SLOT_HEIGHT;
   const totalMinutes = (HOUR_END - HOUR_START) * 60;
   const segmentsPerHour = Math.max(1, Math.round(60 / stepMinutes));
-  const segmentHeight = SLOT_HEIGHT / segmentsPerHour;
+  const hourHeight = BASE_SLOT_HEIGHT * segmentsPerHour;
+  const gridHeight = hours.length * hourHeight;
+  const segmentHeight = BASE_SLOT_HEIGHT;
   const totalSegments = hours.length * segmentsPerHour;
 
   const weekStart = useMemo(() => startOfWeek(date, { weekStartsOn: 1 }), [date]);
@@ -98,8 +99,8 @@ export function WeekAgendaView({
           const stf = activeStaff.find(s => s.id === b.staff_id);
           return {
             booking: b,
-            topPx: (startMin / 60) * SLOT_HEIGHT,
-            heightPx: Math.max((durationMin / 60) * SLOT_HEIGHT, 20),
+            topPx: (startMin / 60) * hourHeight,
+            heightPx: Math.max((durationMin / 60) * hourHeight, 20),
             timeLabel: `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`,
             serviceName: svc?.name || '',
             customerName: b.customer_name,
@@ -195,7 +196,7 @@ export function WeekAgendaView({
             {/* Time column */}
             <div className="flex-shrink-0 border-r border-gray-200/70" style={{ width: TIME_COL_W }}>
               {hours.map(h => (
-                <div key={h} className="border-b border-gray-200/60 text-[11px] font-medium text-gray-500 pr-1 text-right" style={{ height: SLOT_HEIGHT }}>
+                <div key={h} className="border-b border-gray-200/60 text-[11px] font-medium text-gray-500 pr-1 text-right" style={{ height: hourHeight }}>
                   <span className={`relative ${h === HOUR_START ? 'top-0' : '-top-1.5'}`}>{`${String(h).padStart(2, '0')}:00`}</span>
                 </div>
               ))}
@@ -219,7 +220,7 @@ export function WeekAgendaView({
                     // Calculate time from click position
                     const rect = e.currentTarget.getBoundingClientRect();
                     const y = e.clientY - rect.top;
-                    const snappedMin = Math.round(((y / SLOT_HEIGHT) * 60) / stepMinutes) * stepMinutes;
+                    const snappedMin = Math.round(((y / hourHeight) * 60) / stepMinutes) * stepMinutes;
                     const totalMin = HOUR_START * 60 + snappedMin;
                     const h = Math.floor(totalMin / 60);
                     const m = totalMin % 60;
@@ -270,7 +271,7 @@ export function WeekAgendaView({
                   {isToday && nowMin >= 0 && nowMin < totalMinutes && (
                     <div
                       className="absolute left-0 right-0 h-0.5 bg-rose-500 z-[15] pointer-events-none"
-                      style={{ top: (nowMin / 60) * SLOT_HEIGHT }}
+                      style={{ top: (nowMin / 60) * hourHeight }}
                     >
                       <div className="absolute -left-1 -top-1 w-2.5 h-2.5 rounded-full bg-rose-500" />
                     </div>

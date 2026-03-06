@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks, format, isSameDay } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { useAuth } from '../../hooks/useAuth';
@@ -21,6 +21,7 @@ type ViewMode = 'day' | 'week' | 'agenda';
 export function BookingsPage() {
   const { salon } = useOutletContext<{ salon: Salon | null }>();
   const { addToast } = useToast();
+  const [searchParams] = useSearchParams();
   const [date, setDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('agenda');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -37,6 +38,7 @@ export function BookingsPage() {
   }, [date, viewMode]);
 
   const { bookings, loading, refetch, cancelBooking, completeBooking, noShowBooking } = useBookings(salon?.id, dateRange);
+  const bookingParam = searchParams.get('booking');
   const { services } = useServices(salon?.id);
   const { staff } = useStaff(salon?.id);
   const { canEditStaff, canSeeRevenue } = useAuth();
@@ -63,6 +65,13 @@ export function BookingsPage() {
   const selectedService = selectedBooking ? services.find(s => s.id === selectedBooking.service_id) || null : null;
   const selectedStaff = selectedBooking ? staff.find(s => s.id === selectedBooking.staff_id) || null : null;
   const slotStepMinutes = (salon as any)?.slot_step_minutes ?? 15;
+
+  useEffect(() => {
+    if (!bookingParam || bookings.length === 0) return;
+    if (selectedBooking?.id === bookingParam) return;
+    const found = bookings.find(b => b.id === bookingParam);
+    if (found) setSelectedBooking(found);
+  }, [bookingParam, bookings, selectedBooking]);
 
   // Week view grouping
   const weekDays = useMemo(() => {

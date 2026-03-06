@@ -165,7 +165,7 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
       const returnBookingId = params.get('booking_id');
 
       const { data: salonData, error: salonErr } = await supabase
-        .from('salons')
+        .from('public_salons')
         .select('*')
         .eq('slug', salonSlug)
         .single();

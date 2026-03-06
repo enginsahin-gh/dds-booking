@@ -65,6 +65,13 @@ function getBookingRevenue(b: Booking, services: Service[]): number {
   return b.amount_total_cents || services.find(s => s.id === b.service_id)?.price_cents || 0;
 }
 
+function safeParseISO(value?: string | null): Date | null {
+  if (!value) return null;
+  const d = parseISO(value);
+  if (isNaN(d.getTime())) return null;
+  return d;
+}
+
 export function StatsPage() {
   const { salon } = useOutletContext<{ salon: Salon | null }>();
   const [period, setPeriod] = useState<Period>('30d');
@@ -126,7 +133,9 @@ export function StatsPage() {
         months.set(format(d, 'yyyy-MM'), 0);
       }
       for (const b of confirmed) {
-        const key = format(parseISO(b.start_at), 'yyyy-MM');
+        const date = safeParseISO(b.start_at);
+        if (!date) continue;
+        const key = format(date, 'yyyy-MM');
         if (months.has(key)) {
           months.set(key, (months.get(key) || 0) + getBookingRevenue(b, services));
         }
@@ -144,7 +153,9 @@ export function StatsPage() {
       days.set(format(d, 'yyyy-MM-dd'), 0);
     }
     for (const b of confirmed) {
-      const key = format(parseISO(b.start_at), 'yyyy-MM-dd');
+      const date = safeParseISO(b.start_at);
+      if (!date) continue;
+      const key = format(date, 'yyyy-MM-dd');
       if (days.has(key)) {
         days.set(key, (days.get(key) || 0) + getBookingRevenue(b, services));
       }
@@ -164,7 +175,9 @@ export function StatsPage() {
       days.set(format(d, 'yyyy-MM-dd'), 0);
     }
     for (const b of confirmed) {
-      const key = format(parseISO(b.start_at), 'yyyy-MM-dd');
+      const date = safeParseISO(b.start_at);
+      if (!date) continue;
+      const key = format(date, 'yyyy-MM-dd');
       if (days.has(key)) {
         days.set(key, (days.get(key) || 0) + 1);
       }
@@ -194,17 +207,15 @@ export function StatsPage() {
   const heatmapData = useMemo(() => {
     const matrix: number[][] = Array.from({ length: 7 }, () => new Array(24).fill(0));
     for (const b of confirmed) {
-      try {
-        const date = parseISO(b.start_at);
-        if (isNaN(date.getTime())) continue;
-        // JS getDay: 0=Sunday, but we want 0=Monday
-        const jsDay = date.getDay();
-        const dayIndex = jsDay === 0 ? 6 : jsDay - 1;
-        const hour = date.getHours();
-        if (dayIndex >= 0 && dayIndex < 7 && hour >= 0 && hour < 24) {
-          matrix[dayIndex][hour]++;
-        }
-      } catch { continue; }
+      const date = safeParseISO(b.start_at);
+      if (!date) continue;
+      // JS getDay: 0=Sunday, but we want 0=Monday
+      const jsDay = date.getDay();
+      const dayIndex = jsDay === 0 ? 6 : jsDay - 1;
+      const hour = date.getHours();
+      if (dayIndex >= 0 && dayIndex < 7 && hour >= 0 && hour < 24) {
+        matrix[dayIndex][hour]++;
+      }
     }
     return matrix;
   }, [confirmed]);

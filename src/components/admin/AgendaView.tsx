@@ -24,11 +24,11 @@ const TIME_COL_W = 48; // px
 const COL_MIN_W = 130; // px per staff column
 
 const STATUS_COLORS: Record<string, string> = {
-  confirmed: 'bg-violet-50 border-violet-500 text-violet-900',
-  pending_payment: 'bg-amber-50 border-amber-500 text-amber-900',
-  cancelled: 'bg-gray-50 border-gray-300 text-gray-500 opacity-60',
-  no_show: 'bg-rose-50 border-rose-500 text-rose-900',
-  completed: 'bg-emerald-50 border-emerald-500 text-emerald-900',
+  confirmed: 'border-l-violet-500 text-gray-900',
+  pending_payment: 'border-l-amber-500 text-gray-900',
+  cancelled: 'border-l-gray-300 text-gray-500 opacity-60',
+  no_show: 'border-l-rose-500 text-rose-900',
+  completed: 'border-l-emerald-500 text-gray-900',
 };
 
 function snapToStep(minutes: number, step: number): number {
@@ -171,7 +171,7 @@ export function AgendaView({
           <div className="flex-shrink-0 border-r border-gray-200/70" style={{ width: TIME_COL_W }}>
             {hours.map(h => (
               <div key={h} className="border-b border-gray-200/60 text-[11px] font-medium text-gray-500 pr-1.5 text-right" style={{ height: SLOT_HEIGHT }}>
-                <span className="relative -top-1.5">{`${String(h).padStart(2, '0')}:00`}</span>
+                <span className={`relative ${h === HOUR_START ? 'top-0' : '-top-1.5'}`}>{`${String(h).padStart(2, '0')}:00`}</span>
               </div>
             ))}
           </div>
@@ -213,14 +213,14 @@ export function AgendaView({
                     onDragStart={e => canEditStaff(booking.staff_id) && handleDragStart(e, booking.id)}
                     onDragEnd={() => { setDragBooking(null); setDropTarget(null); }}
                     onClick={e => { e.stopPropagation(); onSelectBooking(booking); }}
-                    className={`absolute left-0.5 right-0.5 rounded-lg border border-black/5 border-l-[4px] px-1.5 py-0.5 cursor-grab active:cursor-grabbing overflow-hidden transition-shadow shadow-[0_6px_16px_rgba(15,23,42,0.08)] hover:shadow-[0_10px_22px_rgba(15,23,42,0.12)] z-10 ${
+                    className={`absolute left-0.5 right-0.5 rounded-xl border border-gray-200/70 border-l-[4px] bg-white/95 px-2 py-1.5 cursor-grab active:cursor-grabbing overflow-hidden transition-shadow shadow-[0_8px_20px_rgba(15,23,42,0.10)] hover:shadow-[0_12px_26px_rgba(15,23,42,0.14)] z-10 ${
                       STATUS_COLORS[booking.status] || STATUS_COLORS.confirmed
                     } ${dragBooking === booking.id ? 'opacity-40' : ''}`}
                     style={{ top: topPx, height: heightPx }}
                     title={`${customerName}\n${serviceName}\n${timeLabel}`}
                   >
-                    <p className="text-[10px] font-medium truncate leading-tight">{customerName}</p>
-                    {heightPx > 28 && <p className="text-[9px] opacity-75 truncate">{serviceName}</p>}
+                    <p className="text-[11px] font-semibold truncate leading-tight">{customerName}</p>
+                    {heightPx > 28 && <p className="text-[10px] opacity-80 truncate">{serviceName}</p>}
                     {heightPx > 42 && <p className="text-[9px] opacity-60">{timeLabel}</p>}
                   </div>
                 ))}

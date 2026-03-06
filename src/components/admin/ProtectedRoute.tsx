@@ -4,7 +4,7 @@ import { Spinner } from '../ui/Spinner';
 import type React from 'react';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, salonUser, loading } = useAuth();
+  const { user, salonUser, loading, signOut } = useAuth();
 
   // Still initializing auth
   if (loading) return <Spinner className="min-h-screen" />;
@@ -27,6 +27,12 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           </div>
           <h2 className="text-lg font-bold text-gray-900 mb-2">Geen toegang</h2>
           <p className="text-sm text-gray-500 mb-4">Je account is niet gekoppeld aan een salon. Neem contact op met de eigenaar.</p>
+          <button
+            onClick={() => signOut()}
+            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-xl bg-gray-900 text-white shadow-sm hover:bg-black transition-colors"
+          >
+            Uitloggen
+          </button>
         </div>
       </div>
     );

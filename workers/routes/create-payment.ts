@@ -63,13 +63,17 @@ export async function createPayment(c: Context<{ Bindings: Env }>) {
   const isDeposit = salon.payment_mode === 'deposit';
   const description = isDeposit ? `Aanbetaling: ${service?.name || 'Behandeling'} bij ${salon.name}` : `${service?.name || 'Behandeling'} bij ${salon.name}`;
   const siteUrl = c.env.SITE_URL || 'https://api.bellure.nl';
+  const webhookSecret = c.env.MOLLIE_WEBHOOK_SECRET;
+  const webhookUrl = webhookSecret
+    ? `${siteUrl}/api/mollie-webhook?token=${webhookSecret}`
+    : `${siteUrl}/api/mollie-webhook`;
 
   // Build payment request body
   const paymentBody: Record<string, unknown> = {
     amount: { currency: 'EUR', value: formatMollieAmount(depositCents) },
     description,
     redirectUrl,
-    webhookUrl: `${siteUrl}/api/mollie-webhook`,
+    webhookUrl,
     metadata: { booking_id: bookingId, salon_slug: salon.slug, payment_type: salon.payment_mode },
   };
 

@@ -23,6 +23,10 @@ function eurToCents(eur: string): number {
   return Math.round(parseFloat(eur) * 100);
 }
 
+function buildWebhookUrl(base: string, path: string, secret?: string): string {
+  return secret ? `${base}${path}?token=${secret}` : `${base}${path}`;
+}
+
 // Helper: Mollie API fetch
 async function mollieRequest(
   apiKey: string,
@@ -132,7 +136,7 @@ export async function subscriptionActivate(c: Context<{ Bindings: Env }>) {
     sequenceType: 'first',
     description: `Bellure abonnement activatie - ${PLAN_LABELS[planType] || planType}`,
     redirectUrl: `${frontendUrl}/admin/instellingen?subscription=activated`,
-    webhookUrl: `${siteUrl}/api/subscription/webhook`,
+    webhookUrl: buildWebhookUrl(siteUrl, '/api/subscription/webhook', c.env.MOLLIE_WEBHOOK_SECRET),
     metadata: { salonId, planType },
   });
 
@@ -245,7 +249,7 @@ export async function subscriptionWebhook(c: Context<{ Bindings: Env }>) {
         amount: { value: price, currency: 'EUR' },
         interval: '1 month',
         description: `Bellure ${PLAN_LABELS[planType] || planType}`,
-        webhookUrl: `${siteUrl}/api/subscription/payment-webhook`,
+        webhookUrl: buildWebhookUrl(siteUrl, '/api/subscription/payment-webhook', c.env.MOLLIE_WEBHOOK_SECRET),
         metadata: { salonId, planType },
       }
     );
@@ -278,6 +282,12 @@ export async function subscriptionWebhook(c: Context<{ Bindings: Env }>) {
  * Mollie calls this for each recurring payment.
  */
 export async function subscriptionPaymentWebhook(c: Context<{ Bindings: Env }>) {
+  const webhookSecret = c.env.MOLLIE_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const token = c.req.query('token') || c.req.header('x-webhook-secret');
+    if (token !== webhookSecret) return c.text('Unauthorized', 401);
+  }
+
   const formData = await c.req.parseBody();
   const paymentId = formData.id as string;
 

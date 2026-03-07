@@ -11,10 +11,9 @@ compatibility_flags = ["nodejs_compat"]
 SITE_URL = "https://api.bellure.nl"
 FRONTEND_URL = "https://mijn.bellure.nl"
 
-# Optional: KV namespace for rate limiting (create via `wrangler kv namespace create RATE_LIMIT_KV`)
-# [[kv_namespaces]]
-# binding = "RATE_LIMIT_KV"
-# id = "<KV_NAMESPACE_ID>"
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "91fd7b23c18a4ea08259b7be1660a2be"
 
 # Cron trigger: check for appointment reminders every 15 minutes
 [triggers]

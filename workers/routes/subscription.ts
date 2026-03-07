@@ -3,6 +3,7 @@ import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
 import { verifyAuth } from '../lib/auth';
 import { logAudit } from '../lib/audit';
+import { logError } from '../lib/logger';
 
 // Plan prices in EUR (string format for Mollie)
 const PLAN_PRICES: Record<string, string> = {
@@ -40,7 +41,7 @@ async function mollieRequest(
 
   const data = await res.json();
   if (!res.ok) {
-    console.error(`Mollie ${method} ${path} error:`, JSON.stringify(data));
+    logError(undefined, `Mollie ${method} ${path} error`, { body: data });
     throw new Error(data?.detail || data?.title || 'Mollie API error');
   }
   return data;
@@ -158,6 +159,12 @@ export async function subscriptionActivate(c: Context<{ Bindings: Env }>) {
  * On success: creates the recurring subscription.
  */
 export async function subscriptionWebhook(c: Context<{ Bindings: Env }>) {
+  const webhookSecret = c.env.MOLLIE_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const token = c.req.query('token') || c.req.header('x-webhook-secret');
+    if (token !== webhookSecret) return c.text('Unauthorized', 401);
+  }
+
   // Mollie sends form-encoded body with id=tr_xxx
   const formData = await c.req.parseBody();
   const paymentId = formData.id as string;
@@ -167,23 +174,30 @@ export async function subscriptionWebhook(c: Context<{ Bindings: Env }>) {
   }
 
   const mollieKey = c.env.MOLLIE_API_KEY;
+  const supabase = getSupabase(c.env);
+
+  const { data: existingPayment } = await supabase
+    .from('subscription_payments')
+    .select('id')
+    .eq('mollie_payment_id', paymentId)
+    .maybeSingle();
+
+  if (existingPayment) return c.text('OK');
 
   // Fetch the payment from Mollie
   const payment = await mollieRequest(mollieKey, 'GET', `/payments/${paymentId}`);
   const { salonId, planType } = payment.metadata || {};
 
   if (!salonId || !planType) {
-    console.error('Subscription webhook: missing metadata', payment.metadata);
+    logError(c, 'Subscription webhook: missing metadata', { metadata: payment.metadata });
     return c.text('OK');
   }
 
   const price = PLAN_PRICES[planType];
   if (!price) {
-    console.error('Subscription webhook: unknown planType', planType);
+    logError(c, 'Subscription webhook: unknown planType', { planType });
     return c.text('OK');
   }
-
-  const supabase = getSupabase(c.env);
 
   // Log the payment
   const now = new Date();
@@ -218,7 +232,7 @@ export async function subscriptionWebhook(c: Context<{ Bindings: Env }>) {
     );
 
     if (!validMandate) {
-      console.error('No valid mandate found for customer', customerId);
+      logError(c, 'No valid mandate found', { customerId });
       return c.text('OK');
     }
 
@@ -253,7 +267,7 @@ export async function subscriptionWebhook(c: Context<{ Bindings: Env }>) {
     // Send confirmation email
     await sendSubscriptionEmail(c.env, salonId, 'activated');
   } catch (err) {
-    console.error('Failed to create subscription:', err);
+    logError(c, 'Failed to create subscription', { message: err instanceof Error ? err.message : String(err) });
   }
 
   return c.text('OK');
@@ -276,7 +290,7 @@ export async function subscriptionPaymentWebhook(c: Context<{ Bindings: Env }>) 
   const { salonId, planType } = payment.metadata || {};
 
   if (!salonId) {
-    console.error('Payment webhook: missing salonId in metadata');
+    logError(c, 'Payment webhook: missing salonId in metadata');
     return c.text('OK');
   }
 
@@ -437,7 +451,7 @@ export async function subscriptionCancel(c: Context<{ Bindings: Env }>) {
       `/customers/${salon.mollie_customer_id}/subscriptions/${salon.mollie_subscription_id}`
     );
   } catch (err) {
-    console.error('Mollie cancel error:', err);
+    logError(c, 'Mollie cancel error', { message: err instanceof Error ? err.message : String(err) });
     // Continue anyway — subscription might already be cancelled at Mollie
   }
 
@@ -484,7 +498,7 @@ type EmailType = 'activated' | 'payment_failed' | 'cancelled' | 'paused';
 async function sendSubscriptionEmail(env: Env, salonId: string, type: EmailType): Promise<void> {
   const resendKey = env.RESEND_API_KEY;
   if (!resendKey) {
-    console.error('sendSubscriptionEmail: RESEND_API_KEY not configured');
+    logError(undefined, 'sendSubscriptionEmail: RESEND_API_KEY not configured');
     return;
   }
 
@@ -661,10 +675,10 @@ async function sendSubscriptionEmail(env: Env, salonId: string, type: EmailType)
     });
 
     if (!res.ok) {
-      console.error(`Subscription email (${type}) failed for ${salonId}:`, res.status, await res.text());
+      logError(undefined, `Subscription email (${type}) failed`, { salonId, status: res.status });
     }
   } catch (err) {
-    console.error(`Subscription email (${type}) error for ${salonId}:`, err);
+    logError(undefined, `Subscription email (${type}) error`, { salonId, message: err instanceof Error ? err.message : String(err) });
   }
 }
 

@@ -5,6 +5,7 @@ import { verifyAuth } from '../lib/auth';
 import { logAudit } from '../lib/audit';
 import { deleteBookingFromGoogle } from '../lib/google-calendar';
 import { notifyNextWaitlisted } from './waitlist';
+import { logError } from '../lib/logger';
 
 const MOLLIE_API_BASE = 'https://api.mollie.com/v2';
 
@@ -44,7 +45,7 @@ export async function cancelBooking(c: Context<{ Bindings: Env }>) {
       title: `Annulering: ${booking.customer_name}`,
       message: reason || 'Afspraak geannuleerd',
       booking_id: bookingId,
-    }).then(({ error }) => { if (error) console.error('Notification insert error:', error.message); })
+    }).then(({ error }) => { if (error) logError(c, 'Notification insert error', { message: error.message }); })
   );
 
   let refundResult = null;
@@ -88,7 +89,7 @@ export async function cancelBooking(c: Context<{ Bindings: Env }>) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-email-secret': c.env.EMAIL_SECRET || '' },
       body: JSON.stringify({ type: 'cancellation', bookingId, salonId: booking.salon_id }),
-    }).catch(err => console.error('Cancel email error:', err))
+    }).catch(err => logError(c, 'Cancel email error', { message: err instanceof Error ? err.message : String(err) }))
   );
 
   // Notify next waitlisted customer (non-blocking)
@@ -96,7 +97,7 @@ export async function cancelBooking(c: Context<{ Bindings: Env }>) {
     const cancelDate = booking.start_at.split('T')[0];
     c.executionCtx.waitUntil(
       notifyNextWaitlisted(c.env, booking.salon_id, cancelDate, booking.service_id, booking.staff_id)
-        .catch(err => console.error('Waitlist notify after cancel error:', err))
+        .catch(err => logError(c, 'Waitlist notify after cancel error', { message: err instanceof Error ? err.message : String(err) }))
     );
   }
 

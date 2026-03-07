@@ -1,3 +1,4 @@
+import { logError } from './lib/logger';
 import type { Env } from './api';
 import { getSupabase } from './lib/supabase';
 import { getGoogleTokens, syncGoogleToStaffBlocks } from './lib/google-calendar';
@@ -56,10 +57,10 @@ export async function handleScheduled(env: Env): Promise<void> {
         const col = type === 'reminder_24h' ? 'reminder_24h_sent_at' : 'reminder_1h_sent_at';
         await supabase.from('bookings').update({ [col]: new Date().toISOString() }).eq('id', bookingId);
       } else {
-        console.error(`Reminder ${type} failed for ${bookingId}:`, res.status);
+        logError(undefined, 'Reminder failed', { bookingId, type });
       }
     } catch (err) {
-      console.error(`Reminder ${type} error for ${bookingId}:`, err);
+      logError(undefined, 'Reminder error', { bookingId, type });
     }
   };
 
@@ -145,7 +146,7 @@ export async function handleScheduled(env: Env): Promise<void> {
             await supabase.from('bookings').update({ review_request_sent_at: new Date().toISOString() }).eq('id', b.id);
           }
         } catch (err) {
-          console.error(`Review request error for ${b.id}:`, err);
+          logError(undefined, 'Review request error');
         }
       })());
     }
@@ -189,7 +190,7 @@ async function syncAllGoogleCalendars(env: Env): Promise<void> {
         console.log(`[Google Calendar] Scheduled sync for ${salon.id}:`, result);
       }
     } catch (err) {
-      console.error(`[Google Calendar] Scheduled sync error for ${salon.id}:`, err);
+      logError(undefined, '[Google Calendar] Scheduled sync error');
     }
   });
 

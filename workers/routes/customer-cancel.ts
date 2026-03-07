@@ -3,6 +3,7 @@ import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
 import { deleteBookingFromGoogle } from '../lib/google-calendar';
 import { notifyNextWaitlisted } from './waitlist';
+import { logError } from '../lib/logger';
 
 /**
  * Customer-facing cancellation via unique token.
@@ -91,7 +92,7 @@ export async function customerCancel(c: Context<{ Bindings: Env }>) {
     const cancelDate = booking.start_at.split('T')[0];
     c.executionCtx.waitUntil(
       notifyNextWaitlisted(c.env, booking.salon_id, cancelDate, booking.service_id, booking.staff_id)
-        .catch(err => console.error('Waitlist notify after customer cancel error:', err))
+        .catch(err => logError(c, 'Waitlist notify after customer cancel error', { message: err instanceof Error ? err.message : String(err) }))
     );
   }
 

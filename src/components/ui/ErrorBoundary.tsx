@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import { captureException } from '../../lib/sentry';
 
 interface Props {
   children: ReactNode;
@@ -26,6 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('[ErrorBoundary] Caught error:', error, info.componentStack);
+    captureException(error, { componentStack: info.componentStack });
   }
 
   render() {

@@ -1,3 +1,4 @@
+import { logError } from './lib/logger';
 import type { Env } from './api';
 import { getSupabase } from './lib/supabase';
 import { sendSubscriptionEmail } from './routes/subscription';
@@ -27,7 +28,7 @@ async function handlePastDueCheck(env: Env): Promise<void> {
     .lt('subscription_past_due_at', sevenDaysAgo);
 
   if (error) {
-    console.error('Past due check query error:', error);
+    logError(undefined, 'Past due check query error');
     return;
   }
 
@@ -51,7 +52,7 @@ async function handlePastDueCheck(env: Env): Promise<void> {
             }
           );
         } catch (err) {
-          console.error(`Failed to cancel Mollie subscription for salon ${salon.id}:`, err);
+          logError(undefined, 'Failed to cancel Mollie subscription');
         }
       }
 
@@ -64,7 +65,7 @@ async function handlePastDueCheck(env: Env): Promise<void> {
       // Send paused notification email
       await sendSubscriptionEmail(env, salon.id, 'paused');
     } catch (err) {
-      console.error(`Past due pause error for salon ${salon.id}:`, err);
+      logError(undefined, 'Past due pause error');
     }
   }
 
@@ -87,7 +88,7 @@ async function handleExpiredTrials(env: Env): Promise<void> {
     .lt('trial_ends_at', now);
 
   if (error) {
-    console.error('Trial pause query error:', error);
+    logError(undefined, 'Trial pause query error');
     return;
   }
 
@@ -105,7 +106,7 @@ async function handleExpiredTrials(env: Env): Promise<void> {
     .in('id', salonIds);
 
   if (updateError) {
-    console.error('Trial pause update error:', updateError);
+    logError(undefined, 'Trial pause update error');
     return;
   }
 
@@ -114,7 +115,7 @@ async function handleExpiredTrials(env: Env): Promise<void> {
   // Send notification emails
   const resendKey = env.RESEND_API_KEY;
   if (!resendKey) {
-    console.error('Trial pause: RESEND_API_KEY not configured, skipping emails');
+    logError(undefined, 'Trial pause: RESEND_API_KEY not configured');
     return;
   }
 
@@ -208,10 +209,10 @@ async function handleExpiredTrials(env: Env): Promise<void> {
 
       if (!res.ok) {
         const errBody = await res.text();
-        console.error(`Trial pause email failed for ${salon.id}:`, res.status, errBody);
+        logError(undefined, 'Trial pause email failed');
       }
     } catch (err) {
-      console.error(`Trial pause email error for ${salon.id}:`, err);
+      logError(undefined, 'Trial pause email error');
     }
   }
 

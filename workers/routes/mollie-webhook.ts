@@ -2,6 +2,7 @@ import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
 import { syncBookingToGoogle } from '../lib/google-calendar';
+import { logError } from '../lib/logger';
 
 const MOLLIE_API_BASE = 'https://api.mollie.com/v2';
 
@@ -28,6 +29,12 @@ export async function mollieWebhook(c: Context<{ Bindings: Env }>) {
   let mollieApiKey = c.env.MOLLIE_API_KEY;
   if (!mollieApiKey) return c.text('Not configured', 500);
 
+  const webhookSecret = c.env.MOLLIE_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const token = c.req.query('token') || c.req.header('x-webhook-secret');
+    if (token !== webhookSecret) return c.text('Unauthorized', 401);
+  }
+
   // Mollie sends form-encoded OR JSON
   let paymentId: string | null = null;
   const contentType = c.req.header('content-type') || '';
@@ -49,25 +56,20 @@ export async function mollieWebhook(c: Context<{ Bindings: Env }>) {
     return c.text('Invalid payment ID', 400);
   }
 
-  // Verify payment exists in our database before calling Mollie API
-  const { data: existingPayment } = await getSupabase(c.env)
-    .from('payments')
-    .select('id')
-    .eq('mollie_payment_id', paymentId)
-    .limit(1);
+  const supabase = getSupabase(c.env);
 
-  if (!existingPayment || existingPayment.length === 0) {
+  // Verify payment exists in our database before calling Mollie API
+  const { data: paymentRecord } = await supabase
+    .from('payments')
+    .select('id, status, booking_id')
+    .eq('mollie_payment_id', paymentId)
+    .single();
+
+  if (!paymentRecord) {
     return c.text('Unknown payment', 400);
   }
 
-  const supabase = getSupabase(c.env);
-
   // Check if the payment's salon has its own Mollie token
-  const { data: paymentRecord } = await supabase
-    .from('payments')
-    .select('booking_id')
-    .eq('mollie_payment_id', paymentId)
-    .single();
 
   if (paymentRecord?.booking_id) {
     const { data: booking } = await supabase
@@ -99,6 +101,10 @@ export async function mollieWebhook(c: Context<{ Bindings: Env }>) {
   const mp: any = await mollieRes.json();
   const paymentStatus = mapPaymentStatus(mp.status);
   const paidCents = parseMollieCents(mp.amount.value);
+
+  if (paymentRecord.status === paymentStatus) {
+    return c.text('OK');
+  }
 
   // Update payment record
   const updateData: Record<string, unknown> = { status: paymentStatus, method: mp.method, updated_at: new Date().toISOString() };
@@ -132,7 +138,7 @@ export async function mollieWebhook(c: Context<{ Bindings: Env }>) {
             title: `Betaling ontvangen: ${paidBooking.customer_name}`,
             message: `€${(paidCents / 100).toFixed(2).replace('.', ',')} via ${mp.method || 'iDEAL'}`,
             booking_id: bookingId,
-          }).then(({ error }) => { if (error) console.error('Notification insert error:', error.message); })
+          }).then(({ error }) => { if (error) logError(c, 'Notification insert error', { message: error.message }); })
         );
       }
     }
@@ -157,7 +163,7 @@ export async function mollieWebhook(c: Context<{ Bindings: Env }>) {
               headers: { 'Content-Type': 'application/json', 'x-email-secret': c.env.EMAIL_SECRET || '' },
               body: JSON.stringify({ type, bookingId, salonId: booking.salon_id }),
             });
-          } catch (err) { console.error(`Email ${type} error:`, err); }
+          } catch (err) { logError(c, `Email ${type} error`, { message: err instanceof Error ? err.message : String(err) }); }
         };
         c.executionCtx.waitUntil(Promise.allSettled([sendEmail('confirmation'), sendEmail('notification')]));
       }

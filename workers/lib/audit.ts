@@ -1,3 +1,4 @@
+import { logError } from './logger';
 import type { Env } from '../api';
 import { getSupabase } from './supabase';
 
@@ -27,6 +28,6 @@ export async function logAudit(env: Env, params: {
       ip_address: params.ip,
     });
   } catch (err) {
-    console.error('Audit log insert error:', err);
+    logError(undefined, 'Audit log insert error');
   }
 }

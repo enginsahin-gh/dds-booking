@@ -2,6 +2,8 @@ import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
 import { syncBookingToGoogle } from '../lib/google-calendar';
+import { rateLimit } from '../lib/rate-limit';
+import { logError } from '../lib/logger';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -24,6 +26,13 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
     // Payment fields
     paymentMode, totalPriceCents, notes,
   } = body;
+
+  const rate = await rateLimit(c, 'create-booking', 20, 60, salonId);
+  if (!rate.ok) {
+    const retryAfter = Math.max(0, rate.reset - Math.floor(Date.now() / 1000));
+    c.header('Retry-After', String(retryAfter));
+    return c.json({ error: 'RATE_LIMITED' }, 429);
+  }
 
   // Determine services to book
   const services: ServiceInput[] = servicesInput && Array.isArray(servicesInput) && servicesInput.length > 0
@@ -166,7 +175,7 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
     if (msg.includes('RATE_LIMITED')) return c.json({ error: 'RATE_LIMITED' }, 429);
     if (msg.includes('SPAM_DETECTED')) return c.json({ bookingId: 'ok' });
     if (msg.includes('INVALID_')) return c.json({ error: msg }, 400);
-    console.error('create_booking RPC error:', msg);
+    logError(c, 'create_booking RPC error', { message: msg });
     return c.json({ error: 'Booking failed' }, 500);
   }
 
@@ -206,7 +215,7 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
 
   const { error: bsErr } = await supabase.from('booking_services').insert(bookingServices);
   if (bsErr) {
-    console.error('booking_services insert error:', bsErr.message);
+    logError(c, 'booking_services insert error', { message: bsErr.message });
     // Non-fatal: booking still created, just missing service breakdown
   }
 
@@ -218,7 +227,7 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
       title: `Nieuwe boeking: ${name}`,
       message: `${combinedServiceName} op ${new Date(startAt).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/Amsterdam' })} om ${new Date(startAt).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' })}`,
       booking_id: bookingId,
-    }).then(({ error }) => { if (error) console.error('Notification insert error:', error.message); })
+    }).then(({ error }) => { if (error) logError(c, 'Notification insert error', { message: error.message }); })
   );
 
   // Sync to Google Calendar (non-blocking) — only for confirmed bookings
@@ -238,7 +247,7 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
           headers: { 'Content-Type': 'application/json', 'x-email-secret': emailSecret || '' },
           body: JSON.stringify({ type, bookingId, salonId }),
         });
-      } catch (err) { console.error(`Email ${type} error:`, err); }
+      } catch (err) { logError(c, `Email ${type} error`, { message: err instanceof Error ? err.message : String(err) }); }
     };
 
     c.executionCtx.waitUntil(Promise.allSettled([sendEmail('confirmation'), sendEmail('notification')]));

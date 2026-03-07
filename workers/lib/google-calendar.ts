@@ -1,3 +1,4 @@
+import { logError } from './logger';
 import type { Env } from '../api';
 import { getSupabase } from './supabase';
 
@@ -58,7 +59,7 @@ export async function getGoogleTokens(
   if (expiresAt - now < TOKEN_REFRESH_BUFFER_MS) {
     const newAccessToken = await refreshGoogleToken(env, salonId, secrets.google_refresh_token);
     if (!newAccessToken) {
-      console.error(`[Google Calendar] Token refresh failed for salon ${salonId}`);
+      logError(undefined, '[Google Calendar] Token refresh failed', { salonId });
       return null;
     }
     return {
@@ -90,7 +91,7 @@ export async function refreshGoogleToken(
   const clientSecret = (env as any).GOOGLE_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    console.error('[Google Calendar] GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not configured');
+    logError(undefined, '[Google Calendar] GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not configured');
     return null;
   }
 
@@ -108,7 +109,7 @@ export async function refreshGoogleToken(
 
     if (!res.ok) {
       const errBody = await res.text();
-      console.error(`[Google Calendar] Token refresh failed: ${res.status}`, errBody);
+      logError(undefined, '[Google Calendar] Token refresh failed', { status: res.status });
       return null;
     }
 
@@ -130,7 +131,7 @@ export async function refreshGoogleToken(
 
     return data.access_token;
   } catch (err) {
-    console.error('[Google Calendar] Token refresh error:', err);
+    logError(undefined, '[Google Calendar] Token refresh error', { message: err instanceof Error ? err.message : String(err) });
     return null;
   }
 }
@@ -199,14 +200,14 @@ export async function createGoogleEvent(
 
     if (!res.ok) {
       const errBody = await res.text();
-      console.error(`[Google Calendar] Create event failed: ${res.status}`, errBody);
+      logError(undefined, '[Google Calendar] Create event failed', { status: res.status });
       return null;
     }
 
     const created: any = await res.json();
     return created.id || null;
   } catch (err) {
-    console.error('[Google Calendar] Create event error:', err);
+    logError(undefined, '[Google Calendar] Create event error', { message: err instanceof Error ? err.message : String(err) });
     return null;
   }
 }
@@ -259,10 +260,10 @@ export async function updateGoogleEvent(
     );
 
     if (!res.ok) {
-      console.error(`[Google Calendar] Update event failed: ${res.status}`);
+      logError(undefined, '[Google Calendar] Update event failed', { status: res.status });
     }
   } catch (err) {
-    console.error('[Google Calendar] Update event error:', err);
+    logError(undefined, '[Google Calendar] Update event error', { message: err instanceof Error ? err.message : String(err) });
   }
 }
 
@@ -284,10 +285,10 @@ export async function deleteGoogleEvent(
 
     // 410 Gone is fine — event already deleted
     if (!res.ok && res.status !== 410) {
-      console.error(`[Google Calendar] Delete event failed: ${res.status}`);
+      logError(undefined, '[Google Calendar] Delete event failed', { status: res.status });
     }
   } catch (err) {
-    console.error('[Google Calendar] Delete event error:', err);
+    logError(undefined, '[Google Calendar] Delete event error', { message: err instanceof Error ? err.message : String(err) });
   }
 }
 
@@ -322,7 +323,7 @@ export async function listGoogleEvents(
       );
 
       if (!res.ok) {
-        console.error(`[Google Calendar] List events failed: ${res.status}`);
+        logError(undefined, '[Google Calendar] List events failed', { status: res.status });
         break;
       }
 
@@ -331,7 +332,7 @@ export async function listGoogleEvents(
       pageToken = data.nextPageToken;
     } while (pageToken);
   } catch (err) {
-    console.error('[Google Calendar] List events error:', err);
+    logError(undefined, '[Google Calendar] List events error', { message: err instanceof Error ? err.message : String(err) });
   }
 
   return events;
@@ -366,13 +367,13 @@ export async function watchCalendar(
 
     if (!res.ok) {
       const errBody = await res.text();
-      console.error(`[Google Calendar] Watch setup failed: ${res.status}`, errBody);
+      logError(undefined, '[Google Calendar] Watch setup failed', { status: res.status });
       return null;
     }
 
     return await res.json();
   } catch (err) {
-    console.error('[Google Calendar] Watch error:', err);
+    logError(undefined, '[Google Calendar] Watch error', { message: err instanceof Error ? err.message : String(err) });
     return null;
   }
 }
@@ -568,7 +569,7 @@ export async function syncBookingToGoogle(
       console.log(`[Google Calendar] Created event ${eventId} for booking ${bookingId}`);
     }
   } catch (err) {
-    console.error(`[Google Calendar] syncBookingToGoogle error:`, err);
+    logError(undefined, '[Google Calendar] syncBookingToGoogle error', { message: err instanceof Error ? err.message : String(err) });
   }
 }
 
@@ -600,6 +601,6 @@ export async function deleteBookingFromGoogle(
     await supabase.from('bookings').update({ google_event_id: null }).eq('id', bookingId);
     console.log(`[Google Calendar] Deleted event for booking ${bookingId}`);
   } catch (err) {
-    console.error(`[Google Calendar] deleteBookingFromGoogle error:`, err);
+    logError(undefined, '[Google Calendar] deleteBookingFromGoogle error', { message: err instanceof Error ? err.message : String(err) });
   }
 }

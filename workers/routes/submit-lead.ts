@@ -1,6 +1,8 @@
 import { Context } from 'hono';
 import { createClient } from '@supabase/supabase-js';
 import type { Env } from '../api';
+import { rateLimit } from '../lib/rate-limit';
+import { logError } from '../lib/logger';
 
 interface LeadPayload {
   salon_name: string;
@@ -27,8 +29,12 @@ export const submitLead = async (c: Context<{ Bindings: Env }>) => {
       return c.json({ error: 'Vul een geldig e-mailadres of telefoonnummer in.' }, 400);
     }
 
-    // Rate limit: simple check by IP (basic protection)
-    // For production, use CF rate limiting rules
+    const rate = await rateLimit(c, 'submit-lead', 5, 3600);
+    if (!rate.ok) {
+      const retryAfter = Math.max(0, rate.reset - Math.floor(Date.now() / 1000));
+      c.header('Retry-After', String(retryAfter));
+      return c.json({ error: 'RATE_LIMITED' }, 429);
+    }
 
     const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -42,7 +48,7 @@ export const submitLead = async (c: Context<{ Bindings: Env }>) => {
     }).select('id').single();
 
     if (error) {
-      console.error('Lead insert error:', error);
+      logError(c, 'Lead insert error', { message: error.message });
       return c.json({ error: 'Er ging iets mis. Probeer het later opnieuw.' }, 500);
     }
 
@@ -50,13 +56,13 @@ export const submitLead = async (c: Context<{ Bindings: Env }>) => {
     try {
       await sendNotification(c.env, body);
     } catch (emailErr) {
-      console.error('Lead notification email failed:', emailErr);
+      logError(c, 'Lead notification email failed', { message: emailErr instanceof Error ? emailErr.message : String(emailErr) });
       // Don't fail the request if email fails
     }
 
     return c.json({ success: true, message: 'Bedankt! We nemen binnen 24 uur contact op.' });
   } catch (err) {
-    console.error('Submit lead error:', err);
+    logError(c, 'Submit lead error', { message: err instanceof Error ? err.message : String(err) });
     return c.json({ error: 'Er ging iets mis. Probeer het later opnieuw.' }, 500);
   }
 };

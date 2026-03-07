@@ -3,6 +3,8 @@ import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
 import { verifyAuth } from '../lib/auth';
 import { buildEmailPreview, createEmailLog, updateEmailLog } from '../lib/email-logs';
+import { rateLimit } from '../lib/rate-limit';
+import { logError } from '../lib/logger';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const MAX_WAITLIST_PER_EMAIL = 3;
@@ -21,6 +23,13 @@ export async function waitlistJoin(c: Context<{ Bindings: Env }>) {
 
   // Honeypot check
   if (hp) return c.json({ error: 'Invalid request' }, 400);
+
+  const rate = await rateLimit(c, 'waitlist-join', 10, 600, salonId);
+  if (!rate.ok) {
+    const retryAfter = Math.max(0, rate.reset - Math.floor(Date.now() / 1000));
+    c.header('Retry-After', String(retryAfter));
+    return c.json({ error: 'RATE_LIMITED' }, 429);
+  }
 
   // Required fields
   if (!salonId || !serviceId || !name || !email || !phone || !preferredDate) {
@@ -72,7 +81,7 @@ export async function waitlistJoin(c: Context<{ Bindings: Env }>) {
   }).select('id').single();
 
   if (error) {
-    console.error('Waitlist insert error:', error);
+    logError(c, 'Waitlist insert error', { message: error.message });
     return c.json({ error: 'Failed to join waitlist' }, 500);
   }
 
@@ -230,7 +239,7 @@ export async function waitlistNotify(c: Context<{ Bindings: Env }>) {
 
     const bodyText = await res.text();
     if (!res.ok) {
-      console.error('Waitlist notification email error:', res.status, bodyText);
+      logError(c, 'Waitlist notification email error', { status: res.status, body: bodyText });
       if (logId) {
         await updateEmailLog(supabase, logId, {
           status: 'failed',
@@ -285,7 +294,7 @@ export async function waitlistEntries(c: Context<{ Bindings: Env }>) {
   const { data, error } = await query;
 
   if (error) {
-    console.error('Waitlist entries query error:', error);
+    logError(c, 'Waitlist entries query error', { message: error.message });
     return c.json({ error: 'Failed to fetch waitlist' }, 500);
   }
 
@@ -386,7 +395,7 @@ async function triggerNotify(env: Env, waitlistId: string): Promise<void> {
       'x-email-secret': env.EMAIL_SECRET || '',
     },
     body: JSON.stringify({ waitlistId }),
-  }).catch(err => console.error('Waitlist notify trigger error:', err));
+  }).catch(err => logError(undefined, 'Waitlist notify trigger error', { message: err instanceof Error ? err.message : String(err) }));
 }
 
 /**
@@ -406,7 +415,7 @@ export async function handleExpiredWaitlist(env: Env): Promise<void> {
     .lt('expires_at', now);
 
   if (error) {
-    console.error('Waitlist expiry check error:', error);
+    logError(undefined, 'Waitlist expiry check error', { message: error.message });
     return;
   }
 

@@ -1,6 +1,7 @@
 import { Context } from 'hono';
 import type { Env } from '../api';
 import { verifyAuth } from '../lib/auth';
+import { logError } from '../lib/logger';
 
 // Slugify helper
 function slugify(text: string): string {
@@ -139,7 +140,7 @@ export async function trialRegister(c: Context<{ Bindings: Env }>) {
 
     if (!salonRes.ok) {
       const err = await salonRes.text();
-      console.error('Salon creation failed:', err);
+      logError(c, 'Salon creation failed', { message: err instanceof Error ? err.message : String(err) });
       return c.json({ error: 'Kon salon niet aanmaken' }, 500);
     }
 
@@ -164,7 +165,7 @@ export async function trialRegister(c: Context<{ Bindings: Env }>) {
     });
 
     if (!suRes.ok) {
-      console.error('salon_users creation failed:', await suRes.text());
+      logError(c, 'salon_users creation failed');
     }
 
     return c.json({
@@ -173,7 +174,7 @@ export async function trialRegister(c: Context<{ Bindings: Env }>) {
       trialEndsAt: trialEnds,
     });
   } catch (err: any) {
-    console.error('Trial register error:', err);
+    logError(c, 'Trial register error', { message: err instanceof Error ? err.message : String(err) });
     return c.json({ error: 'Er ging iets mis. Probeer het later opnieuw.' }, 500);
   }
 }

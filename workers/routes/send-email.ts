@@ -2,6 +2,7 @@ import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
 import { buildEmailPreview, createEmailLog, updateEmailLog } from '../lib/email-logs';
+import { logError } from '../lib/logger';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('nl-NL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Amsterdam' });
@@ -322,7 +323,7 @@ async function sendResend(apiKey: string, from: string, fromName: string, to: st
 
   const bodyText = await res.text();
   if (!res.ok) {
-    console.error('Resend error:', res.status, bodyText);
+    logError(c, 'Resend error', { status: res.status, body: bodyText });
     return { success: false, error: bodyText || `Resend error ${res.status}` };
   }
 
@@ -584,7 +585,7 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
 
   const resendKey = c.env.RESEND_API_KEY;
   if (!resendKey) {
-    console.error('RESEND_API_KEY not configured');
+    logError(c, 'RESEND_API_KEY not configured');
     return c.json({ success: false, error: 'Email not configured' }, 500);
   }
 

@@ -1,3 +1,4 @@
+import { logError } from '../lib/logger';
 import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
@@ -119,7 +120,7 @@ export async function inviteUser(c: Context<{ Bindings: Env }>) {
     });
 
     if (createErr || !newUser?.user) {
-      console.error('Failed to create user:', createErr?.message);
+      logError(c, 'Failed to create user', { message: createErr?.message });
       return c.json({ error: 'Kon account niet aanmaken' }, 500);
     }
 
@@ -137,7 +138,7 @@ export async function inviteUser(c: Context<{ Bindings: Env }>) {
   });
 
   if (linkErr) {
-    console.error('Failed to create salon_user:', linkErr.message);
+    logError(c, 'Failed to create salon_user', { message: linkErr.message });
     return c.json({ error: 'Kon gebruiker niet koppelen aan salon' }, 500);
   }
 
@@ -151,7 +152,7 @@ export async function inviteUser(c: Context<{ Bindings: Env }>) {
   });
 
   if (linkGenErr || !linkData) {
-    console.error('Failed to generate setup link:', linkGenErr?.message);
+    logError(c, 'Failed to generate setup link', { message: linkGenErr?.message });
     // User is created but link failed — they can use password reset from login page
     return c.json({ success: true, userId, inviteSent: false });
   }
@@ -202,11 +203,11 @@ export async function inviteUser(c: Context<{ Bindings: Env }>) {
     });
 
     if (!resendRes.ok) {
-      console.error('Resend error:', await resendRes.text());
+      logError(c, 'Resend error');
       return c.json({ success: true, userId, inviteSent: false });
     }
   } catch (err) {
-    console.error('Email send error:', err);
+    logError(c, 'Email send error', { message: err instanceof Error ? err.message : String(err) });
     return c.json({ success: true, userId, inviteSent: false });
   }
 
@@ -408,7 +409,7 @@ export async function updateUserPermissions(c: Context<{ Bindings: Env }>) {
     .eq('id', targetUser.id);
 
   if (updateErr) {
-    console.error('Failed to update permissions:', updateErr.message);
+    logError(c, 'Failed to update permissions', { message: updateErr.message });
     return c.json({ error: 'Kon rechten niet bijwerken' }, 500);
   }
 

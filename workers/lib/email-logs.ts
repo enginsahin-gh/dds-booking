@@ -1,3 +1,4 @@
+import { logError } from './logger';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type EmailLogStatus = 'queued' | 'sent' | 'failed' | 'skipped';
@@ -24,12 +25,12 @@ export async function createEmailLog(
       .single();
 
     if (error) {
-      console.error('email_logs insert error:', error);
+      logError(undefined, 'email_logs insert error');
       return null;
     }
     return data?.id || null;
   } catch (err) {
-    console.error('email_logs insert exception:', err);
+    logError(undefined, 'email_logs insert exception');
     return null;
   }
 }
@@ -41,8 +42,8 @@ export async function updateEmailLog(
 ): Promise<void> {
   try {
     const { error } = await supabase.from('email_logs').update(patch).eq('id', id);
-    if (error) console.error('email_logs update error:', error);
+    if (error) logError(undefined, 'email_logs update error');
   } catch (err) {
-    console.error('email_logs update exception:', err);
+    logError(undefined, 'email_logs update exception');
   }
 }

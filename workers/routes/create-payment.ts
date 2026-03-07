@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
+import { logError } from '../lib/logger';
 
 const MOLLIE_API_BASE = 'https://api.mollie.com/v2';
 
@@ -98,7 +99,7 @@ export async function createPayment(c: Context<{ Bindings: Env }>) {
   }
 
   if (!mollieRes.ok) {
-    console.error('Mollie error:', mollieRes.status, await mollieRes.text());
+    logError(c, 'Mollie error', { status: mollieRes.status });
     return c.json({ error: 'Failed to create payment' }, 502);
   }
 

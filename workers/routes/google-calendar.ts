@@ -2,6 +2,7 @@ import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
 import { verifyAuth } from '../lib/auth';
+import { logError } from '../lib/logger';
 import {
   refreshGoogleToken,
   getCalendarInfo,
@@ -22,7 +23,7 @@ const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
 export async function googleConnect(c: Context<{ Bindings: Env }>) {
   const clientId = (c.env as any).GOOGLE_CLIENT_ID;
   if (!clientId) {
-    console.error('[Google Calendar] GOOGLE_CLIENT_ID not configured');
+    logError(c, '[Google Calendar] GOOGLE_CLIENT_ID not configured');
     return c.json({ error: 'Google Calendar not configured' }, 500);
   }
 
@@ -66,7 +67,7 @@ export async function googleCallback(c: Context<{ Bindings: Env }>) {
   const frontendUrl = c.env.FRONTEND_URL || 'https://mijn.bellure.nl';
 
   if (error) {
-    console.error('[Google Calendar] OAuth error:', error);
+    logError(c, '[Google Calendar] OAuth error');
     return c.redirect(`${frontendUrl}/admin/instellingen?google=error&reason=${encodeURIComponent(error)}`);
   }
 
@@ -98,7 +99,7 @@ export async function googleCallback(c: Context<{ Bindings: Env }>) {
 
   if (!tokenRes.ok) {
     const errBody = await tokenRes.text();
-    console.error('[Google Calendar] Token exchange failed:', tokenRes.status, errBody);
+    logError(c, '[Google Calendar] Token exchange failed', { status: tokenRes.status });
     return c.redirect(`${frontendUrl}/admin/instellingen?google=error&reason=token_exchange_failed`);
   }
 
@@ -135,7 +136,7 @@ export async function googleCallback(c: Context<{ Bindings: Env }>) {
   }, { onConflict: 'salon_id' });
 
   if (secretsErr) {
-    console.error('[Google Calendar] Failed to store secrets:', secretsErr.message);
+    logError(c, '[Google Calendar] Failed to store secrets', { message: secretsErr.message });
     return c.redirect(`${frontendUrl}/admin/instellingen?google=error&reason=db_error`);
   }
 
@@ -147,7 +148,7 @@ export async function googleCallback(c: Context<{ Bindings: Env }>) {
   }).eq('id', salonId);
 
   if (salonErr) {
-    console.error('[Google Calendar] Failed to update salon:', salonErr.message);
+    logError(c, '[Google Calendar] Failed to update salon', { message: salonErr.message });
   }
 
   return c.redirect(`${frontendUrl}/admin/instellingen?google=connected`);
@@ -182,7 +183,7 @@ export async function googleDisconnect(c: Context<{ Bindings: Env }>) {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
     } catch (err) {
-      console.error('[Google Calendar] Revoke error (non-fatal):', err);
+      logError(c, '[Google Calendar] Revoke error', { message: err instanceof Error ? err.message : String(err) });
     }
   }
 
@@ -310,7 +311,7 @@ export async function googleWebhook(c: Context<{ Bindings: Env }>) {
         const result = await syncGoogleToStaffBlocks(c.env, salonId, tokens);
         console.log(`[Google Calendar] Webhook sync for ${salonId}:`, result);
       } catch (err) {
-        console.error(`[Google Calendar] Webhook sync error for ${salonId}:`, err);
+        logError(undefined, `[Google Calendar] Webhook sync error`, { salonId, message: err instanceof Error ? err.message : String(err) });
       }
     })()
   );

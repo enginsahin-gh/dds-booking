@@ -19,6 +19,8 @@ import { waitlistJoin, waitlistNotify, waitlistEntries, waitlistCancel, handleEx
 import { getCustomerProfile, upsertCustomerProfile } from './routes/customer-profile';
 import { getCustomerProfileGlobal, updateCustomerProfileGlobal } from './routes/customer-profile-global';
 import { customerAppointments } from './routes/customer-appointments';
+import { initSentry, captureException } from './lib/sentry';
+import { logError } from './lib/logger';
 
 export type Env = {
   SUPABASE_URL: string;
@@ -26,15 +28,31 @@ export type Env = {
   MOLLIE_API_KEY: string;
   MOLLIE_APP_ID: string;
   MOLLIE_APP_SECRET: string;
+  MOLLIE_WEBHOOK_SECRET?: string;
   EMAIL_SECRET: string;
   RESEND_API_KEY: string;
   SITE_URL: string;      // Worker API base URL
   FRONTEND_URL: string;  // Pages frontend URL (admin dashboard)
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
+  SENTRY_DSN?: string;
+  SENTRY_ENV?: string;
+  SENTRY_TRACES_SAMPLE_RATE?: string;
+  RATE_LIMIT_KV?: KVNamespace;
 };
 
 const app = new Hono<{ Bindings: Env }>();
+
+app.use('*', async (c, next) => {
+  initSentry(c.env);
+  await next();
+});
+
+app.onError((err, c) => {
+  logError(c, 'Unhandled error', { message: err?.message || String(err) });
+  captureException(err, c);
+  return c.json({ error: 'Internal server error' }, 500);
+});
 
 // SEC-007: Restrict CORS to allowed origins (no wildcard)
 app.use('/api/*', cors({

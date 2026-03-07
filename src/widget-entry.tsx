@@ -1,9 +1,12 @@
 import { createRoot } from 'react-dom/client';
 import { BookingWidget } from './components/widget/BookingWidget';
+import { initSentry } from './lib/sentry';
 
 // Widget CSS is injected inline into Shadow DOM to ensure complete isolation
 // Using ?inline to get the CSS as a string (works regardless of host page domain)
 import widgetCss from './styles/widget.css?inline';
+
+initSentry('widget');
 
 function applyTheme(el: HTMLElement, shadow: ShadowRoot) {
   const map: Record<string, string> = {

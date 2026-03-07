@@ -1,3 +1,4 @@
+import { logError } from '../lib/logger';
 import type { Context } from 'hono';
 import type { Env } from '../api';
 import { getSupabase } from '../lib/supabase';
@@ -69,7 +70,7 @@ export async function mollieCallback(c: Context<{ Bindings: Env }>) {
   const frontendUrl = c.env.FRONTEND_URL || 'https://mijn.bellure.nl';
 
   if (error) {
-    console.error('Mollie OAuth error:', error, c.req.query('error_description'));
+    logError(c, 'Mollie OAuth error');
     return c.redirect(`${frontendUrl}/admin/payments?mollie=error&reason=${encodeURIComponent(error)}`);
   }
 
@@ -114,7 +115,7 @@ export async function mollieCallback(c: Context<{ Bindings: Env }>) {
 
   if (!tokenRes.ok) {
     const errBody = await tokenRes.text();
-    console.error('Mollie token exchange failed:', tokenRes.status, errBody);
+    logError(c, 'Mollie token exchange failed', { status: tokenRes.status });
     return c.redirect(`${frontendUrl}/admin/payments?mollie=error&reason=token_exchange_failed`);
   }
 
@@ -139,7 +140,7 @@ export async function mollieCallback(c: Context<{ Bindings: Env }>) {
       organizationName = org.name || null;
     }
   } catch (err) {
-    console.error('Failed to fetch Mollie org:', err);
+    logError(c, 'Failed to fetch Mollie org');
   }
 
   // Fetch first profile ID
@@ -155,7 +156,7 @@ export async function mollieCallback(c: Context<{ Bindings: Env }>) {
       }
     }
   } catch (err) {
-    console.error('Failed to fetch Mollie profiles:', err);
+    logError(c, 'Failed to fetch Mollie profiles');
   }
 
   // Store tokens in salon_secrets (sensitive) and display data in salons (non-sensitive)
@@ -177,11 +178,11 @@ export async function mollieCallback(c: Context<{ Bindings: Env }>) {
   }).eq('id', salonId);
 
   if (secretsErr) {
-    console.error('Failed to store Mollie secrets:', secretsErr.message);
+    logError(c, 'Failed to store Mollie secrets');
   }
 
   if (dbErr) {
-    console.error('Failed to store Mollie tokens:', dbErr.message);
+    logError(c, 'Failed to store Mollie tokens');
     return c.redirect(`${frontendUrl}/admin/payments?mollie=error&reason=db_error`);
   }
 
@@ -263,7 +264,7 @@ export async function refreshMollieToken(
   });
 
   if (!tokenRes.ok) {
-    console.error('Mollie token refresh failed:', tokenRes.status);
+    logError(undefined, 'Mollie token refresh failed');
     return null;
   }
 

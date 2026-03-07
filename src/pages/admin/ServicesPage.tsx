@@ -106,15 +106,15 @@ export function ServicesPage() {
           tabIndex={0}
           onClick={e => { e.stopPropagation(); toggleActive(service.id, !service.is_active); }}
           onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); toggleActive(service.id, !service.is_active); } }}
-          className={`w-11 h-6 rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative cursor-pointer flex-shrink-0 ${
+          className={`w-9 h-5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative cursor-pointer flex-shrink-0 ${
             service.is_active ? 'bg-violet-600 hover:bg-violet-700' : 'bg-gray-300 hover:bg-gray-400'
           }`}
         >
           <span
-            className={`absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-              service.is_active ? 'translate-x-[20px]' : 'translate-x-[3px]'
+            className={`absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              service.is_active ? 'translate-x-[16px]' : 'translate-x-[2px]'
             }`}
-            style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.08)' }}
+            style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.14)' }}
           />
         </div>
       </div>

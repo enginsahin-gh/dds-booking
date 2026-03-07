@@ -9,9 +9,16 @@ function getSampleRate(): number {
   return Number.isFinite(parsed) ? parsed : 0.05;
 }
 
+function getDsn(scope: 'app' | 'widget') {
+  if (scope === 'widget') {
+    return import.meta.env.VITE_SENTRY_WIDGET_DSN || import.meta.env.VITE_SENTRY_DSN;
+  }
+  return import.meta.env.VITE_SENTRY_DSN;
+}
+
 export function initSentry(scope: 'app' | 'widget') {
   if (initialized) return;
-  const dsn = import.meta.env.VITE_SENTRY_DSN;
+  const dsn = getDsn(scope);
   if (!dsn) return;
 
   Sentry.init({

@@ -19,8 +19,8 @@ import { waitlistJoin, waitlistNotify, waitlistEntries, waitlistCancel, handleEx
 import { getCustomerProfile, upsertCustomerProfile } from './routes/customer-profile';
 import { getCustomerProfileGlobal, updateCustomerProfileGlobal } from './routes/customer-profile-global';
 import { customerAppointments } from './routes/customer-appointments';
-import { initSentry, captureException } from './lib/sentry';
 import { logError } from './lib/logger';
+import * as Sentry from '@sentry/cloudflare';
 
 export type Env = {
   SUPABASE_URL: string;
@@ -43,14 +43,13 @@ export type Env = {
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.use('*', async (c, next) => {
-  initSentry(c.env);
-  await next();
-});
-
 app.onError((err, c) => {
   logError(c, 'Unhandled error', { message: err?.message || String(err) });
-  captureException(err, c);
+  try {
+    Sentry.captureException(err, { tags: { path: c.req.path, method: c.req.method } });
+  } catch (_) {
+    // ignore sentry failures
+  }
   return c.json({ error: 'Internal server error' }, 500);
 });
 
@@ -140,7 +139,14 @@ app.post('/api/admin/remove-user', removeUser);
 app.post('/api/admin/update-user-role', updateUserRole);
 app.post('/api/admin/update-user-permissions', updateUserPermissions);
 
-export default {
+function getTracesSampleRate(env: Env): number {
+  const raw = env.SENTRY_TRACES_SAMPLE_RATE;
+  if (!raw) return 0.05;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : 0.05;
+}
+
+const handler = {
   fetch: app.fetch,
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
     // Daily at 06:00 UTC: pause expired trials
@@ -152,4 +158,15 @@ export default {
       ctx.waitUntil(handleExpiredWaitlist(env));
     }
   },
+  // Expose Hono error handler for Sentry Hono integration
+  errorHandler: app.errorHandler,
 };
+
+export default Sentry.withSentry(
+  (env: Env) => ({
+    dsn: env.SENTRY_DSN,
+    environment: env.SENTRY_ENV || 'production',
+    tracesSampleRate: getTracesSampleRate(env),
+  }),
+  handler
+);

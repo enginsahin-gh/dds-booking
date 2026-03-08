@@ -107,7 +107,7 @@ export function ServicesPage() {
           tabIndex={0}
           onClick={e => { e.stopPropagation(); toggleActive(service.id, !service.is_active); }}
           onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); toggleActive(service.id, !service.is_active); } }}
-          className={`w-9 h-5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative cursor-pointer flex-shrink-0 ${
+          className={`inline-flex items-center w-9 h-5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative cursor-pointer flex-shrink-0 ${
             service.is_active ? 'bg-violet-600 hover:bg-violet-700' : 'bg-gray-300 hover:bg-gray-400'
           }`}
         >

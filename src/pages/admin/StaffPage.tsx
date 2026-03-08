@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useStaff } from '../../hooks/useStaff';
 import { StaffList } from '../../components/admin/StaffList';
 import { StaffFormModal } from '../../components/admin/StaffFormModal';
+import { AdminFab } from '../../components/admin/AdminFab';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
 import { useToast } from '../../components/ui/Toast';
@@ -48,6 +49,13 @@ export function StaffPage() {
 
       {loading ? <Spinner className="py-12" /> : (
         <StaffList staff={staff} onEdit={isOwner ? (s) => { setEditingStaff(s); setModalOpen(true); } : undefined} />
+      )}
+
+      {isOwner && (
+        <AdminFab
+          label="Nieuwe medewerker"
+          onClick={() => { setEditingStaff(null); setModalOpen(true); }}
+        />
       )}
 
       <StaffFormModal

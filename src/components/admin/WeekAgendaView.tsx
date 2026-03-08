@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { format, parseISO, addMinutes, differenceInMinutes, startOfDay, startOfWeek, addDays, isSameDay, set } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
@@ -32,13 +32,31 @@ const STAFF_COLORS = [
   { bg: 'rgba(236,72,153,0.15)', border: '#EC4899', text: '#9D174D' },
 ];
 
+const STATUS_LABELS: Record<string, string> = {
+  confirmed: 'Bevestigd',
+  pending_payment: 'Wacht op betaling',
+  cancelled: 'Geannuleerd',
+  no_show: 'No-show',
+  completed: 'Voltooid',
+};
+
 export function WeekAgendaView({
   date, bookings, services, staff: allStaff, timezone, slotStepMinutes = 15,
   onSelectBooking, onSlotClick,
 }: Props) {
   const stepMinutes = slotStepMinutes;
   const { getReadableStaffIds } = useAuth();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [filterStaffId, setFilterStaffId] = useState<string | 'all'>('all');
+  const [hoverCard, setHoverCard] = useState<null | {
+    customerName: string;
+    serviceName: string;
+    staffName: string;
+    timeLabel: string;
+    status: string;
+    x: number;
+    y: number;
+  }>(null);
   const activeStaff = useMemo(() => {
     const active = allStaff.filter(s => s.is_active);
     const readableIds = getReadableStaffIds();
@@ -159,6 +177,8 @@ export function WeekAgendaView({
 
       {/* Grid */}
       <div
+        ref={containerRef}
+        onScroll={() => hoverCard && setHoverCard(null)}
         className="bg-white rounded-2xl border border-gray-200/70 overflow-auto overscroll-none shadow-[0_12px_32px_rgba(15,23,42,0.06)]"
         style={{ height: 'calc(100dvh - 200px)' }}
       >
@@ -247,6 +267,24 @@ export function WeekAgendaView({
                     <div
                       key={booking.id}
                       data-booking="true"
+                      onMouseEnter={(e) => {
+                        if (window.matchMedia && window.matchMedia('(hover: none)').matches) return;
+                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                        const containerRect = containerRef.current?.getBoundingClientRect();
+                        if (!containerRect) return;
+                        const x = Math.min(rect.left - containerRect.left + rect.width + 8, containerRect.width - 220);
+                        const y = Math.max(8, rect.top - containerRect.top);
+                        setHoverCard({
+                          customerName,
+                          serviceName,
+                          staffName,
+                          timeLabel,
+                          status: booking.status,
+                          x,
+                          y,
+                        });
+                      }}
+                      onMouseLeave={() => setHoverCard(null)}
                       onClick={(e) => { e.stopPropagation(); onSelectBooking(booking); }}
                       className="absolute left-0.5 right-0.5 rounded-lg border border-black/5 border-l-[4px] px-1 py-0.5 cursor-pointer overflow-hidden transition-shadow shadow-[0_6px_16px_rgba(15,23,42,0.08)] hover:shadow-[0_10px_22px_rgba(15,23,42,0.12)] z-10"
                       style={{
@@ -256,7 +294,6 @@ export function WeekAgendaView({
                         borderColor: color.border,
                         color: color.text,
                       }}
-                      title={`${customerName}\n${serviceName}\n${staffName}\n${timeLabel}`}
                     >
                       <p className="text-[9px] font-semibold truncate leading-tight">{customerName}</p>
                       {heightPx > 28 && <p className="text-[8px] opacity-75 truncate">{serviceName}</p>}
@@ -270,6 +307,7 @@ export function WeekAgendaView({
                   {/* Current time line */}
                   {isToday && nowMin >= 0 && nowMin < totalMinutes && (
                     <div
+                      id="admin-now-line"
                       className="absolute left-0 right-0 h-0.5 bg-rose-500 z-[15] pointer-events-none"
                       style={{ top: (nowMin / 60) * hourHeight }}
                     >
@@ -279,6 +317,26 @@ export function WeekAgendaView({
                 </div>
               );
             })}
+
+            {hoverCard && (
+              <div
+                className="absolute z-[40] pointer-events-none"
+                style={{ top: hoverCard.y, left: hoverCard.x }}
+              >
+                <div className="w-[210px] rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-[0_18px_40px_rgba(15,23,42,0.18)]">
+                  <p className="text-[12px] font-semibold text-gray-900 truncate">{hoverCard.customerName}</p>
+                  <p className="text-[11px] text-gray-500 truncate">{hoverCard.serviceName || '-'}</p>
+                  <div className="mt-1 flex items-center gap-2 text-[10px] text-gray-400">
+                    <span>{hoverCard.timeLabel}</span>
+                    <span>•</span>
+                    <span className="truncate">{hoverCard.staffName || '-'}</span>
+                  </div>
+                  <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-[9px] font-semibold text-gray-600">
+                    {STATUS_LABELS[hoverCard.status] || hoverCard.status}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

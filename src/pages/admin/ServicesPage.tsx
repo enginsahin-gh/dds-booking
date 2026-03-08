@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useServices } from '../../hooks/useServices';
 import { useCategories } from '../../hooks/useCategories';
 import { ServiceFormModal } from '../../components/admin/ServiceFormModal';
+import { AdminFab } from '../../components/admin/AdminFab';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
@@ -257,6 +258,11 @@ export function ServicesPage() {
           )}
         </div>
       )}
+
+      <AdminFab
+        label="Nieuwe dienst"
+        onClick={() => { setEditingService(null); setPrefillCategoryId(null); setServiceModalOpen(true); }}
+      />
 
       <ServiceFormModal
         open={serviceModalOpen}

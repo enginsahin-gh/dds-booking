@@ -31,6 +31,14 @@ const STATUS_COLORS: Record<string, string> = {
   completed: 'bg-emerald-50 border-emerald-500 text-emerald-900',
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  confirmed: 'Bevestigd',
+  pending_payment: 'Wacht op betaling',
+  cancelled: 'Geannuleerd',
+  no_show: 'No-show',
+  completed: 'Voltooid',
+};
+
 function snapToStep(minutes: number, step: number): number {
   return Math.round(minutes / step) * step;
 }
@@ -51,8 +59,18 @@ export function AgendaView({
 }: Props) {
   const stepMinutes = slotStepMinutes;
   const { getReadableStaffIds, canEditStaff } = useAuth();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [dragBooking, setDragBooking] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ staffId: string; time: string } | null>(null);
+  const [hoverCard, setHoverCard] = useState<null | {
+    customerName: string;
+    serviceName: string;
+    staffName: string;
+    timeLabel: string;
+    status: string;
+    x: number;
+    y: number;
+  }>(null);
 
   const activeStaff = useMemo(() => {
     const active = allStaff.filter(s => s.is_active);
@@ -78,16 +96,20 @@ export function AgendaView({
         const startMin = start.getHours() * 60 + start.getMinutes() - HOUR_START * 60;
         const durationMin = differenceInMinutes(end, start);
         const svc = services.find(s => s.id === b.service_id);
+        const stf = allStaff.find(s => s.id === b.staff_id);
         return {
           booking: b, staffId: b.staff_id,
           topPx: (startMin / 60) * hourHeight,
           heightPx: Math.max((durationMin / 60) * hourHeight, 20),
           timeLabel: `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`,
-          serviceName: svc?.name || '', customerName: b.customer_name, startMin,
+          serviceName: svc?.name || '',
+          staffName: stf?.name || '',
+          customerName: b.customer_name,
+          startMin,
         };
       })
       .filter(b => b.startMin >= 0 && b.startMin < totalMinutes);
-  }, [bookings, services, timezone, totalMinutes]);
+  }, [bookings, services, allStaff, timezone, totalMinutes]);
 
   const handleDragStart = (e: React.DragEvent, bookingId: string) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -139,6 +161,8 @@ export function AgendaView({
 
   return (
     <div
+      ref={containerRef}
+      onScroll={() => hoverCard && setHoverCard(null)}
       className="bg-white rounded-2xl border border-gray-200/70 overflow-auto overscroll-none shadow-[0_12px_32px_rgba(15,23,42,0.06)]"
       style={{ height: 'calc(100dvh - 170px)' }}
     >
@@ -214,19 +238,36 @@ export function AgendaView({
                   />
                 )}
 
-                {staffBookings.map(({ booking, topPx, heightPx, timeLabel, serviceName, customerName }) => (
+                {staffBookings.map(({ booking, topPx, heightPx, timeLabel, serviceName, staffName, customerName }) => (
                   <div
                     key={booking.id}
                     data-booking="true"
                     draggable={canEditStaff(booking.staff_id)}
                     onDragStart={e => canEditStaff(booking.staff_id) && handleDragStart(e, booking.id)}
                     onDragEnd={() => { setDragBooking(null); setDropTarget(null); }}
+                    onMouseEnter={(e) => {
+                      if (window.matchMedia && window.matchMedia('(hover: none)').matches) return;
+                      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                      const containerRect = containerRef.current?.getBoundingClientRect();
+                      if (!containerRect) return;
+                      const x = Math.min(rect.left - containerRect.left + rect.width + 8, containerRect.width - 220);
+                      const y = Math.max(8, rect.top - containerRect.top);
+                      setHoverCard({
+                        customerName,
+                        serviceName,
+                        staffName,
+                        timeLabel,
+                        status: booking.status,
+                        x,
+                        y,
+                      });
+                    }}
+                    onMouseLeave={() => setHoverCard(null)}
                     onClick={e => { e.stopPropagation(); onSelectBooking(booking); }}
                     className={`absolute left-0.5 right-0.5 rounded-lg border border-black/5 border-l-[4px] px-1.5 py-0.5 cursor-grab active:cursor-grabbing overflow-hidden transition-shadow shadow-[0_6px_16px_rgba(15,23,42,0.08)] hover:shadow-[0_10px_22px_rgba(15,23,42,0.12)] z-10 ${
                       STATUS_COLORS[booking.status] || STATUS_COLORS.confirmed
                     } ${dragBooking === booking.id ? 'opacity-40' : ''}`}
                     style={{ top: topPx, height: heightPx }}
-                    title={`${customerName}\n${serviceName}\n${timeLabel}`}
                   >
                     <p className="text-[10px] font-medium truncate leading-tight">{customerName}</p>
                     {heightPx > 28 && <p className="text-[9px] opacity-75 truncate">{serviceName}</p>}
@@ -237,8 +278,28 @@ export function AgendaView({
             );
           })}
 
+          {hoverCard && (
+            <div
+              className="absolute z-[40] pointer-events-none"
+              style={{ top: hoverCard.y, left: hoverCard.x }}
+            >
+              <div className="w-[210px] rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-[0_18px_40px_rgba(15,23,42,0.18)]">
+                <p className="text-[12px] font-semibold text-gray-900 truncate">{hoverCard.customerName}</p>
+                <p className="text-[11px] text-gray-500 truncate">{hoverCard.serviceName || '-'}</p>
+                <div className="mt-1 flex items-center gap-2 text-[10px] text-gray-400">
+                  <span>{hoverCard.timeLabel}</span>
+                  <span>•</span>
+                  <span className="truncate">{hoverCard.staffName || '-'}</span>
+                </div>
+                <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-[9px] font-semibold text-gray-600">
+                  {STATUS_LABELS[hoverCard.status] || hoverCard.status}
+                </span>
+              </div>
+            </div>
+          )}
+
           {showNowLine && (
-            <div className="absolute right-0 h-0.5 bg-rose-500 z-[15] pointer-events-none" style={{ top: (nowMin / 60) * hourHeight, left: TIME_COL_W }}>
+            <div id="admin-now-line" className="absolute right-0 h-0.5 bg-rose-500 z-[15] pointer-events-none" style={{ top: (nowMin / 60) * hourHeight, left: TIME_COL_W }}>
               <div className="absolute -left-1 -top-1 w-2.5 h-2.5 rounded-full bg-rose-500" />
             </div>
           )}

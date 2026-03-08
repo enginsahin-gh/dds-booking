@@ -6,6 +6,9 @@ interface BookingListProps {
   services: Service[];
   staff: Staff[];
   onSelect: (booking: Booking) => void;
+  selectedIds?: string[];
+  onToggleSelect?: (id: string) => void;
+  onToggleAll?: () => void;
 }
 
 const statusStyles: Record<string, { bg: string; text: string; label: string }> = {
@@ -32,7 +35,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export function BookingList({ bookings, services, staff, onSelect }: BookingListProps) {
+export function BookingList({ bookings, services, staff, onSelect, selectedIds = [], onToggleSelect, onToggleAll }: BookingListProps) {
   if (!bookings.length) {
     return (
       <div className="text-center py-12">
@@ -43,6 +46,9 @@ export function BookingList({ bookings, services, staff, onSelect }: BookingList
       </div>
     );
   }
+
+  const selectable = typeof onToggleSelect === 'function';
+  const allSelected = selectable && bookings.length > 0 && selectedIds.length === bookings.length;
 
   return (
     <>
@@ -55,6 +61,7 @@ export function BookingList({ bookings, services, staff, onSelect }: BookingList
           const end = parseISO(booking.end_at);
           const priceCents = booking.amount_total_cents || service?.price_cents || 0;
           const pi = booking.payment_status !== 'none' ? paymentIcons[booking.payment_status] : null;
+          const isSelected = selectedIds.includes(booking.id);
 
           return (
             <div
@@ -77,6 +84,26 @@ export function BookingList({ bookings, services, staff, onSelect }: BookingList
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  {selectable && (
+                    <label
+                      className="inline-flex items-center justify-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={isSelected}
+                        onChange={() => onToggleSelect?.(booking.id)}
+                      />
+                      <span
+                        className={`w-4 h-4 rounded-md border flex items-center justify-center text-[10px] font-bold ${
+                          isSelected ? 'bg-gray-900 border-gray-900 text-white' : 'bg-white border-gray-300 text-transparent'
+                        }`}
+                      >
+                        ✓
+                      </span>
+                    </label>
+                  )}
                   <StatusBadge status={booking.status} />
                   <div className="flex items-center gap-1.5">
                     {pi && <span className={`text-xs ${pi.color}`} title={pi.label}>{pi.icon}</span>}
@@ -94,6 +121,25 @@ export function BookingList({ bookings, services, staff, onSelect }: BookingList
         <table className="w-full text-sm">
           <thead className="bg-gray-50/80 border-b">
             <tr>
+              {selectable && (
+                <th className="text-left px-4 py-3 font-medium text-gray-500 text-xs uppercase tracking-wider w-10">
+                  <label className="inline-flex items-center" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={allSelected}
+                      onChange={() => onToggleAll?.()}
+                    />
+                    <span
+                      className={`w-4 h-4 rounded-md border flex items-center justify-center text-[10px] font-bold ${
+                        allSelected ? 'bg-gray-900 border-gray-900 text-white' : 'bg-white border-gray-300 text-transparent'
+                      }`}
+                    >
+                      ✓
+                    </span>
+                  </label>
+                </th>
+              )}
               <th className="text-left px-4 py-3 font-medium text-gray-500 text-xs uppercase tracking-wider">Tijd</th>
               <th className="text-left px-4 py-3 font-medium text-gray-500 text-xs uppercase tracking-wider">Klant</th>
               <th className="text-left px-4 py-3 font-medium text-gray-500 text-xs uppercase tracking-wider">Dienst</th>
@@ -110,6 +156,7 @@ export function BookingList({ bookings, services, staff, onSelect }: BookingList
               const end = parseISO(booking.end_at);
               const priceCents = booking.amount_total_cents || service?.price_cents || 0;
               const pi = booking.payment_status !== 'none' ? paymentIcons[booking.payment_status] : null;
+              const isSelected = selectedIds.includes(booking.id);
 
               return (
                 <tr
@@ -117,6 +164,28 @@ export function BookingList({ bookings, services, staff, onSelect }: BookingList
                   className="hover:bg-violet-50/50 cursor-pointer transition-colors"
                   onClick={() => onSelect(booking)}
                 >
+                  {selectable && (
+                    <td className="px-4 py-3">
+                      <label
+                        className="inline-flex items-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={isSelected}
+                          onChange={() => onToggleSelect?.(booking.id)}
+                        />
+                        <span
+                          className={`w-4 h-4 rounded-md border flex items-center justify-center text-[10px] font-bold ${
+                            isSelected ? 'bg-gray-900 border-gray-900 text-white' : 'bg-white border-gray-300 text-transparent'
+                          }`}
+                        >
+                          ✓
+                        </span>
+                      </label>
+                    </td>
+                  )}
                   <td className="px-4 py-3">
                     <span className="font-semibold text-gray-900">{format(start, 'HH:mm')}</span>
                     <span className="text-gray-300 mx-1">-</span>

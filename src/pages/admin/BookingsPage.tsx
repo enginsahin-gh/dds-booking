@@ -28,7 +28,6 @@ export function BookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createPrefill, setCreatePrefill] = useState<{ staffId?: string; time?: string }>({});
-  const [statusFilter, setStatusFilter] = useState<'all' | 'confirmed' | 'pending_payment' | 'completed' | 'no_show' | 'cancelled'>('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState<'cancel' | 'complete' | 'no_show' | null>(null);
 
@@ -57,35 +56,7 @@ export function BookingsPage() {
   const { staff } = useStaff(salon?.id);
   const { canEditStaff, canSeeRevenue } = useAuth();
 
-  const statusCounts = useMemo(() => {
-    const counts = {
-      confirmed: 0,
-      pending_payment: 0,
-      completed: 0,
-      no_show: 0,
-      cancelled: 0,
-    };
-    bookings.forEach((b) => {
-      if (counts[b.status as keyof typeof counts] !== undefined) {
-        counts[b.status as keyof typeof counts] += 1;
-      }
-    });
-    return counts;
-  }, [bookings]);
-
-  const statusOptions = [
-    { id: 'all', label: 'Alle', count: bookings.length },
-    { id: 'confirmed', label: 'Bevestigd', count: statusCounts.confirmed },
-    { id: 'pending_payment', label: 'Wacht', count: statusCounts.pending_payment },
-    { id: 'completed', label: 'Voltooid', count: statusCounts.completed },
-    { id: 'no_show', label: 'No-show', count: statusCounts.no_show },
-    { id: 'cancelled', label: 'Geannuleerd', count: statusCounts.cancelled },
-  ] as const;
-
-  const filteredBookings = useMemo(() => {
-    if (statusFilter === 'all') return bookings;
-    return bookings.filter(b => b.status === statusFilter);
-  }, [bookings, statusFilter]);
+  const filteredBookings = bookings;
 
   const handleCancel = async (id: string) => {
     try { await cancelBooking(id); addToast('success', 'Afspraak geannuleerd'); } catch { addToast('error', 'Annulering mislukt'); }
@@ -186,7 +157,7 @@ export function BookingsPage() {
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
             <div className="flex items-center justify-between lg:justify-start w-full lg:w-auto gap-2">
               <h2 className="text-base lg:text-lg font-bold text-gray-900 tracking-tight whitespace-nowrap">Boekingen</h2>
-              <div className="flex rounded-xl bg-gray-100/70 p-0.5">
+              <div className="hidden sm:flex rounded-xl bg-gray-100/70 p-0.5">
                 {(['agenda', 'day', 'week'] as ViewMode[]).map(mode => (
                   <button
                     key={mode}
@@ -198,6 +169,17 @@ export function BookingsPage() {
                     {mode === 'agenda' ? 'Agenda' : mode === 'day' ? 'Lijst' : 'Week'}
                   </button>
                 ))}
+              </div>
+              <div className="sm:hidden">
+                <select
+                  value={viewMode}
+                  onChange={(e) => setViewMode(e.target.value as ViewMode)}
+                  className="px-3 py-2 text-[12px] font-semibold rounded-xl border border-gray-200 bg-white"
+                >
+                  <option value="agenda">Agenda</option>
+                  <option value="day">Lijst</option>
+                  <option value="week">Week</option>
+                </select>
               </div>
             </div>
 
@@ -233,68 +215,6 @@ export function BookingsPage() {
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="mt-2 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Status</span>
-              {statusOptions.map(option => {
-                const active = statusFilter === option.id;
-                return (
-                  <button
-                    key={option.id}
-                    onClick={() => setStatusFilter(option.id)}
-                    className={`px-3 py-1.5 text-[11px] font-semibold rounded-full transition-all ${
-                      active ? 'bg-gray-900 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    } ${option.count === 0 ? 'opacity-50' : ''}`}
-                  >
-                    {option.label}
-                    <span className={`ml-1 text-[10px] ${active ? 'text-white/70' : 'text-gray-400'}`}>{option.count}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Snel</span>
-              {viewMode === 'week' ? (
-                <>
-                  <button
-                    onClick={() => setDate(new Date())}
-                    className="px-3 py-1.5 text-[11px] font-semibold rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  >
-                    Deze week
-                  </button>
-                  <button
-                    onClick={() => setDate(addWeeks(new Date(), 1))}
-                    className="px-3 py-1.5 text-[11px] font-semibold rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  >
-                    Volgende week
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={handleNow}
-                    className="px-3 py-1.5 text-[11px] font-semibold rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  >
-                    Vandaag
-                  </button>
-                  <button
-                    onClick={() => setDate(addDays(new Date(), 1))}
-                    className="px-3 py-1.5 text-[11px] font-semibold rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  >
-                    Morgen
-                  </button>
-                  <button
-                    onClick={() => { setViewMode('week'); setDate(new Date()); }}
-                    className="px-3 py-1.5 text-[11px] font-semibold rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  >
-                    Deze week
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
 
           {/* Bulk actions */}
           {viewMode === 'day' && selectedCount > 0 && (

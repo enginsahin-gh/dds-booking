@@ -1,4 +1,4 @@
-import { format, addDays, subDays, isToday } from 'date-fns';
+import { format, addDays, subDays } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
 interface DateNavigatorProps {
@@ -25,14 +25,6 @@ export function DateNavigator({ date, onChange }: DateNavigatorProps) {
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
       </button>
-      {!isToday(date) && (
-        <button
-          onClick={() => onChange(new Date())}
-          className="px-2 py-1 text-[10px] font-medium text-violet-600 bg-violet-50 rounded-lg hover:bg-violet-100 transition-colors"
-        >
-          Vandaag
-        </button>
-      )}
     </div>
   );
 }

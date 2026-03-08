@@ -70,7 +70,7 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
   // Block bookings for expired trials
   if (salon.subscription_status === 'trial' && salon.trial_ends_at) {
     if (new Date(salon.trial_ends_at) < new Date()) {
-      return c.json({ error: 'SALON_PAUSED' }, 403);
+      return c.json({ error: 'TRIAL_EXPIRED' }, 403);
     }
   }
 

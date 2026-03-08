@@ -436,7 +436,11 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
 
       if (!res.ok) {
         const err = result.error || '';
-        if (err === 'SALON_PAUSED') {
+        if (err === 'TRIAL_EXPIRED') {
+          setError('De proefperiode van deze salon is verlopen. Online boeken is tijdelijk uitgeschakeld.');
+          setBookingLoading(false);
+          return;
+        } else if (err === 'SALON_PAUSED') {
           setError('Online boeken is op dit moment niet beschikbaar. Neem contact op met de salon.');
           setBookingLoading(false);
           return;

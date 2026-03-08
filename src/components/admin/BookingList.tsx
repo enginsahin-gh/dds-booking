@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import type { Booking, Service, Staff } from '../../lib/types';
 
@@ -35,7 +36,10 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export function BookingList({ bookings, services, staff, onSelect, selectedIds = [], onToggleSelect, onToggleAll }: BookingListProps) {
+export const BookingList = memo(function BookingList({ bookings, services, staff, onSelect, selectedIds = [], onToggleSelect, onToggleAll }: BookingListProps) {
+  const serviceMap = useMemo(() => new Map(services.map(s => [s.id, s])), [services]);
+  const staffMap = useMemo(() => new Map(staff.map(s => [s.id, s])), [staff]);
+
   if (!bookings.length) {
     return (
       <div className="text-center py-12">
@@ -55,8 +59,8 @@ export function BookingList({ bookings, services, staff, onSelect, selectedIds =
       {/* Mobile: card layout */}
       <div className="space-y-2 md:hidden">
         {bookings.map((booking) => {
-          const service = services.find(s => s.id === booking.service_id);
-          const member = staff.find(s => s.id === booking.staff_id);
+          const service = serviceMap.get(booking.service_id);
+          const member = staffMap.get(booking.staff_id);
           const start = parseISO(booking.start_at);
           const end = parseISO(booking.end_at);
           const priceCents = booking.amount_total_cents || service?.price_cents || 0;
@@ -150,8 +154,8 @@ export function BookingList({ bookings, services, staff, onSelect, selectedIds =
           </thead>
           <tbody className="divide-y divide-gray-50">
             {bookings.map((booking) => {
-              const service = services.find(s => s.id === booking.service_id);
-              const member = staff.find(s => s.id === booking.staff_id);
+              const service = serviceMap.get(booking.service_id);
+              const member = staffMap.get(booking.staff_id);
               const start = parseISO(booking.start_at);
               const end = parseISO(booking.end_at);
               const priceCents = booking.amount_total_cents || service?.price_cents || 0;
@@ -214,4 +218,4 @@ export function BookingList({ bookings, services, staff, onSelect, selectedIds =
       </div>
     </>
   );
-}
+});

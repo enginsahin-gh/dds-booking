@@ -1,20 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { useSalon } from '../../hooks/useSalon';
 import { supabase } from '../../lib/supabase';
 import { Input, Textarea, Select } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { Card, CardSection } from '../../components/ui/Card';
 import { Tabs, TabPanel } from '../../components/ui/Tabs';
+import { Spinner } from '../../components/ui/Spinner';
 import { useToast } from '../../components/ui/Toast';
 import type { Salon, PaymentMode, DepositType } from '../../lib/types';
 import type { User } from '@supabase/supabase-js';
 
-import { SubscriptionTab } from './settings/SubscriptionTab';
-import { GeneralTab } from './settings/GeneralTab';
-import { AppointmentsTab } from './settings/AppointmentsTab';
-import { PaymentsTab } from './settings/PaymentsTab';
-import { BrandingTab } from './settings/BrandingTab';
-import { IntegrationsTab } from './settings/IntegrationsTab';
+const SubscriptionTab = lazy(() => import('./settings/SubscriptionTab').then(m => ({ default: m.SubscriptionTab })));
+const GeneralTab = lazy(() => import('./settings/GeneralTab').then(m => ({ default: m.GeneralTab })));
+const AppointmentsTab = lazy(() => import('./settings/AppointmentsTab').then(m => ({ default: m.AppointmentsTab })));
+const PaymentsTab = lazy(() => import('./settings/PaymentsTab').then(m => ({ default: m.PaymentsTab })));
+const BrandingTab = lazy(() => import('./settings/BrandingTab').then(m => ({ default: m.BrandingTab })));
+const IntegrationsTab = lazy(() => import('./settings/IntegrationsTab').then(m => ({ default: m.IntegrationsTab })));
 
 const settingsTabs = [
   {
@@ -53,6 +55,28 @@ const settingsTabs = [
     icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
   },
 ];
+
+const planLabels: Record<string, string> = {
+  booking_standalone: 'Booking Standalone',
+  booking_website: 'Booking + Website',
+};
+
+const statusLabels: Record<string, string> = {
+  none: 'Geen abonnement',
+  trial: 'Trial',
+  active: 'Actief',
+  paused: 'Gepauzeerd',
+  cancelled: 'Geannuleerd',
+  past_due: 'Betaling mislukt',
+};
+
+function SettingsTabLoader() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <Spinner />
+    </div>
+  );
+}
 
 export function SettingsPage() {
   const { salon } = useOutletContext<{ salon: Salon | null; user: User }>();
@@ -202,106 +226,175 @@ export function SettingsPage() {
 
   if (!salon) return null;
 
+  const status = (salon.subscription_status || 'none') as string;
+  const statusLabel = statusLabels[status] || 'Onbekend';
+  const planLabel = salon.plan_type ? (planLabels[salon.plan_type] || salon.plan_type) : 'Geen plan';
+  const trialEnds = salon.trial_ends_at ? new Date(salon.trial_ends_at) : null;
+  const daysLeft = trialEnds ? Math.max(0, Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
+  const statusTone = status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    : status === 'trial' ? 'bg-amber-50 text-amber-700 border-amber-200'
+    : status === 'paused' || status === 'cancelled' || status === 'past_due' ? 'bg-red-50 text-red-700 border-red-200'
+    : 'bg-gray-100 text-gray-600 border-gray-200';
+  const ctaLabel = status === 'active' ? 'Beheer abonnement' : 'Activeer abonnement';
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-5">
+    <div className="space-y-5">
+      <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
         <div>
           <h1 className="text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">Instellingen</h1>
           <p className="text-[13px] text-gray-500 mt-0.5">Beheer je salon profiel en voorkeuren</p>
         </div>
-        <Button onClick={handleSave} loading={saving}>
-          Opslaan
-        </Button>
+        <div className="bg-white border border-gray-200/70 rounded-2xl p-4 sm:p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Plan & status</div>
+              <div className="mt-2 text-[16px] font-bold text-gray-900">{planLabel}</div>
+              <div className="text-[12px] text-gray-500 mt-1">
+                {status === 'trial' && trialEnds ? `Trial eindigt over ${daysLeft} ${daysLeft === 1 ? 'dag' : 'dagen'}` : statusLabel}
+              </div>
+            </div>
+            <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${statusTone}`}>
+              {statusLabel}
+            </span>
+          </div>
+          <div className="mt-4 flex items-center justify-between">
+            <Button variant="secondary" onClick={() => setActiveTab('subscription')}>
+              {ctaLabel}
+            </Button>
+            <Button onClick={handleSave} loading={saving}>
+              Opslaan
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <Tabs tabs={settingsTabs} activeTab={activeTab} onChange={setActiveTab} />
+      <div className="lg:hidden">
+        <Tabs tabs={settingsTabs} activeTab={activeTab} onChange={setActiveTab} />
+      </div>
 
-      <div className="mt-5 max-w-2xl">
-        <TabPanel active={activeTab === 'subscription'}>
-          <SubscriptionTab salon={salon} />
-        </TabPanel>
+      <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <div className="hidden lg:block">
+          <div className="bg-white border border-gray-200/70 rounded-2xl p-2">
+            {settingsTabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
+                  activeTab === tab.id ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <span className={`flex items-center justify-center w-7 h-7 rounded-lg ${activeTab === tab.id ? 'bg-white/15 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                  {tab.icon}
+                </span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="max-w-2xl">
+          <TabPanel active={activeTab === 'subscription'}>
+            <Suspense fallback={<SettingsTabLoader />}>
+              <SubscriptionTab salon={salon} />
+            </Suspense>
+          </TabPanel>
 
         <TabPanel active={activeTab === 'general'}>
-          <GeneralTab
-            name={name} setName={setName}
-            email={email} setEmail={setEmail}
-            phone={phone} setPhone={setPhone}
-            slug={slug}
-          />
+          <Suspense fallback={<SettingsTabLoader />}>
+            <GeneralTab
+              name={name} setName={setName}
+              email={email} setEmail={setEmail}
+              phone={phone} setPhone={setPhone}
+              slug={slug}
+            />
+          </Suspense>
         </TabPanel>
 
         <TabPanel active={activeTab === 'location'}>
-          <div className="space-y-4">
-            <Input label="Adres" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Keizersgracht 123" />
-            <div className="grid grid-cols-3 gap-4">
-              <Input label="Postcode" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="1015 CJ" />
-              <div className="col-span-2">
-                <Input label="Plaats" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Amsterdam" />
+          <Card padding="lg">
+            <CardSection title="Locatie" description="Adres en route-informatie voor je klanten.">
+              <div className="space-y-4">
+                <Input label="Adres" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Keizersgracht 123" />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Input label="Postcode" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="1015 CJ" />
+                  <div className="sm:col-span-2">
+                    <Input label="Plaats" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Amsterdam" />
+                  </div>
+                </div>
+                <Textarea
+                  label="Parkeer- en route-informatie"
+                  value={locationInfo}
+                  onChange={(e) => setLocationInfo(e.target.value)}
+                  placeholder="Bijv. Gratis parkeren op eigen terrein achter de salon."
+                  rows={3}
+                  hint="Wordt getoond in de bevestigingsmail aan klanten."
+                />
               </div>
-            </div>
-            <Textarea
-              label="Parkeer- en route-informatie"
-              value={locationInfo}
-              onChange={(e) => setLocationInfo(e.target.value)}
-              placeholder="Bijv. Gratis parkeren op eigen terrein achter de salon."
-              rows={3}
-              hint="Wordt getoond in de bevestigingsmail aan klanten."
-            />
-          </div>
+            </CardSection>
+          </Card>
         </TabPanel>
 
         <TabPanel active={activeTab === 'booking'}>
-          <AppointmentsTab
-            bufferMinutes={bufferMinutes} setBufferMinutes={setBufferMinutes}
-            slotStepMinutes={slotStepMinutes} setSlotStepMinutes={setSlotStepMinutes}
-            maxBookingWeeks={maxBookingWeeks} setMaxBookingWeeks={setMaxBookingWeeks}
-            cancellationPolicy={cancellationPolicy} setCancellationPolicy={setCancellationPolicy}
-            rescheduleEnabled={rescheduleEnabled} setRescheduleEnabled={setRescheduleEnabled}
-            customerLoginEnabled={customerLoginEnabled} setCustomerLoginEnabled={setCustomerLoginEnabled}
-            guestBookingAllowed={guestBookingAllowed} setGuestBookingAllowed={setGuestBookingAllowed}
-            customerLoginMethods={customerLoginMethods} setCustomerLoginMethods={setCustomerLoginMethods}
-            waitlistEnabled={waitlistEnabled} setWaitlistEnabled={setWaitlistEnabled}
-          />
+          <Suspense fallback={<SettingsTabLoader />}>
+            <AppointmentsTab
+              bufferMinutes={bufferMinutes} setBufferMinutes={setBufferMinutes}
+              slotStepMinutes={slotStepMinutes} setSlotStepMinutes={setSlotStepMinutes}
+              maxBookingWeeks={maxBookingWeeks} setMaxBookingWeeks={setMaxBookingWeeks}
+              cancellationPolicy={cancellationPolicy} setCancellationPolicy={setCancellationPolicy}
+              rescheduleEnabled={rescheduleEnabled} setRescheduleEnabled={setRescheduleEnabled}
+              customerLoginEnabled={customerLoginEnabled} setCustomerLoginEnabled={setCustomerLoginEnabled}
+              guestBookingAllowed={guestBookingAllowed} setGuestBookingAllowed={setGuestBookingAllowed}
+              customerLoginMethods={customerLoginMethods} setCustomerLoginMethods={setCustomerLoginMethods}
+              waitlistEnabled={waitlistEnabled} setWaitlistEnabled={setWaitlistEnabled}
+            />
+          </Suspense>
         </TabPanel>
 
         <TabPanel active={activeTab === 'payments'}>
-          <PaymentsTab
-            salon={salon}
-            paymentMode={paymentMode} setPaymentMode={setPaymentMode}
-            depositType={depositType} setDepositType={setDepositType}
-            depositValue={depositValue} setDepositValue={setDepositValue}
-          />
+          <Suspense fallback={<SettingsTabLoader />}>
+            <PaymentsTab
+              salon={salon}
+              paymentMode={paymentMode} setPaymentMode={setPaymentMode}
+              depositType={depositType} setDepositType={setDepositType}
+              depositValue={depositValue} setDepositValue={setDepositValue}
+            />
+          </Suspense>
         </TabPanel>
 
         <TabPanel active={activeTab === 'branding'}>
-          <BrandingTab
-            salon={salon}
-            name={name}
-            brandColor={brandColor} setBrandColor={setBrandColor}
-            brandColorText={brandColorText} setBrandColorText={setBrandColorText}
-            logoUrl={logoUrl} setLogoUrl={setLogoUrl}
-            emailFooterText={emailFooterText} setEmailFooterText={setEmailFooterText}
-            gradientEnabled={gradientEnabled} setGradientEnabled={setGradientEnabled}
-            gradientFrom={gradientFrom} setGradientFrom={setGradientFrom}
-            gradientTo={gradientTo} setGradientTo={setGradientTo}
-            gradientDirection={gradientDirection} setGradientDirection={setGradientDirection}
-            emailPreferences={emailPreferences} setEmailPreferences={setEmailPreferences}
-            emailPreviewType={emailPreviewType} setEmailPreviewType={setEmailPreviewType}
-            logoUploading={logoUploading} setLogoUploading={setLogoUploading}
-            onSave={handleSave}
-            saving={saving}
-          />
+          <Suspense fallback={<SettingsTabLoader />}>
+            <BrandingTab
+              salon={salon}
+              name={name}
+              brandColor={brandColor} setBrandColor={setBrandColor}
+              brandColorText={brandColorText} setBrandColorText={setBrandColorText}
+              logoUrl={logoUrl} setLogoUrl={setLogoUrl}
+              emailFooterText={emailFooterText} setEmailFooterText={setEmailFooterText}
+              gradientEnabled={gradientEnabled} setGradientEnabled={setGradientEnabled}
+              gradientFrom={gradientFrom} setGradientFrom={setGradientFrom}
+              gradientTo={gradientTo} setGradientTo={setGradientTo}
+              gradientDirection={gradientDirection} setGradientDirection={setGradientDirection}
+              emailPreferences={emailPreferences} setEmailPreferences={setEmailPreferences}
+              emailPreviewType={emailPreviewType} setEmailPreviewType={setEmailPreviewType}
+              logoUploading={logoUploading} setLogoUploading={setLogoUploading}
+              onSave={handleSave}
+              saving={saving}
+            />
+          </Suspense>
         </TabPanel>
 
         <TabPanel active={activeTab === 'integrations'}>
-          <IntegrationsTab
-            salon={salon}
-            googlePlaceId={googlePlaceId} setGooglePlaceId={setGooglePlaceId}
-            reviewEnabled={reviewEnabled} setReviewEnabled={setReviewEnabled}
-            reviewAfterVisit={reviewAfterVisit} setReviewAfterVisit={setReviewAfterVisit}
-          />
+          <Suspense fallback={<SettingsTabLoader />}>
+            <IntegrationsTab
+              salon={salon}
+              googlePlaceId={googlePlaceId} setGooglePlaceId={setGooglePlaceId}
+              reviewEnabled={reviewEnabled} setReviewEnabled={setReviewEnabled}
+              reviewAfterVisit={reviewAfterVisit} setReviewAfterVisit={setReviewAfterVisit}
+            />
+          </Suspense>
         </TabPanel>
       </div>
+    </div>
     </div>
   );
 }

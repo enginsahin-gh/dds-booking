@@ -332,7 +332,7 @@ export function AdminLayout() {
         <SubscriptionBanner salon={salon} />
 
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
-          <div className="p-4 lg:p-6 max-w-6xl">
+          <div className="p-3 sm:p-4 lg:p-6 max-w-6xl">
             <Outlet context={{ salon, user, isOwner, role }} />
           </div>
         </main>

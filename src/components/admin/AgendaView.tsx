@@ -60,6 +60,7 @@ export function AgendaView({
   const stepMinutes = slotStepMinutes;
   const { getReadableStaffIds, canEditStaff } = useAuth();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
   const [dragBooking, setDragBooking] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ staffId: string; time: string } | null>(null);
   const [hoverCard, setHoverCard] = useState<null | {
@@ -78,12 +79,25 @@ export function AgendaView({
     if (readableIds === null) return active; // all visible
     return active.filter(s => readableIds.includes(s.id));
   }, [allStaff, getReadableStaffIds]);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => setContainerWidth(el.clientWidth || 0);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const hours = useMemo(() => Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i), []);
   const totalMinutes = (HOUR_END - HOUR_START) * 60;
   const segmentsPerHour = Math.max(1, Math.round(60 / stepMinutes));
   const hourHeight = BASE_SLOT_HEIGHT * segmentsPerHour;
   const gridHeight = hours.length * hourHeight;
-  const totalGridWidth = TIME_COL_W + activeStaff.length * COL_MIN_W;
+  const staffColWidth = activeStaff.length === 1
+    ? Math.max(COL_MIN_W, containerWidth - TIME_COL_W)
+    : COL_MIN_W;
+  const totalGridWidth = TIME_COL_W + activeStaff.length * staffColWidth;
   const segmentHeight = BASE_SLOT_HEIGHT;
   const totalSegments = hours.length * segmentsPerHour;
 
@@ -179,7 +193,7 @@ export function AgendaView({
             <div
               key={s.id}
               className="px-2.5 py-3 text-center border-r border-gray-200/70 last:border-r-0 flex-shrink-0"
-              style={{ width: COL_MIN_W }}
+              style={{ width: staffColWidth }}
             >
               {s.photo_url ? (
                 <img src={s.photo_url} alt="" className="w-8 h-8 rounded-full mx-auto mb-1 object-cover" />
@@ -211,7 +225,7 @@ export function AgendaView({
               <div
                 key={staffMember.id}
                 className="relative border-r border-gray-200/70 last:border-r-0 cursor-pointer flex-shrink-0"
-                style={{ height: gridHeight, width: COL_MIN_W }}
+                style={{ height: gridHeight, width: staffColWidth }}
                 onClick={e => handleSlotClick(e, staffMember.id)}
                 onDragOver={e => handleDragOver(e, staffMember.id)}
                 onDragLeave={() => setDropTarget(null)}

@@ -168,27 +168,29 @@ export function CommunicationsPage() {
           <p className="text-[13px] text-gray-500 mt-0.5">Alle klantmails, inclusief status per verzending</p>
           <p className="text-[11px] text-gray-400 mt-1">{filtered.length} berichten</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={fetchLogs}
-            className="px-3 py-2 text-xs font-semibold rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-          >
-            Vernieuwen
-          </button>
-          {filtered.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full lg:w-auto">
+          <div className="flex items-center gap-2 order-2 sm:order-none">
             <button
-              onClick={toggleSelectAll}
+              onClick={fetchLogs}
               className="px-3 py-2 text-xs font-semibold rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
             >
-              {allSelected ? 'Deselecteer alles' : 'Selecteer alles'}
+              Vernieuwen
             </button>
-          )}
-          <div className="relative">
+            {filtered.length > 0 && (
+              <button
+                onClick={toggleSelectAll}
+                className="px-3 py-2 text-xs font-semibold rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+              >
+                {allSelected ? 'Deselecteer' : 'Selecteer'}
+              </button>
+            )}
+          </div>
+          <div className="relative w-full sm:w-[260px]">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Zoek op naam, email of onderwerp"
-              className="w-full sm:w-[260px] px-3 py-2 text-[13px] rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-200"
+              className="w-full px-3 py-2 text-[13px] rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-200"
             />
           </div>
         </div>
@@ -196,7 +198,30 @@ export function CommunicationsPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
-        <div className="flex gap-1 overflow-x-auto pb-1">
+        {/* Mobile dropdowns */}
+        <div className="sm:hidden grid grid-cols-2 gap-2">
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-3 py-2 text-[12px] font-semibold rounded-xl border border-gray-200 bg-white"
+          >
+            {typeOptions.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 text-[12px] font-semibold rounded-xl border border-gray-200 bg-white"
+          >
+            {statusOptions.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Desktop chips */}
+        <div className="hidden sm:flex gap-1 overflow-x-auto pb-1">
           {typeOptions.map(opt => (
             <button
               key={opt.value}
@@ -209,13 +234,14 @@ export function CommunicationsPage() {
             </button>
           ))}
         </div>
+
         <div className="flex items-center gap-2 sm:ml-auto">
-          <div className="flex gap-1 bg-gray-100/70 p-0.5 rounded-full">
+          <div className="flex gap-1 bg-gray-100/70 p-0.5 rounded-full w-full sm:w-auto">
             {handledOptions.map(opt => (
               <button
                 key={opt.value}
                 onClick={() => setHandledFilter(opt.value as typeof handledFilter)}
-                className={`px-3 py-1 text-[11px] font-semibold rounded-full transition-all ${
+                className={`flex-1 sm:flex-none px-3 py-1 text-[11px] font-semibold rounded-full transition-all ${
                   handledFilter === opt.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -226,7 +252,7 @@ export function CommunicationsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 text-xs rounded-xl border border-gray-200 bg-white"
+            className="hidden sm:block px-3 py-2 text-xs rounded-xl border border-gray-200 bg-white"
           >
             {statusOptions.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>

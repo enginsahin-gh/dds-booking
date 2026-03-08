@@ -20,6 +20,14 @@ interface Customer {
   noShows: number;
   cancellations: number;
   bookings: Booking[];
+  tags: string[];
+  note: string | null;
+}
+
+interface CustomerMeta {
+  email: string;
+  tags: string[];
+  note: string | null;
 }
 
 function formatPrice(cents: number): string {
@@ -32,12 +40,16 @@ export function CustomersPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [meta, setMeta] = useState<CustomerMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [sortBy, setSortBy] = useState<'lastVisit' | 'totalSpent' | 'totalBookings'>('lastVisit');
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [tagsDraft, setTagsDraft] = useState<string[]>([]);
+  const [savingMeta, setSavingMeta] = useState(false);
   const PAGE_SIZE = 1000;
 
   useEffect(() => {
@@ -48,16 +60,18 @@ export function CustomersPage() {
       if (readableIds !== null) {
         bookingsQuery = bookingsQuery.in('staff_id', readableIds);
       }
-      const [bookingsRes, servicesRes, staffRes] = await Promise.all([
+      const [bookingsRes, servicesRes, staffRes, metaRes] = await Promise.all([
         bookingsQuery,
         supabase.from('services').select('*').eq('salon_id', salon.id),
         supabase.from('staff').select('*').eq('salon_id', salon.id),
+        supabase.from('customer_meta').select('*').eq('salon_id', salon.id),
       ]);
       const data = bookingsRes.data || [];
       setBookings(data);
       setHasMore(data.length === PAGE_SIZE);
       setServices(servicesRes.data || []);
       setStaffList(staffRes.data || []);
+      setMeta(metaRes.data || []);
       setLoading(false);
     };
     load();
@@ -85,6 +99,12 @@ export function CustomersPage() {
     setLoadingMore(false);
   };
 
+  const metaMap = useMemo(() => {
+    const map = new Map<string, CustomerMeta>();
+    meta.forEach((m) => map.set(m.email.toLowerCase(), m));
+    return map;
+  }, [meta]);
+
   const customers = useMemo(() => {
     const map = new Map<string, Customer>();
 
@@ -104,6 +124,8 @@ export function CustomersPage() {
           noShows: 0,
           cancellations: 0,
           bookings: [],
+          tags: [],
+          note: null,
         };
         map.set(key, c);
       }
@@ -126,7 +148,14 @@ export function CustomersPage() {
       if (b.start_at < c.firstVisit) c.firstVisit = b.start_at;
     }
 
-    let list = Array.from(map.values());
+    let list = Array.from(map.values()).map((c) => {
+      const m = metaMap.get(c.email.toLowerCase());
+      return {
+        ...c,
+        tags: m?.tags || [],
+        note: m?.note || null,
+      };
+    });
 
     if (search) {
       const q = search.toLowerCase();
@@ -144,7 +173,65 @@ export function CustomersPage() {
     });
 
     return list;
-  }, [bookings, services, search, sortBy]);
+  }, [bookings, services, search, sortBy, metaMap]);
+
+  useEffect(() => {
+    if (!selectedCustomer) return;
+    setNoteDraft(selectedCustomer.note || '');
+    setTagsDraft(selectedCustomer.tags || []);
+  }, [selectedCustomer]);
+
+  const tagOptions = [
+    { id: 'new', label: 'Nieuw', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+    { id: 'vip', label: 'VIP', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+    { id: 'warning', label: 'Waarschuwing', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+  ];
+
+  const saveMeta = async (email: string, updates: Partial<CustomerMeta>) => {
+    if (!salon) return;
+    setSavingMeta(true);
+    const payload = {
+      salon_id: salon.id,
+      email,
+      tags: updates.tags || tagsDraft,
+      note: updates.note ?? noteDraft,
+    };
+    const { data, error } = await supabase
+      .from('customer_meta')
+      .upsert(payload, { onConflict: 'salon_id,email' })
+      .select('*')
+      .single();
+    if (!error && data) {
+      setMeta(prev => {
+        const next = prev.filter(m => m.email.toLowerCase() !== email.toLowerCase());
+        next.push({ email: data.email, tags: data.tags || [], note: data.note || null });
+        return next;
+      });
+    }
+    setSavingMeta(false);
+  };
+
+  const toggleTag = async (tagId: string) => {
+    if (!selectedCustomer) return;
+    const next = tagsDraft.includes(tagId)
+      ? tagsDraft.filter(t => t !== tagId)
+      : [...tagsDraft, tagId];
+    setTagsDraft(next);
+    await saveMeta(selectedCustomer.email, { tags: next });
+  };
+
+  const historyGroups = useMemo(() => {
+    if (!selectedCustomer) return [] as Array<{ label: string; items: Booking[] }>;
+    const sorted = [...selectedCustomer.bookings].sort((a, b) => b.start_at.localeCompare(a.start_at));
+    const map = new Map<string, Booking[]>();
+    sorted.forEach((b) => {
+      const key = format(parseISO(b.start_at), 'MMMM yyyy', { locale: nl });
+      const list = map.get(key) || [];
+      list.push(b);
+      map.set(key, list);
+    });
+    return Array.from(map.entries()).map(([label, items]) => ({ label, items }));
+  }, [selectedCustomer]);
 
   if (loading) return <Spinner className="py-12" />;
 
@@ -207,6 +294,25 @@ export function CustomersPage() {
                   <div className="min-w-0">
                     <p className="text-[14px] font-semibold text-gray-900 truncate">{customer.name}</p>
                     <p className="text-[12px] text-gray-400 truncate mt-0.5">{customer.email}</p>
+                    {(customer.tags.length > 0 || customer.noShows > 0 || customer.note) && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {customer.tags.map(tag => (
+                          <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                            {tagOptions.find(t => t.id === tag)?.label || tag}
+                          </span>
+                        ))}
+                        {customer.noShows > 0 && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700">
+                            {customer.noShows}x no-show
+                          </span>
+                        )}
+                        {customer.note && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                            Notitie
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex-shrink-0 text-right">
                     {canSeeRevenue && <p className="text-[14px] font-bold text-gray-900">{formatPrice(customer.totalSpentCents)}</p>}
@@ -247,6 +353,25 @@ export function CustomersPage() {
                     <td className="px-5 py-3.5">
                       <div className="font-semibold text-gray-900">{customer.name}</div>
                       <div className="text-[12px] text-gray-400 mt-0.5">{customer.email}</div>
+                      {(customer.tags.length > 0 || customer.noShows > 0 || customer.note) && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {customer.tags.map(tag => (
+                            <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                              {tagOptions.find(t => t.id === tag)?.label || tag}
+                            </span>
+                          ))}
+                          {customer.noShows > 0 && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700">
+                              {customer.noShows}x no-show
+                            </span>
+                          )}
+                          {customer.note && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                              Notitie
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3.5 hidden lg:table-cell">
                       <span className="font-semibold">{customer.totalBookings}</span>
@@ -328,6 +453,53 @@ export function CustomersPage() {
               </a>
             </div>
 
+            {/* Tags + note */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+              <div>
+                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Tags</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {tagOptions.map(tag => {
+                    const active = tagsDraft.includes(tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        onClick={() => toggleTag(tag.id)}
+                        className={`px-3 py-1.5 text-[11px] font-semibold rounded-full border transition-all ${
+                          active ? tag.cls : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        {tag.label}
+                      </button>
+                    );
+                  })}
+                  {selectedCustomer.noShows > 0 && (
+                    <span className="px-3 py-1.5 text-[11px] font-semibold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                      {selectedCustomer.noShows}x no-show
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Snelle notitie</label>
+                <textarea
+                  value={noteDraft}
+                  onChange={(e) => setNoteDraft(e.target.value)}
+                  rows={3}
+                  placeholder="Interne notitie (bijv. voorkeuren, allergieën, vaste kleur)"
+                  className="mt-2 w-full px-3 py-2 text-[13px] rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-violet-500 focus:ring-[3px] focus:ring-violet-500/10"
+                />
+                <div className="flex justify-end mt-2">
+                  <button
+                    onClick={() => saveMeta(selectedCustomer.email, { note: noteDraft })}
+                    disabled={savingMeta}
+                    className="px-3 py-1.5 text-[11px] font-semibold rounded-full bg-gray-900 text-white hover:bg-black disabled:opacity-60"
+                  >
+                    {savingMeta ? 'Opslaan...' : 'Opslaan'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Contact info */}
             <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
               <div className="flex justify-between items-center px-4 py-3">
@@ -372,39 +544,46 @@ export function CustomersPage() {
             {/* Booking history */}
             <div>
               <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Geschiedenis</label>
-              <div className="mt-2.5 space-y-2 max-h-64 overflow-y-auto">
-                {selectedCustomer.bookings.map(b => {
-                  const svc = services.find(s => s.id === b.service_id);
-                  const stf = staffList.find(s => s.id === b.staff_id);
-                  const statusStyles: Record<string, string> = {
-                    confirmed: 'text-emerald-600',
-                    pending_payment: 'text-amber-600',
-                    cancelled: 'text-red-500',
-                    no_show: 'text-gray-500',
-                  };
-                  const statusLabels: Record<string, string> = {
-                    confirmed: 'Bevestigd',
-                    pending_payment: 'Wacht op betaling',
-                    cancelled: 'Geannuleerd',
-                    no_show: 'No-show',
-                  };
-                  return (
-                    <div key={b.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
-                      <div>
-                        <div className="text-[14px] font-medium text-gray-900">{svc?.name || '-'}</div>
-                        <div className="text-[12px] text-gray-400 mt-0.5">
-                          {format(parseISO(b.start_at), 'd MMM yyyy HH:mm', { locale: nl })} · {stf?.name || '-'}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[14px] font-semibold">{formatPrice(svc?.price_cents || 0)}</div>
-                        <div className={`text-[12px] font-medium ${statusStyles[b.status] || 'text-gray-500'}`}>
-                          {statusLabels[b.status] || b.status}
-                        </div>
-                      </div>
+              <div className="mt-2.5 max-h-64 overflow-y-auto space-y-4">
+                {historyGroups.map(group => (
+                  <div key={group.label}>
+                    <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">{group.label}</div>
+                    <div className="space-y-2">
+                      {group.items.map(b => {
+                        const svc = services.find(s => s.id === b.service_id);
+                        const stf = staffList.find(s => s.id === b.staff_id);
+                        const statusStyles: Record<string, string> = {
+                          confirmed: 'text-emerald-600',
+                          pending_payment: 'text-amber-600',
+                          cancelled: 'text-red-500',
+                          no_show: 'text-gray-500',
+                        };
+                        const statusLabels: Record<string, string> = {
+                          confirmed: 'Bevestigd',
+                          pending_payment: 'Wacht op betaling',
+                          cancelled: 'Geannuleerd',
+                          no_show: 'No-show',
+                        };
+                        return (
+                          <div key={b.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2.5">
+                            <div>
+                              <div className="text-[13px] font-medium text-gray-900">{svc?.name || '-'}</div>
+                              <div className="text-[11px] text-gray-400 mt-0.5">
+                                {format(parseISO(b.start_at), 'd MMM yyyy HH:mm', { locale: nl })} · {stf?.name || '-'}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-[13px] font-semibold">{formatPrice(svc?.price_cents || 0)}</div>
+                              <div className={`text-[11px] font-medium ${statusStyles[b.status] || 'text-gray-500'}`}>
+                                {statusLabels[b.status] || b.status}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </div>
 

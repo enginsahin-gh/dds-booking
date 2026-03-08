@@ -20,6 +20,9 @@ interface EmailLog {
   meta?: any;
   created_at: string;
   sent_at: string | null;
+  is_read: boolean;
+  handled_at: string | null;
+  handled_by: string | null;
 }
 
 const typeLabels: Record<string, string> = {
@@ -55,13 +58,16 @@ function formatDateTime(iso: string): string {
 }
 
 export function CommunicationsPage() {
-  const { salonId } = useAuth();
+  const { salonId, user } = useAuth();
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<'all' | string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | string>('all');
+  const [handledFilter, setHandledFilter] = useState<'all' | 'open' | 'handled'>('all');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<EmailLog | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const fetchLogs = async () => {
     if (!salonId) return;
@@ -87,15 +93,48 @@ export function CommunicationsPage() {
     fetchLogs();
   }, [salonId, typeFilter, statusFilter]);
 
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [typeFilter, statusFilter, handledFilter, query]);
+
   const filtered = useMemo(() => {
-    if (!query.trim()) return logs;
+    let data = logs;
+    if (handledFilter === 'open') data = data.filter(l => !l.handled_at);
+    if (handledFilter === 'handled') data = data.filter(l => !!l.handled_at);
+    if (!query.trim()) return data;
     const q = query.toLowerCase();
-    return logs.filter(l =>
+    return data.filter(l =>
       (l.subject || '').toLowerCase().includes(q) ||
       (l.to_email || '').toLowerCase().includes(q) ||
       (l.customer_name || '').toLowerCase().includes(q)
     );
-  }, [logs, query]);
+  }, [logs, query, handledFilter]);
+
+  const selectedCount = selectedIds.length;
+  const allSelected = selectedCount > 0 && selectedCount === filtered.length;
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+  };
+
+  const toggleSelectAll = () => {
+    if (allSelected) setSelectedIds([]);
+    else setSelectedIds(filtered.map(l => l.id));
+  };
+
+  const updateLogs = async (ids: string[], updates: Partial<EmailLog>) => {
+    if (!salonId || ids.length === 0) return;
+    setBulkLoading(true);
+    await supabase.from('email_logs').update(updates).in('id', ids);
+    await fetchLogs();
+    setSelectedIds([]);
+    setBulkLoading(false);
+  };
+
+  const markRead = (ids: string[]) => updateLogs(ids, { is_read: true });
+  const markUnread = (ids: string[]) => updateLogs(ids, { is_read: false });
+  const markHandled = (ids: string[]) => updateLogs(ids, { handled_at: new Date().toISOString(), handled_by: user?.id || null });
+  const markOpen = (ids: string[]) => updateLogs(ids, { handled_at: null, handled_by: null });
 
   const typeOptions = [
     { value: 'all', label: 'Alles' },
@@ -115,6 +154,12 @@ export function CommunicationsPage() {
     { value: 'queued', label: 'Wachtrij' },
   ];
 
+  const handledOptions = [
+    { value: 'all', label: 'Alles' },
+    { value: 'open', label: 'Open' },
+    { value: 'handled', label: 'Afgehandeld' },
+  ];
+
   return (
     <div>
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5">
@@ -130,6 +175,14 @@ export function CommunicationsPage() {
           >
             Vernieuwen
           </button>
+          {filtered.length > 0 && (
+            <button
+              onClick={toggleSelectAll}
+              className="px-3 py-2 text-xs font-semibold rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            >
+              {allSelected ? 'Deselecteer alles' : 'Selecteer alles'}
+            </button>
+          )}
           <div className="relative">
             <input
               value={query}
@@ -156,7 +209,20 @@ export function CommunicationsPage() {
             </button>
           ))}
         </div>
-        <div className="sm:ml-auto">
+        <div className="flex items-center gap-2 sm:ml-auto">
+          <div className="flex gap-1 bg-gray-100/70 p-0.5 rounded-full">
+            {handledOptions.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setHandledFilter(opt.value as typeof handledFilter)}
+                className={`px-3 py-1 text-[11px] font-semibold rounded-full transition-all ${
+                  handledFilter === opt.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -169,6 +235,49 @@ export function CommunicationsPage() {
         </div>
       </div>
 
+      {selectedCount > 0 && (
+        <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-white border border-gray-200/70 rounded-xl px-3 py-2">
+          <div className="text-[12px] font-semibold text-gray-700">{selectedCount} geselecteerd</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              disabled={bulkLoading}
+              onClick={() => markRead(selectedIds)}
+              className="px-3 py-1.5 text-[11px] font-semibold rounded-full bg-gray-900 text-white hover:bg-black disabled:opacity-60"
+            >
+              Markeer gelezen
+            </button>
+            <button
+              disabled={bulkLoading}
+              onClick={() => markUnread(selectedIds)}
+              className="px-3 py-1.5 text-[11px] font-semibold rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-60"
+            >
+              Ongelezen
+            </button>
+            <button
+              disabled={bulkLoading}
+              onClick={() => markHandled(selectedIds)}
+              className="px-3 py-1.5 text-[11px] font-semibold rounded-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              Afgehandeld
+            </button>
+            <button
+              disabled={bulkLoading}
+              onClick={() => markOpen(selectedIds)}
+              className="px-3 py-1.5 text-[11px] font-semibold rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-60"
+            >
+              Open zetten
+            </button>
+            <button
+              disabled={bulkLoading}
+              onClick={() => setSelectedIds([])}
+              className="px-3 py-1.5 text-[11px] font-semibold rounded-full bg-white border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-60"
+            >
+              Deselecteer
+            </button>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <Spinner className="py-12" />
       ) : filtered.length === 0 ? (
@@ -179,11 +288,30 @@ export function CommunicationsPage() {
         <div className="space-y-2">
           {filtered.map(log => {
             const status = statusStyles[log.status] || statusStyles.failed;
+            const isHandled = !!log.handled_at;
+            const isSelected = selectedIds.includes(log.id);
             return (
               <div
                 key={log.id}
-                className={`bg-white border border-gray-200/70 ${status.border} border-l-4 rounded-2xl px-4 py-3 flex items-start gap-3 hover:border-gray-300 transition-colors`}
+                className={`bg-white border border-gray-200/70 ${status.border} border-l-4 rounded-2xl px-3 py-2.5 flex items-start gap-3 hover:border-gray-300 transition-colors ${!log.is_read ? 'ring-1 ring-violet-200' : ''}`}
               >
+                <div className="pt-1">
+                  <label className="inline-flex items-center" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(log.id)}
+                    />
+                    <span
+                      className={`w-4 h-4 rounded-md border flex items-center justify-center text-[10px] font-bold ${
+                        isSelected ? 'bg-gray-900 border-gray-900 text-white' : 'bg-white border-gray-300 text-transparent'
+                      }`}
+                    >
+                      ✓
+                    </span>
+                  </label>
+                </div>
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${status.bg} ${status.text}`}
                   title={statusLabels[log.status] || log.status}
                 >
@@ -192,9 +320,15 @@ export function CommunicationsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[13px] font-semibold text-gray-900 truncate">
-                        {log.subject || 'Zonder onderwerp'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        {!log.is_read && <span className="w-2 h-2 rounded-full bg-violet-500" />}
+                        <p className="text-[13px] font-semibold text-gray-900 truncate">
+                          {log.subject || 'Zonder onderwerp'}
+                        </p>
+                        {isHandled && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">Afgehandeld</span>
+                        )}
+                      </div>
                       {log.body_preview && (
                         <p className="text-[12px] text-gray-500 mt-0.5 line-clamp-2">{log.body_preview}</p>
                       )}
@@ -233,6 +367,20 @@ export function CommunicationsPage() {
                       <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${status.bg} ${status.text}`}>
                         {statusLabels[log.status] || log.status}
                       </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => (log.is_read ? markUnread([log.id]) : markRead([log.id]))}
+                          className="text-[11px] font-semibold text-gray-600 hover:text-gray-900"
+                        >
+                          {log.is_read ? 'Ongelezen' : 'Gelezen'}
+                        </button>
+                        <button
+                          onClick={() => (isHandled ? markOpen([log.id]) : markHandled([log.id]))}
+                          className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800"
+                        >
+                          {isHandled ? 'Open' : 'Afhandelen'}
+                        </button>
+                      </div>
                       <button
                         onClick={() => setSelected(log)}
                         className="text-xs font-medium text-violet-600 hover:text-violet-700 whitespace-nowrap"

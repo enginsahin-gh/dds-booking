@@ -28,6 +28,19 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('[ErrorBoundary] Caught error:', error, info.componentStack);
     captureException(error, { componentStack: info.componentStack });
+
+    if (typeof window !== 'undefined') {
+      const msg = error?.message || '';
+      const isChunkError = /Loading chunk|ChunkLoadError|Failed to fetch dynamically imported module|Importing a module script failed/i.test(msg);
+      if (isChunkError) {
+        const key = 'bellure_chunk_reload';
+        const last = Number(sessionStorage.getItem(key) || 0);
+        if (!last || Date.now() - last > 60_000) {
+          sessionStorage.setItem(key, String(Date.now()));
+          window.location.reload();
+        }
+      }
+    }
   }
 
   render() {

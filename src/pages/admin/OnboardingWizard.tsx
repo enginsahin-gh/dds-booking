@@ -200,7 +200,7 @@ export function OnboardingWizard() {
       let logoUrl: string | undefined;
       if (logoFile) {
         const ext = logoFile.name.split('.').pop();
-        const path = `logos/${salonId}.${ext}`;
+        const path = `${salonId}/logo.${ext}`;
         const { error: uploadErr } = await supabase.storage.from('salon-assets').upload(path, logoFile, { upsert: true });
         if (uploadErr) throw uploadErr;
         const { data: urlData } = supabase.storage.from('salon-assets').getPublicUrl(path);

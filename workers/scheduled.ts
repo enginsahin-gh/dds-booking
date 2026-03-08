@@ -12,6 +12,7 @@ import { getGoogleTokens, syncGoogleToStaffBlocks } from './lib/google-calendar'
 export async function handleScheduled(env: Env): Promise<void> {
   const supabase = getSupabase(env);
   const now = new Date();
+  const PENDING_PAYMENT_TTL_MINUTES = 30;
 
   // Window for 24h reminder: bookings starting 23h-25h from now (gives 2h window for cron tolerance)
   const h24Start = new Date(now.getTime() + 23 * 3600000).toISOString();
@@ -78,6 +79,31 @@ export async function handleScheduled(env: Env): Promise<void> {
   if (tasks.length > 0) {
     await Promise.allSettled(tasks);
     console.log(`Sent ${tasks.length} reminders (24h: ${reminders24h?.length || 0}, 1h: ${reminders1h?.length || 0})`);
+  }
+
+  // --- Auto-expire pending payments (free reserved slots) ---
+  const pendingCutoff = new Date(now.getTime() - PENDING_PAYMENT_TTL_MINUTES * 60000).toISOString();
+  const { data: stalePending } = await supabase
+    .from('bookings')
+    .select('id')
+    .eq('status', 'pending_payment')
+    .lt('created_at', pendingCutoff)
+    .limit(100);
+
+  if (stalePending && stalePending.length > 0) {
+    const ids = stalePending.map(b => b.id);
+    await supabase
+      .from('bookings')
+      .update({ status: 'cancelled', payment_status: 'failed', cancelled_at: new Date().toISOString() })
+      .in('id', ids);
+
+    await supabase
+      .from('payments')
+      .update({ status: 'expired', updated_at: new Date().toISOString() })
+      .in('booking_id', ids)
+      .eq('status', 'open');
+
+    console.log(`[Auto-expire] Cancelled ${ids.length} pending_payment bookings older than ${PENDING_PAYMENT_TTL_MINUTES}m`);
   }
 
   // --- Review requests: send 2 hours after appointment ended ---

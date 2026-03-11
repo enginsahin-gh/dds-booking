@@ -1218,10 +1218,10 @@
 }
 
 .bellure-slot--selected {
-  border-color: var(--bellure-color-primary);
-  background: var(--bellure-color-primary);
-  color: white;
-  box-shadow: 0 6px 14px color-mix(in srgb, var(--bellure-color-primary) 30%, transparent), 0 0 0 2px color-mix(in srgb, var(--bellure-color-primary) 35%, transparent);
+  border-color: color-mix(in srgb, var(--bellure-color-primary) 70%, transparent);
+  background: color-mix(in srgb, var(--bellure-color-primary) 12%, #fff);
+  color: var(--bellure-color-primary);
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--bellure-color-primary) 22%, transparent), 0 0 0 2px color-mix(in srgb, var(--bellure-color-primary) 20%, transparent);
   transform: translateY(-1px);
 }
 

@@ -131,6 +131,7 @@ export async function trialRegister(c: Context<{ Bindings: Env }>) {
       body: JSON.stringify({
         name: salonName.trim(),
         slug,
+        email: ownerEmail.trim(),
         trial_started_at: now,
         trial_ends_at: trialEnds,
         subscription_status: 'trial',

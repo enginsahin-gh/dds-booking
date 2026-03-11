@@ -14,6 +14,7 @@ interface SalonData {
   postal_code: string;
   city: string;
   phone: string;
+  slug: string;
 }
 
 interface ServiceEntry {
@@ -21,13 +22,6 @@ interface ServiceEntry {
   name: string;
   price: string;
   duration: string;
-}
-
-interface StaffEntry {
-  id?: string;
-  name: string;
-  email: string;
-  isOwner?: boolean;
 }
 
 interface DaySchedule {
@@ -50,7 +44,8 @@ function defaultSchedule(): DaySchedule[] {
 
 /* ─── Progress bar ─── */
 function ProgressBar({ step }: { step: number }) {
-  const steps = ['Salongegevens', 'Diensten', 'Medewerkers', 'Openingstijden'];
+  const steps = ['Salon + openingstijden', 'Diensten + prijzen', 'Boekingslink + widget'];
+  const progress = steps.length > 1 ? ((step - 1) / (steps.length - 1)) * 100 : 0;
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-3">
@@ -74,7 +69,7 @@ function ProgressBar({ step }: { step: number }) {
         })}
       </div>
       <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-        <div className="h-full bg-violet-600 rounded-full transition-all duration-500" style={{ width: `${((step - 1) / 3) * 100}%` }} />
+        <div className="h-full bg-violet-600 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
       </div>
     </div>
   );
@@ -82,7 +77,7 @@ function ProgressBar({ step }: { step: number }) {
 
 /* ─── Main Component ─── */
 export function OnboardingWizard() {
-  const { user, salonUser, loading: authLoading, salonId } = useAuth();
+  const { user, loading: authLoading, salonId } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
@@ -91,7 +86,7 @@ export function OnboardingWizard() {
   const [checkingSetup, setCheckingSetup] = useState(true);
 
   // Step 1
-  const [salon, setSalon] = useState<SalonData>({ name: '', address: '', postal_code: '', city: '', phone: '' });
+  const [salon, setSalon] = useState<SalonData>({ name: '', address: '', postal_code: '', city: '', phone: '', slug: '' });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
@@ -100,10 +95,6 @@ export function OnboardingWizard() {
   const [newService, setNewService] = useState<ServiceEntry>({ name: '', price: '', duration: '30' });
 
   // Step 3
-  const [staffList, setStaffList] = useState<StaffEntry[]>([]);
-  const [newStaff, setNewStaff] = useState({ name: '', email: '' });
-
-  // Step 4
   const [schedule, setSchedule] = useState<DaySchedule[]>(defaultSchedule());
 
   /* ─── Check if salon is already set up ─── */
@@ -136,26 +127,13 @@ export function OnboardingWizard() {
   /* ─── Load existing salon data ─── */
   useEffect(() => {
     if (!salonId) return;
-    supabase.from('salons').select('name, address, postal_code, city, phone').eq('id', salonId).single().then(({ data }) => {
+    supabase.from('salons').select('name, address, postal_code, city, phone, slug').eq('id', salonId).single().then(({ data }) => {
       if (data) {
-        setSalon(s => ({ ...s, name: data.name || '', address: data.address || '', postal_code: data.postal_code || '', city: data.city || '', phone: data.phone || '' }));
+        setSalon(s => ({ ...s, name: data.name || '', address: data.address || '', postal_code: data.postal_code || '', city: data.city || '', phone: data.phone || '', slug: data.slug || '' }));
       }
     });
   }, [salonId]);
 
-  /* ─── Load existing staff (owner) — auto-add owner if empty ─── */
-  useEffect(() => {
-    if (!salonId || !user) return;
-    supabase.from('staff').select('id, name').eq('salon_id', salonId).order('sort_order').then(({ data }) => {
-      if (data?.length) {
-        setStaffList(data.map((s, i) => ({ id: s.id, name: s.name, email: '', isOwner: i === 0 })));
-      } else {
-        // No staff yet — add the owner as default first staff member
-        const ownerName = user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Eigenaar';
-        setStaffList([{ name: ownerName, email: user.email || '', isOwner: true }]);
-      }
-    });
-  }, [salonId, user]);
 
   /* ─── Handlers ─── */
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -175,13 +153,6 @@ export function OnboardingWizard() {
     setServices(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const addStaff = () => {
-    if (!newStaff.name.trim()) return;
-    setStaffList(prev => [...prev, { name: newStaff.name, email: newStaff.email }]);
-    setNewStaff({ name: '', email: '' });
-  };
-
-  const removeStaff = (idx: number) => {
     setStaffList(prev => prev.filter((_, i) => i !== idx));
   };
 
@@ -263,63 +234,56 @@ export function OnboardingWizard() {
     setSaving(true);
 
     try {
-      // Insert new staff (those without id) — owner first with all_services: true
-      const newRows = staffList.filter(s => !s.id).map((s, i) => ({
-        salon_id: salonId,
-        name: s.name,
-        is_active: true,
-        all_services: true,
-        sort_order: s.isOwner ? 0 : i + 1,
-      }));
+      const { data: existingStaff } = await supabase.from('staff').select('id').eq('salon_id', salonId);
+      let staffIds = (existingStaff || []).map(s => s.id);
 
-      if (newRows.length) {
-        const { error: insertErr } = await supabase.from('staff').insert(newRows);
+      if (!staffIds.length) {
+        const ownerName = user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Eigenaar';
+        const { data: inserted, error: insertErr } = await supabase.from('staff').insert({
+          salon_id: salonId,
+          name: ownerName,
+          is_active: true,
+          all_services: true,
+          sort_order: 0,
+        }).select('id');
+        if (insertErr) throw insertErr;
+        staffIds = (inserted || []).map(s => s.id);
+      }
+
+      if (!staffIds.length) throw new Error('Geen medewerkers gevonden');
+
+      const { count: scheduleCount } = await supabase
+        .from('staff_schedules')
+        .select('id', { count: 'exact', head: true })
+        .in('staff_id', staffIds);
+
+      if ((scheduleCount ?? 0) === 0) {
+        const rows = staffIds.flatMap(staffId =>
+          schedule.map((day, dayIdx) => ({
+            staff_id: staffId,
+            day_of_week: dayIdx,
+            start_time: day.start_time + ':00',
+            end_time: day.end_time + ':00',
+            is_working: day.is_working,
+          }))
+        );
+
+        const { error: insertErr } = await supabase.from('staff_schedules').insert(rows);
         if (insertErr) throw insertErr;
       }
 
-      setStep(4);
+      navigate('/admin/bookings', { replace: true });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Kon medewerkers niet opslaan');
+      setError(err instanceof Error ? err.message : 'Kon onboarding niet afronden');
     }
     setSaving(false);
-  }, [salonId, staffList]);
-
-  const saveStep4 = useCallback(async () => {
-    if (!salonId) return;
-    setError('');
-    setSaving(true);
-
-    try {
-      // Get all staff for this salon
-      const { data: allStaff } = await supabase.from('staff').select('id').eq('salon_id', salonId);
-      if (!allStaff?.length) throw new Error('Geen medewerkers gevonden');
-
-      const rows = allStaff.flatMap(staff =>
-        schedule.map((day, dayIdx) => ({
-          staff_id: staff.id,
-          day_of_week: dayIdx, // 0=monday
-          start_time: day.start_time + ':00',
-          end_time: day.end_time + ':00',
-          is_working: day.is_working,
-        }))
-      );
-
-      const { error: insertErr } = await supabase.from('staff_schedules').insert(rows);
-      if (insertErr) throw insertErr;
-
-      navigate('/admin', { replace: true });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Kon openingstijden niet opslaan');
-    }
-    setSaving(false);
-  }, [salonId, schedule, navigate]);
+  }, [salonId, schedule, navigate, user]);
 
   const handleNext = () => {
     setError('');
     if (step === 1) saveStep1();
     else if (step === 2) saveStep2();
     else if (step === 3) saveStep3();
-    else if (step === 4) saveStep4();
   };
 
   const handleBack = () => {
@@ -336,9 +300,11 @@ export function OnboardingWizard() {
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-4">
         <div className="max-w-xl mx-auto flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-violet-600 flex items-center justify-center text-white text-sm font-bold">B</div>
+          <div className="w-9 h-9 rounded-lg bg-white border border-gray-200/70 flex items-center justify-center">
+            <img src="/logo-mark-blue.png" alt="Bellure" className="w-5 h-5 object-contain" />
+          </div>
           <span className="text-base font-bold tracking-tight text-gray-900">Bellure</span>
-          <span className="text-[13px] text-gray-400 ml-auto">Stap {step} van 4</span>
+          <span className="text-[13px] text-gray-400 ml-auto">Stap {step} van 3</span>
         </div>
       </div>
 
@@ -354,8 +320,8 @@ export function OnboardingWizard() {
           {step === 1 && (
             <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 space-y-4 shadow-sm">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Salongegevens aanvullen</h2>
-                <p className="text-[13px] text-gray-500 mt-1">Vul je contactgegevens en adres aan.</p>
+                <h2 className="text-lg font-bold text-gray-900">Salongegevens & openingstijden</h2>
+                <p className="text-[13px] text-gray-500 mt-1">Vul je contactgegevens in en zet je standaard openingstijden.</p>
               </div>
               <Input label="Salonnaam" value={salon.name} onChange={e => setSalon(s => ({ ...s, name: e.target.value }))} required />
               <Input label="Adres" value={salon.address} onChange={e => setSalon(s => ({ ...s, address: e.target.value }))} placeholder="Straat en huisnummer" />
@@ -379,6 +345,46 @@ export function OnboardingWizard() {
                   </label>
                 </div>
                 <p className="text-[12px] text-gray-400">Optioneel · JPG, PNG of SVG</p>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 space-y-3">
+                <div>
+                  <h3 className="text-[15px] font-semibold text-gray-900">Openingstijden</h3>
+                  <p className="text-[12px] text-gray-500">Stel de standaard werktijden in. Je kunt dit later per medewerker aanpassen.</p>
+                </div>
+                <div className="space-y-3">
+                  {schedule.map((day, i) => (
+                    <div key={i} className="flex items-center gap-3 py-2">
+                      <div className="w-24 flex-shrink-0">
+                        <Toggle
+                          checked={day.is_working}
+                          onChange={checked => updateScheduleDay(i, { is_working: checked })}
+                          label={day.label}
+                          size="sm"
+                        />
+                      </div>
+                      {day.is_working ? (
+                        <div className="flex items-center gap-2 flex-1">
+                          <input
+                            type="time"
+                            value={day.start_time}
+                            onChange={e => updateScheduleDay(i, { start_time: e.target.value })}
+                            className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/10"
+                          />
+                          <span className="text-gray-400 text-[13px]">–</span>
+                          <input
+                            type="time"
+                            value={day.end_time}
+                            onChange={e => updateScheduleDay(i, { end_time: e.target.value })}
+                            className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/10"
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-[13px] text-gray-400 italic">Gesloten</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -424,92 +430,55 @@ export function OnboardingWizard() {
             </div>
           )}
 
-          {/* ─── Step 3: Staff ─── */}
+          {/* ─── Step 3: Booking link + widget ─── */}
           {step === 3 && (
             <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 space-y-4 shadow-sm">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Medewerkers</h2>
-                <p className="text-[13px] text-gray-500 mt-1">Voeg medewerkers toe. Je staat er zelf al als eerste bij.</p>
+                <h2 className="text-lg font-bold text-gray-900">Boekingslink & widget</h2>
+                <p className="text-[13px] text-gray-500 mt-1">Deel je boekingslink en plaats de widget op je website.</p>
               </div>
 
-              {/* Staff list */}
-              {staffList.length > 0 && (
-                <div className="space-y-2">
-                  {staffList.map((s, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-[13px] font-bold">
-                          {s.name[0]?.toUpperCase() || '?'}
-                        </div>
-                        <div>
-                          <span className="text-[14px] font-medium text-gray-900">{s.name}</span>
-                          {s.isOwner && <span className="text-[11px] ml-2 px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 font-medium">Eigenaar</span>}
-                          {s.email && <span className="text-[12px] text-gray-400 block">{s.email}</span>}
-                        </div>
-                      </div>
-                      {!s.isOwner && !s.id && (
-                        <button onClick={() => removeStaff(i)} className="text-gray-400 hover:text-red-500 transition-colors p-1">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </button>
-                      )}
-                    </div>
-                  ))}
+              <div className="space-y-2">
+                <label className="text-[12px] font-semibold text-gray-600">Jouw boekingslink</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    className="flex-1 h-10 rounded-lg border border-gray-200 px-3 text-[13px] bg-gray-50"
+                    value={salon.slug ? `https://booking.bellure.nl/${salon.slug}` : ''}
+                    readOnly
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => salon.slug && navigator.clipboard.writeText(`https://booking.bellure.nl/${salon.slug}`)}
+                  >
+                    Kopieer
+                  </Button>
                 </div>
-              )}
-
-              {/* Add staff form */}
-              <div className="space-y-3 pt-2 border-t border-gray-100">
-                <Input label="Naam" value={newStaff.name} onChange={e => setNewStaff(s => ({ ...s, name: e.target.value }))} placeholder="Naam medewerker" />
-                <Input label="E-mail" value={newStaff.email} onChange={e => setNewStaff(s => ({ ...s, email: e.target.value }))} placeholder="Optioneel" type="email" hint="Optioneel" />
-                <Button variant="secondary" size="sm" onClick={addStaff} icon={
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                }>
-                  Medewerker toevoegen
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* ─── Step 4: Opening hours ─── */}
-          {step === 4 && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 space-y-4 shadow-sm">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Openingstijden</h2>
-                <p className="text-[13px] text-gray-500 mt-1">Stel de standaard werktijden in. Je kunt dit later per medewerker aanpassen.</p>
               </div>
 
-              <div className="space-y-3">
-                {schedule.map((day, i) => (
-                  <div key={i} className="flex items-center gap-3 py-2">
-                    <div className="w-24 flex-shrink-0">
-                      <Toggle
-                        checked={day.is_working}
-                        onChange={checked => updateScheduleDay(i, { is_working: checked })}
-                        label={day.label}
-                        size="sm"
-                      />
-                    </div>
-                    {day.is_working ? (
-                      <div className="flex items-center gap-2 flex-1">
-                        <input
-                          type="time"
-                          value={day.start_time}
-                          onChange={e => updateScheduleDay(i, { start_time: e.target.value })}
-                          className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/10"
-                        />
-                        <span className="text-gray-400 text-[13px]">–</span>
-                        <input
-                          type="time"
-                          value={day.end_time}
-                          onChange={e => updateScheduleDay(i, { end_time: e.target.value })}
-                          className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/10"
-                        />
-                      </div>
-                    ) : (
-                      <span className="text-[13px] text-gray-400 italic">Gesloten</span>
-                    )}
-                  </div>
-                ))}
+              <div className="space-y-2">
+                <label className="text-[12px] font-semibold text-gray-600">Widget embed code</label>
+                <div className="relative">
+                  <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl text-[12px] font-mono overflow-x-auto">
+{`<script\n  src=\"https://mijn.bellure.nl/embed.js\"\n  data-salon=\"${salon.slug || 'jouw-salon'}\"\n></script>`}
+                  </pre>
+                  <button
+                    onClick={() => salon.slug && navigator.clipboard.writeText(`<script src=\"https://mijn.bellure.nl/embed.js\" data-salon=\"${salon.slug}\"></script>`)}
+                    className="absolute top-3 right-3 p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2 bg-violet-50/60 border border-violet-100 rounded-xl p-4">
+                <div className="text-[13px] font-semibold text-violet-700">Eerste boeking checklist</div>
+                <ul className="text-[12px] text-violet-700 space-y-1 list-disc pl-4">
+                  <li>Deel je boekingslink met klanten</li>
+                  <li>Plaats de widget op je website</li>
+                  <li>Maak je eerste boeking in de agenda</li>
+                </ul>
+                <Button variant="primary" size="sm" onClick={() => navigate('/admin/bookings')}>Maak eerste boeking</Button>
               </div>
             </div>
           )}
@@ -520,7 +489,7 @@ export function OnboardingWizard() {
               <Button variant="secondary" onClick={handleBack} disabled={saving}>Vorige</Button>
             ) : <div />}
             <Button variant="primary" onClick={handleNext} loading={saving}>
-              {step === 4 ? 'Voltooien' : 'Volgende'}
+              {step === 3 ? 'Voltooien' : 'Volgende'}
             </Button>
           </div>
         </div>

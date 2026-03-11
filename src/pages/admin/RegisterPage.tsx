@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../lib/supabase';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -14,7 +15,6 @@ export function RegisterPage() {
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   if (authLoading) return null;
   if (user) return <Navigate to="/admin" replace />;
@@ -22,6 +22,11 @@ export function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (password.length < 10 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+      setError('Wachtwoord moet minimaal 10 tekens bevatten, met een hoofdletter, kleine letter en cijfer');
+      return;
+    }
 
     if (password !== passwordConfirm) {
       setError('Wachtwoorden komen niet overeen');
@@ -41,46 +46,20 @@ export function RegisterPage() {
         setLoading(false);
         return;
       }
-      setSuccess(true);
-      setTimeout(() => navigate('/admin/login'), 3000);
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) {
+        setError('Account aangemaakt, maar inloggen mislukt. Log in met je gegevens.');
+        setLoading(false);
+        navigate('/admin/login', { replace: true });
+        return;
+      }
+      navigate('/admin/onboarding', { replace: true });
     } catch {
       setError('Kon geen verbinding maken. Probeer het later opnieuw.');
     }
     setLoading(false);
   };
 
-  if (success) {
-    return (
-      <div className="min-h-[100dvh] flex">
-        <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-gradient-to-br from-violet-600 via-violet-700 to-indigo-800">
-          <div className="absolute inset-0">
-            <div className="absolute top-20 -left-20 w-80 h-80 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute bottom-20 right-10 w-60 h-60 rounded-full bg-violet-300/20 blur-3xl" />
-          </div>
-          <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center text-lg font-bold border border-white/10">B</div>
-              <span className="text-lg font-bold tracking-tight">Bellure</span>
-            </div>
-            <div className="max-w-sm">
-              <h1 className="text-3xl font-bold leading-tight tracking-tight">30 dagen gratis.<br />Alle functies.</h1>
-              <p className="mt-4 text-violet-200 text-[15px] leading-relaxed">Geen creditcard nodig. Probeer het boekingssysteem vrijblijvend uit.</p>
-            </div>
-            <p className="text-violet-300/60 text-[12px]">&copy; 2026 Bellure — Onderdeel van Ensalabs</p>
-          </div>
-        </div>
-        <div className="flex-1 flex items-center justify-center p-6 bg-gray-50/50">
-          <div className="w-full max-w-[380px] text-center">
-            <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-            </div>
-            <h2 className="text-2xl font-bold tracking-tight mb-2">Account aangemaakt</h2>
-            <p className="text-gray-500 mb-6">Je proefperiode van 30 dagen is gestart. Je wordt doorgestuurd naar de inlogpagina.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-[100dvh] flex">
@@ -97,7 +76,9 @@ export function RegisterPage() {
         }} />
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center text-lg font-bold border border-white/10">B</div>
+            <div className="w-10 h-10 rounded-xl bg-white/90 flex items-center justify-center border border-white/20">
+              <img src="/logo-mark-blue.png" alt="Bellure" className="w-6 h-6 object-contain" />
+            </div>
             <span className="text-lg font-bold tracking-tight">Bellure</span>
           </div>
           <div className="max-w-sm">
@@ -112,7 +93,9 @@ export function RegisterPage() {
       <div className="flex-1 flex items-center justify-center p-6 bg-gray-50/50">
         <div className="w-full max-w-[380px]">
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-9 h-9 rounded-lg bg-violet-600 flex items-center justify-center text-white text-sm font-bold">B</div>
+            <div className="w-9 h-9 rounded-lg bg-white border border-gray-200/70 flex items-center justify-center">
+              <img src="/logo-mark-blue.png" alt="Bellure" className="w-5 h-5 object-contain" />
+            </div>
             <span className="text-base font-bold tracking-tight text-gray-900">Bellure</span>
           </div>
 
@@ -168,9 +151,9 @@ export function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
-                placeholder="Minimaal 8 tekens"
+                placeholder="Minimaal 10 tekens, hoofdletter + cijfer"
                 required
-                minLength={8}
+                minLength={10}
               />
             </div>
             <div>
@@ -182,7 +165,7 @@ export function RegisterPage() {
                 className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
                 placeholder="Herhaal je wachtwoord"
                 required
-                minLength={8}
+                minLength={10}
               />
             </div>
             <button

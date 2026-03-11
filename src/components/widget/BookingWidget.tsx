@@ -431,8 +431,7 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
 
   const goToStep = useCallback((s: BookingStep) => {
     setStep(s);
-    setTimeout(scrollToWidget, 100);
-  }, [scrollToWidget]);
+  }, []);
 
   const handleServicesChange = useCallback((svcs: Service[]) => {
     setSelectedServices(svcs);

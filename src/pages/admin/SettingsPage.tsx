@@ -56,19 +56,6 @@ const settingsTabs = [
   },
 ];
 
-const planLabels: Record<string, string> = {
-  booking_standalone: 'Booking Standalone',
-  booking_website: 'Booking + Website',
-};
-
-const statusLabels: Record<string, string> = {
-  none: 'Geen abonnement',
-  trial: 'Trial',
-  active: 'Actief',
-  paused: 'Gepauzeerd',
-  cancelled: 'Geannuleerd',
-  past_due: 'Betaling mislukt',
-};
 
 function SettingsTabLoader() {
   return (
@@ -109,13 +96,13 @@ export function SettingsPage() {
   const [saving, setSaving] = useState(false);
 
   // Branding state
-  const [brandColor, setBrandColor] = useState('#8B5CF6');
+  const [brandColor, setBrandColor] = useState('#3B4E6C');
   const [brandColorText, setBrandColorText] = useState('#FFFFFF');
   const [logoUrl, setLogoUrl] = useState('');
   const [emailFooterText, setEmailFooterText] = useState('');
   const [gradientEnabled, setGradientEnabled] = useState(false);
-  const [gradientFrom, setGradientFrom] = useState('#8B5CF6');
-  const [gradientTo, setGradientTo] = useState('#6366F1');
+  const [gradientFrom, setGradientFrom] = useState('#3B4E6C');
+  const [gradientTo, setGradientTo] = useState('#4F607A');
   const [gradientDirection, setGradientDirection] = useState('135deg');
   const [emailPreferences, setEmailPreferences] = useState<Record<string, boolean>>({
     confirmation: true, notification: true, cancellation: true,
@@ -175,12 +162,12 @@ export function SettingsPage() {
       setPaymentMode(salon.payment_mode || 'deposit');
       setDepositType(salon.deposit_type || 'percentage');
       setDepositValue(salon.deposit_value || 25);
-      setBrandColor((salon as any).brand_color || '#8B5CF6');
+      setBrandColor((salon as any).brand_color || '#3B4E6C');
       setBrandColorText((salon as any).brand_color_text || '#FFFFFF');
       setLogoUrl((salon as any).logo_url || '');
       setEmailFooterText((salon as any).email_footer_text || '');
       setGradientEnabled((salon as any).brand_gradient_enabled || false);
-      setGradientFrom((salon as any).brand_gradient_from || '#8B5CF6');
+      setGradientFrom((salon as any).brand_gradient_from || '#3B4E6C');
       setGradientTo((salon as any).brand_gradient_to || '#6366F1');
       setGradientDirection((salon as any).brand_gradient_direction || '135deg');
       if ((salon as any).email_preferences) {
@@ -207,7 +194,7 @@ export function SettingsPage() {
         max_booking_weeks: maxBookingWeeks,
         google_place_id: googlePlaceId || null,
         review_enabled: reviewEnabled, review_after_visit: reviewAfterVisit,
-        brand_color: brandColor || '#8B5CF6',
+        brand_color: brandColor || '#3B4E6C',
         brand_color_text: brandColorText || '#FFFFFF',
         logo_url: logoUrl || null,
         email_footer_text: emailFooterText || null,
@@ -226,46 +213,16 @@ export function SettingsPage() {
 
   if (!salon) return null;
 
-  const status = (salon.subscription_status || 'none') as string;
-  const statusLabel = statusLabels[status] || 'Onbekend';
-  const planLabel = salon.plan_type ? (planLabels[salon.plan_type] || salon.plan_type) : 'Geen plan';
-  const trialEnds = salon.trial_ends_at ? new Date(salon.trial_ends_at) : null;
-  const daysLeft = trialEnds ? Math.max(0, Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
-  const statusTone = status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    : status === 'trial' ? 'bg-amber-50 text-amber-700 border-amber-200'
-    : status === 'paused' || status === 'cancelled' || status === 'past_due' ? 'bg-red-50 text-red-700 border-red-200'
-    : 'bg-gray-100 text-gray-600 border-gray-200';
-  const ctaLabel = status === 'active' ? 'Beheer abonnement' : 'Activeer abonnement';
-
   return (
     <div className="space-y-5">
-      <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">Instellingen</h1>
           <p className="text-[13px] text-gray-500 mt-0.5">Beheer je salon profiel en voorkeuren</p>
         </div>
-        <div className="bg-white border border-gray-200/70 rounded-2xl p-4 sm:p-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Plan & status</div>
-              <div className="mt-2 text-[16px] font-bold text-gray-900">{planLabel}</div>
-              <div className="text-[12px] text-gray-500 mt-1">
-                {status === 'trial' && trialEnds ? `Trial eindigt over ${daysLeft} ${daysLeft === 1 ? 'dag' : 'dagen'}` : statusLabel}
-              </div>
-            </div>
-            <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${statusTone}`}>
-              {statusLabel}
-            </span>
-          </div>
-          <div className="mt-4 flex items-center justify-between">
-            <Button variant="secondary" onClick={() => setActiveTab('subscription')}>
-              {ctaLabel}
-            </Button>
-            <Button onClick={handleSave} loading={saving}>
-              Opslaan
-            </Button>
-          </div>
-        </div>
+        <Button onClick={handleSave} loading={saving}>
+          Opslaan
+        </Button>
       </div>
 
       <div className="lg:hidden">

@@ -192,7 +192,7 @@ export function SearchBar({ salonId }: SearchBarProps) {
 
       {/* Search modal */}
       {open && (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-[70]">
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeSearch} />
 

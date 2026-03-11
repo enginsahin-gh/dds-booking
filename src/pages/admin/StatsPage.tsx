@@ -340,7 +340,7 @@ export function StatsPage() {
               </div>
               <LineChart
                 data={revenueTimeline}
-                color="#8B5CF6"
+                color="#3B4E6C"
                 height={220}
                 formatValue={(v) => fmt(v)}
               />

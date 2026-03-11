@@ -3,13 +3,16 @@ import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-r
 import { ToastProvider } from './components/ui/Toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
-import { AdminLayout } from './components/admin/AdminLayout';
 import { ProtectedRoute, OwnerRoute } from './components/admin/ProtectedRoute';
-import { LoginPage } from './pages/admin/LoginPage';
+import { PlatformRoute } from './components/platform/PlatformRoute';
+import { Spinner } from './components/ui/Spinner';
+
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
+const PlatformLayout = lazy(() => import('./components/platform/PlatformLayout').then(m => ({ default: m.PlatformLayout })));
+const LoginPage = lazy(() => import('./pages/admin/LoginPage').then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./pages/admin/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const OnboardingWizard = lazy(() => import('./pages/admin/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
-import { SetPasswordPage } from './pages/admin/SetPasswordPage';
-import { Spinner } from './components/ui/Spinner';
+const SetPasswordPage = lazy(() => import('./pages/admin/SetPasswordPage').then(m => ({ default: m.SetPasswordPage })));
 
 // Lazy load pages — only fetched when navigated to
 const DashboardPage = lazy(() => import('./pages/admin/DashboardPage').then(m => ({ default: m.DashboardPage })));
@@ -28,6 +31,7 @@ const CommunicationsPage = lazy(() => import('./pages/admin/CommunicationsPage')
 const BookingPage = lazy(() => import('./pages/BookingPage').then(m => ({ default: m.BookingPage })));
 const CustomerPortalPage = lazy(() => import('./pages/CustomerPortalPage').then(m => ({ default: m.CustomerPortalPage })));
 const PaymentReturnPage = lazy(() => import('./pages/PaymentReturnPage').then(m => ({ default: m.PaymentReturnPage })));
+const PlatformDashboard = lazy(() => import('./pages/platform/PlatformDashboard').then(m => ({ default: m.PlatformDashboard })));
 
 function PageLoader() {
   return <Spinner className="min-h-[50vh]" />;
@@ -63,6 +67,10 @@ export function App() {
               <Route path="/boeking/bevestiging" element={<PaymentReturnPage />} />
               {/* Admin routes */}
               <Route path="/admin/login" element={<LoginPage />} />
+              {/* Platform routes */}
+              <Route path="/platform" element={<PlatformRoute><PlatformLayout /></PlatformRoute>}>
+                <Route index element={<PlatformDashboard />} />
+              </Route>
               <Route path="/admin/registreren" element={<RegisterPage />} />
               <Route path="/admin/set-password" element={<SetPasswordPage />} />
               <Route path="/admin/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />

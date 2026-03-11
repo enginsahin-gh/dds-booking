@@ -8,20 +8,20 @@ interface DateNavigatorProps {
 
 export function DateNavigator({ date, onChange }: DateNavigatorProps) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       <button
         onClick={() => onChange(subDays(date, 1))}
-        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+        className="p-1 rounded-md hover:bg-gray-100 text-gray-500 transition-colors"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
       </button>
-      <span className="text-xs lg:text-sm font-medium text-gray-700 min-w-[100px] lg:min-w-[180px] text-center">
+      <span className="text-[11px] lg:text-[12px] font-medium text-gray-700 min-w-[96px] lg:min-w-[170px] text-center">
         <span className="hidden lg:inline">{format(date, 'EEEE d MMMM yyyy', { locale: nl })}</span>
         <span className="lg:hidden">{format(date, 'EEE d MMM', { locale: nl })}</span>
       </span>
       <button
         onClick={() => onChange(addDays(date, 1))}
-        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+        className="p-1 rounded-md hover:bg-gray-100 text-gray-500 transition-colors"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
       </button>

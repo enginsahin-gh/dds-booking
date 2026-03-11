@@ -15,7 +15,7 @@ interface LineChartProps {
 // Default euro formatter
 const defaultFormat = (v: number) => `€${(v / 100).toFixed(2).replace('.', ',')}`;
 
-export function LineChart({ data, color = '#8B5CF6', height = 200, formatValue = defaultFormat }: LineChartProps) {
+export function LineChart({ data, color = '#3B4E6C', height = 200, formatValue = defaultFormat }: LineChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);

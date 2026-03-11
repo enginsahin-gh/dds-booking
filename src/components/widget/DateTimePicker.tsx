@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { startOfDay, startOfMonth, addDays, format, isBefore, isAfter } from 'date-fns';
-import { CalendarGrid } from './CalendarGrid';
+import { startOfDay, addDays, format, isBefore, isAfter } from 'date-fns';
+import { nl } from 'date-fns/locale';
 import { TimeSlotList } from './TimeSlotList';
 import { WaitlistForm } from './WaitlistForm';
 import type { TimeSlot } from '../../lib/types';
@@ -37,9 +37,7 @@ export function DateTimePicker({
   staffId,
   waitlistEnabled,
 }: DateTimePickerProps) {
-  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const [showWaitlist, setShowWaitlist] = useState(false);
-  const [viewMode, setViewMode] = useState<'strip' | 'calendar'>('strip');
 
   const daysStrip = useMemo(() => {
     const today = startOfDay(new Date());
@@ -66,41 +64,25 @@ export function DateTimePicker({
       <h2 className="bellure-step-title">Kies datum & tijd</h2>
       <p className="bellure-step-subtitle">Wanneer wil je langskomen?</p>
 
-      <div className={`bellure-datetime-layout ${viewMode === 'strip' ? 'strip' : 'calendar'}`}>
+      <div className="bellure-datetime-layout strip">
         <div className="bellure-datetime-calendar">
-          <div className="bellure-datetime-toggle">
-            <button className={`bellure-toggle ${viewMode === 'strip' ? 'active' : ''}`} onClick={() => setViewMode('strip')}>Dagen</button>
-            <button className={`bellure-toggle ${viewMode === 'calendar' ? 'active' : ''}`} onClick={() => setViewMode('calendar')}>Kalender</button>
+          <div className="bellure-day-strip">
+            {daysStrip.map((day) => {
+              const disabled = !isSelectable(day);
+              const selected = selectedDate && day.toDateString() === selectedDate.toDateString();
+              return (
+                <button
+                  key={day.toISOString()}
+                  className={`bellure-day-pill ${selected ? 'active' : ''}`}
+                  onClick={() => !disabled && onSelectDate(day)}
+                  disabled={disabled}
+                >
+                  <div className="bellure-day-name">{format(day, 'EEE', { locale: nl })}</div>
+                  <div className="bellure-day-num">{format(day, 'd')}</div>
+                </button>
+              );
+            })}
           </div>
-
-          {viewMode === 'strip' ? (
-            <div className="bellure-day-strip">
-              {daysStrip.map((day) => {
-                const disabled = !isSelectable(day);
-                const selected = selectedDate && day.toDateString() === selectedDate.toDateString();
-                return (
-                  <button
-                    key={day.toISOString()}
-                    className={`bellure-day-pill ${selected ? 'active' : ''}`}
-                    onClick={() => !disabled && onSelectDate(day)}
-                    disabled={disabled}
-                  >
-                    <div className="bellure-day-name">{format(day, 'EEE')}</div>
-                    <div className="bellure-day-num">{format(day, 'd')}</div>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <CalendarGrid
-              selectedDate={selectedDate}
-              onSelectDate={onSelectDate}
-              currentMonth={currentMonth}
-              onChangeMonth={setCurrentMonth}
-              workingDays={workingDays}
-              maxDate={maxDate}
-            />
-          )}
         </div>
 
         <div className="bellure-datetime-slots">

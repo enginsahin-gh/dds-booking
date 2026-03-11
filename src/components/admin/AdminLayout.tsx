@@ -140,7 +140,7 @@ function ProfileMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 z-50 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-100 py-1.5 w-56">
+        <div className="absolute right-0 top-full mt-1.5 z-[70] bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-100 py-1.5 w-56">
           {/* Profile header */}
           <div className="px-4 py-3 border-b border-gray-100">
             <div className="text-[13px] font-semibold text-gray-900 truncate">{displayName}</div>
@@ -286,7 +286,7 @@ export function AdminLayout() {
       <Sidebar salonId={salon?.id} role={role} />
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header - desktop */}
-        <header className="hidden lg:flex h-14 border-b border-gray-200/80 bg-white/80 backdrop-blur-sm items-center justify-between px-6">
+        <header className="hidden lg:flex h-14 border-b border-gray-200/80 bg-white/80 backdrop-blur-sm items-center justify-between px-6 relative z-[60]">
           <div className="flex items-center gap-3">
             {salon && (
               <div className="flex items-center gap-2.5">
@@ -310,9 +310,11 @@ export function AdminLayout() {
         </header>
 
         {/* Header - mobile */}
-        <header className="lg:hidden flex h-13 border-b border-gray-100 bg-white items-center justify-between px-4">
+        <header className="lg:hidden flex h-13 border-b border-gray-100 bg-white items-center justify-between px-4 relative z-[60]">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center text-[11px] font-bold text-white shadow-[0_2px_6px_rgba(124,58,237,0.3)]">B</div>
+            <div className="w-7 h-7 rounded-lg bg-white border border-gray-200/70 flex items-center justify-center shadow-[0_2px_6px_rgba(59,78,108,0.25)]">
+              <img src="/logo-mark-blue.png" alt="Bellure" className="w-4 h-4 object-contain" />
+            </div>
             {salon && <h2 className="text-[14px] font-bold text-gray-900 truncate">{salon.name}</h2>}
           </div>
           <div className="flex items-center gap-0.5">
@@ -332,7 +334,7 @@ export function AdminLayout() {
         <SubscriptionBanner salon={salon} />
 
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
-          <div className="p-3 sm:p-4 lg:p-6 max-w-6xl">
+          <div className="p-3 sm:p-4 lg:p-6 w-full max-w-none">
             <Outlet context={{ salon, user, isOwner, role }} />
           </div>
         </main>

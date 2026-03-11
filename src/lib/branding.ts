@@ -38,11 +38,11 @@ export interface EmailPreferences {
 }
 
 export const DEFAULT_BRANDING: Omit<SalonBranding, 'salonName'> = {
-  brandColor: '#8B5CF6',
+  brandColor: '#3B4E6C',
   brandColorText: '#FFFFFF',
   gradientEnabled: false,
-  gradientFrom: '#8B5CF6',
-  gradientTo: '#6366F1',
+  gradientFrom: '#3B4E6C',
+  gradientTo: '#4F607A',
   gradientDirection: '135deg',
   logoUrl: null,
   footerText: null,

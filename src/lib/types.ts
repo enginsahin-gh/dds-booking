@@ -1,4 +1,4 @@
-export type PaymentMode = 'none' | 'deposit' | 'full';
+export type PaymentMode = 'none' | 'optional' | 'deposit' | 'full';
 export type DepositType = 'percentage' | 'fixed';
 
 export interface Salon {
@@ -94,6 +94,19 @@ export interface Service {
   price_cents: number;
   is_active: boolean;
   sort_order: number;
+  tags?: string[] | null;
+  created_at: string;
+}
+
+export interface ServiceAddon {
+  id: string;
+  salon_id: string;
+  service_id: string;
+  name: string;
+  price_cents: number;
+  duration_min: number;
+  is_active: boolean;
+  sort_order: number;
   created_at: string;
 }
 
@@ -109,7 +122,7 @@ export interface Booking {
   customer_phone: string;
   status: 'confirmed' | 'cancelled' | 'pending_payment' | 'no_show' | 'completed';
   payment_status: 'none' | 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_paid';
-  payment_type: 'none' | 'deposit' | 'full';
+  payment_type: 'none' | 'optional' | 'deposit' | 'full';
   amount_total_cents: number;
   amount_paid_cents: number;
   amount_due_cents: number;

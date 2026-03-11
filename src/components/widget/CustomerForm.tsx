@@ -6,6 +6,7 @@ interface CustomerFormProps {
   submitLabel?: string;
   initial?: { name?: string; email?: string; phone?: string } | null;
   lockEmail?: boolean;
+  onBack?: () => void;
 }
 
 interface FormErrors {
@@ -14,7 +15,7 @@ interface FormErrors {
   phone?: string;
 }
 
-export function CustomerForm({ onSubmit, loading, submitLabel, initial, lockEmail }: CustomerFormProps) {
+export function CustomerForm({ onSubmit, loading, submitLabel, initial, lockEmail, onBack }: CustomerFormProps) {
   const [name, setName] = useState(initial?.name || '');
   const [email, setEmail] = useState(initial?.email || '');
   const [phone, setPhone] = useState(initial?.phone || '');
@@ -86,6 +87,7 @@ export function CustomerForm({ onSubmit, loading, submitLabel, initial, lockEmai
             onChange={(e) => setPhone(e.target.value)}
             autoComplete="tel"
           />
+          <div className="bellure-form-help">Alleen voor wijzigingen of herinneringen.</div>
           {errors.phone && <span className="bellure-form-error">{errors.phone}</span>}
         </div>
 
@@ -100,16 +102,24 @@ export function CustomerForm({ onSubmit, loading, submitLabel, initial, lockEmai
             autoComplete="email"
             disabled={!!lockEmail}
           />
+          <div className="bellure-form-help">Hier sturen we je bevestiging.</div>
           {errors.email && <span className="bellure-form-error">{errors.email}</span>}
         </div>
 
-        <button
-          className="bellure-btn bellure-btn-primary"
-          onClick={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? 'Bezig met boeken...' : (submitLabel || 'Bevestig afspraak')}
-        </button>
+        <div className="bellure-btn-group">
+          {onBack && (
+            <button className="bellure-btn bellure-btn-secondary" onClick={onBack} disabled={loading}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug
+            </button>
+          )}
+          <button
+            className="bellure-btn bellure-btn-primary"
+            onClick={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? 'Bezig met boeken...' : (submitLabel || 'Bevestig afspraak')}
+          </button>
+        </div>
       </div>
     </div>
   );

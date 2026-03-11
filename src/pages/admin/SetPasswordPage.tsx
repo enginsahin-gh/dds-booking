@@ -71,7 +71,9 @@ export function SetPasswordPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
           <div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center text-lg font-bold border border-white/10">B</div>
+              <div className="w-10 h-10 rounded-xl bg-white/90 flex items-center justify-center border border-white/20">
+                <img src="/logo-mark-blue.png" alt="Bellure" className="w-6 h-6 object-contain" />
+              </div>
               <span className="text-lg font-bold tracking-tight">Bellure</span>
             </div>
           </div>
@@ -88,7 +90,9 @@ export function SetPasswordPage() {
         <div className="w-full max-w-[380px]">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-10">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-violet-600 text-white text-xl font-bold shadow-[0_8px_24px_rgba(124,58,237,0.25)]">B</div>
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white border border-gray-200/70 shadow-[0_8px_24px_rgba(59,78,108,0.25)]">
+              <img src="/logo-mark-blue.png" alt="Bellure" className="w-8 h-8 object-contain" />
+            </div>
             <h1 className="text-xl font-bold text-gray-900 mt-4 tracking-tight">Bellure</h1>
           </div>
 

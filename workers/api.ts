@@ -19,6 +19,7 @@ import { waitlistJoin, waitlistNotify, waitlistEntries, waitlistCancel, handleEx
 import { getCustomerProfile, upsertCustomerProfile } from './routes/customer-profile';
 import { getCustomerProfileGlobal, updateCustomerProfileGlobal } from './routes/customer-profile-global';
 import { customerAppointments } from './routes/customer-appointments';
+import { platformMe, platformSalons, platformUpdateSalon } from './routes/platform';
 import { logError } from './lib/logger';
 import * as Sentry from '@sentry/cloudflare';
 
@@ -138,6 +139,11 @@ app.post('/api/admin/invite-user', inviteUser);
 app.post('/api/admin/remove-user', removeUser);
 app.post('/api/admin/update-user-role', updateUserRole);
 app.post('/api/admin/update-user-permissions', updateUserPermissions);
+
+// Platform admin (Bellure beheer)
+app.get('/api/platform/me', platformMe);
+app.get('/api/platform/salons', platformSalons);
+app.post('/api/platform/update-salon', platformUpdateSalon);
 
 function getTracesSampleRate(env: Env): number {
   const raw = env.SENTRY_TRACES_SAMPLE_RATE;

@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { addMinutes, addWeeks, addDays, startOfDay, isAfter } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { addMinutes, addWeeks, addDays, startOfDay, endOfDay, isAfter } from 'date-fns';
+import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { supabase } from '../../lib/supabase';
 import { calculateDepositCents, requiresPayment, formatCents } from '../../lib/payment';
+import { getAvailableSlots } from '../../lib/slots';
 import { StepIndicator } from './StepIndicator';
 import { ServicePicker } from './ServicePicker';
 import { StaffPicker } from './StaffPicker';
@@ -12,7 +13,7 @@ import { CustomerLogin } from './CustomerLogin';
 import { PaymentStep } from './PaymentStep';
 import { Confirmation } from './Confirmation';
 import { useSlots } from '../../hooks/useSlots';
-import type { Salon, Service, ServiceCategory, Staff, StaffService, TimeSlot, BookingStep } from '../../lib/types';
+import type { Salon, Service, ServiceCategory, ServiceAddon, Staff, StaffService, StaffSchedule, StaffBlock, PublicBooking, TimeSlot, BookingStep } from '../../lib/types';
 
 interface BookingWidgetProps {
   salonSlug: string;
@@ -39,6 +40,7 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [staffServices, setStaffServices] = useState<StaffService[]>([]);
+  const [addons, setAddons] = useState<ServiceAddon[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +49,7 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
 
   // Selections — now multi-select
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [staffConfirmed, setStaffConfirmed] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -74,9 +77,23 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
 
   const timezone = salon?.timezone || 'Europe/Amsterdam';
 
-  // Computed totals from selected services
-  const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration_min, 0);
-  const totalPriceCents = selectedServices.reduce((sum, s) => sum + s.price_cents, 0);
+  const selectedAddons = addons.filter(a => selectedAddonIds.includes(a.id));
+
+  // Computed totals from selected services + add-ons
+  const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration_min, 0)
+    + selectedAddons.reduce((sum, a) => sum + (a.duration_min || 0), 0);
+  const totalPriceCents = selectedServices.reduce((sum, s) => sum + s.price_cents, 0)
+    + selectedAddons.reduce((sum, a) => sum + a.price_cents, 0);
+
+  useEffect(() => {
+    if (selectedServices.length === 0) {
+      if (selectedAddonIds.length > 0) setSelectedAddonIds([]);
+      return;
+    }
+    const serviceIds = new Set(selectedServices.map(s => s.id));
+    const allowedAddonIds = new Set(addons.filter(a => serviceIds.has(a.service_id)).map(a => a.id));
+    setSelectedAddonIds(prev => prev.filter(id => allowedAddonIds.has(id)));
+  }, [selectedServices, addons]);
 
   // Filter staff based on selected services
   // staff.all_services=true → can do everything (backward compat)
@@ -129,6 +146,61 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
 
   const sortedSlots = useMemo(() => [...slots].sort((a, b) => a.time.localeCompare(b.time)), [slots]);
 
+  const findNextAvailableSlot = useCallback(async (fromDate: Date) => {
+    if (!filteredStaff.length || totalDuration === 0) return null;
+
+    const ids = staffConfirmed && selectedStaffId
+      ? [selectedStaffId]
+      : filteredStaff.map(s => s.id);
+
+    if (ids.length === 0) return null;
+
+    const schedulesRes = await supabase
+      .from('staff_schedules')
+      .select('*')
+      .in('staff_id', ids);
+
+    const schedules: StaffSchedule[] = schedulesRes.data || [];
+    const start = startOfDay(toZonedTime(fromDate, timezone));
+    const maxDate = maxBookingDate ? startOfDay(toZonedTime(maxBookingDate, timezone)) : null;
+
+    for (let i = 0; i < 56; i++) {
+      const candidate = addDays(start, i);
+      if (maxDate && isAfter(candidate, maxDate)) return null;
+
+      const dayStart = fromZonedTime(startOfDay(candidate), timezone).toISOString();
+      const dayEnd = fromZonedTime(endOfDay(candidate), timezone).toISOString();
+
+      const [blocksRes, bookingsRes] = await Promise.all([
+        supabase.from('staff_blocks').select('*').in('staff_id', ids)
+          .lte('start_at', dayEnd).gte('end_at', dayStart),
+        supabase.from('public_bookings').select('*').in('staff_id', ids)
+          .gte('start_at', dayStart).lt('start_at', dayEnd),
+      ]);
+
+      const blocks: StaffBlock[] = blocksRes.data || [];
+      const bookings: PublicBooking[] = bookingsRes.data || [];
+
+      const available = getAvailableSlots(
+        candidate,
+        totalDuration,
+        filteredStaff,
+        schedules,
+        blocks,
+        bookings,
+        timezone,
+        staffConfirmed ? selectedStaffId : null,
+        bufferMinutes
+      );
+
+      if (available.length > 0) {
+        return { date: candidate, slot: available[0] };
+      }
+    }
+
+    return null;
+  }, [filteredStaff, totalDuration, timezone, bufferMinutes, staffConfirmed, selectedStaffId, maxBookingDate]);
+
   const staffAvailability = useMemo(() => {
     const map: Record<string, { label: string; time: string } | null> = {};
     if (!selectedDate || sortedSlots.length === 0) return map;
@@ -155,6 +227,49 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
     paymentMode: string;
   } | null>(null);
 
+  const updateMeta = useCallback((salonData: Salon) => {
+    if (typeof window === 'undefined') return;
+    const host = window.location.hostname;
+    const isBookingHost = host === 'booking.bellure.nl' || host.endsWith('.dds-booking.pages.dev');
+    if (!isBookingHost) return;
+
+    const title = `${salonData.name} — Online boeken | Bellure`;
+    const description = `Boek direct bij ${salonData.name}${salonData.city ? ' in ' + salonData.city : ''}. Kies behandeling, medewerker en tijd. Bevestiging per e-mail.`;
+    const url = `https://booking.bellure.nl/${salonData.slug}`;
+    const image = 'https://bellure.nl/og-image.png';
+
+    document.title = title;
+
+    const setMeta = (key: string, content: string, attr: 'name' | 'property' = 'name') => {
+      let el = document.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    };
+
+    setMeta('description', description, 'name');
+    setMeta('og:title', title, 'property');
+    setMeta('og:description', description, 'property');
+    setMeta('og:type', 'website', 'property');
+    setMeta('og:url', url, 'property');
+    setMeta('og:image', image, 'property');
+    setMeta('twitter:card', 'summary_large_image', 'name');
+    setMeta('twitter:title', title, 'name');
+    setMeta('twitter:description', description, 'name');
+    setMeta('twitter:image', image, 'name');
+
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', url);
+  }, []);
+
   // Load salon data + check payment return
   useEffect(() => {
     const init = async () => {
@@ -177,13 +292,15 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
       }
 
       setSalon(salonData);
+      updateMeta(salonData);
 
-      const [servicesRes, staffRes, categoriesRes, schedulesRes, staffServicesRes] = await Promise.all([
+      const [servicesRes, staffRes, categoriesRes, schedulesRes, staffServicesRes, addonsRes] = await Promise.all([
         supabase.from('services').select('*').eq('salon_id', salonData.id).eq('is_active', true).order('sort_order'),
         supabase.from('staff').select('*').eq('salon_id', salonData.id).eq('is_active', true).order('sort_order'),
         supabase.from('service_categories').select('*').eq('salon_id', salonData.id).order('sort_order'),
         supabase.from('staff_schedules').select('day_of_week, staff_id').eq('is_working', true),
         supabase.from('staff_services').select('staff_id, service_id'),
+        supabase.from('service_addons').select('*').eq('salon_id', salonData.id).eq('is_active', true).order('sort_order'),
       ]);
 
       // Build set of working days (JS: 0=Sun, but DB might use 0=Mon — check)
@@ -203,6 +320,7 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
       setCategories(categoriesRes.data || []);
       setStaff(staffRes.data || []);
       setStaffServices(staffServicesRes.data || []);
+      setAddons(addonsRes.data || []);
 
       // Handle payment return
       if (isPaymentReturn && returnBookingId) {
@@ -292,7 +410,7 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
     if (!salon) return;
     const host = document.querySelector('.bellure-shadow-host') as HTMLElement | null;
     if (!host) return;
-    const primary = (salon as any).brand_gradient_from || salon.brand_color || '#8B5CF6';
+    const primary = (salon as any).brand_gradient_from || salon.brand_color || '#3B4E6C';
     host.style.setProperty('--bellure-color-primary', primary);
   }, [salon]);
 
@@ -324,6 +442,10 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
     if (selectedServices.length > 0) goToStep(2);
   }, [selectedServices, goToStep]);
 
+  const handleToggleAddon = useCallback((addonId: string) => {
+    setSelectedAddonIds(prev => (prev.includes(addonId) ? prev.filter(id => id !== addonId) : [...prev, addonId]));
+  }, []);
+
   const handleCustomerAuth = useCallback((payload: { session: any; customer: { name: string; email: string; phone: string | null } | null }) => {
     setCustomerSession(payload.session);
     setCustomerProfile(payload.customer);
@@ -332,8 +454,7 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
   const handleStaffSelect = useCallback((staffId: string | null) => {
     setSelectedStaffId(staffId);
     setStaffConfirmed(true);
-    goToStep(3);
-  }, [goToStep]);
+  }, []);
 
   const handleDateSelect = useCallback((date: Date) => {
     setDateTouched(true);
@@ -341,48 +462,36 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
     setSelectedSlot(null);
   }, []);
 
-  const findNextSelectableDate = useCallback((from: Date) => {
-    const start = startOfDay(toZonedTime(from, timezone));
-    const max = maxBookingDate ? startOfDay(toZonedTime(maxBookingDate, timezone)) : null;
-    for (let i = 0; i < 56; i++) {
-      const candidate = addDays(start, i);
-      if (max && isAfter(candidate, max)) return null;
-      const jsDay = candidate.getDay();
-      const isWorkDay = workingDays.size === 0 || workingDays.has(jsDay);
-      if (isWorkDay) return candidate;
-    }
-    return null;
-  }, [workingDays, maxBookingDate, timezone]);
+
+  const autoPickingRef = useRef(false);
 
   useEffect(() => {
-    if (step !== 3 || dateTouched) return;
-    if (!selectedDate) {
-      setSelectedDate(startOfDay(toZonedTime(new Date(), timezone)));
-    }
-  }, [step, selectedDate, dateTouched, timezone]);
+    if (step !== 3 || dateTouched || slotsLoading) return;
 
-  useEffect(() => {
-    if (step !== 3 || !selectedDate || slotsLoading) return;
-    if (sortedSlots.length === 0 && !dateTouched) {
-      const next = findNextSelectableDate(addDays(selectedDate, 1));
-      if (next && next.toDateString() !== selectedDate.toDateString()) {
-        setSelectedDate(next);
-        setSelectedSlot(null);
-      }
-      return;
-    }
     if (sortedSlots.length > 0) {
       const stillValid = selectedSlot && sortedSlots.some((slot) => slot.time === selectedSlot.time && slot.staffId === selectedSlot.staffId);
       if (!stillValid) {
         setSelectedSlot(sortedSlots[0]);
       }
+      return;
     }
-  }, [step, selectedDate, slotsLoading, sortedSlots, selectedSlot, findNextSelectableDate, dateTouched]);
+
+    if (autoPickingRef.current) return;
+    autoPickingRef.current = true;
+
+    const startFrom = selectedDate || new Date();
+    findNextAvailableSlot(startFrom).then((next) => {
+      if (next) {
+        setSelectedDate(next.date);
+        setSelectedSlot(next.slot);
+      }
+      autoPickingRef.current = false;
+    }).catch(() => { autoPickingRef.current = false; });
+  }, [step, dateTouched, selectedDate, slotsLoading, sortedSlots, selectedSlot, findNextAvailableSlot]);
 
   const handleSlotSelect = useCallback((slot: TimeSlot) => {
     setSelectedSlot(slot);
-    goToStep(4);
-  }, [goToStep]);
+  }, []);
 
   const handleBack = useCallback(() => {
     if (step === 5) {
@@ -426,6 +535,12 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
             priceCents: s.price_cents,
             durationMin: s.duration_min,
             name: s.name,
+          })),
+          addons: selectedAddons.map(a => ({
+            id: a.id,
+            priceCents: a.price_cents,
+            durationMin: a.duration_min,
+            name: a.name,
           })),
           paymentMode: salon.payment_mode,
           totalPriceCents,
@@ -547,6 +662,11 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
       setPaymentLoading(false);
     }
   }, [salon, selectedServices, bookingId, totalPriceCents, combinedServiceName]);
+
+  const handlePayLater = useCallback(() => {
+    setDepositPaidCents(0);
+    goToStep(6);
+  }, [goToStep]);
 
   // Loading state
   if (loading) {
@@ -720,8 +840,11 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
         <ServicePicker
           services={services}
           categories={categories}
+          addons={addons}
+          selectedAddonIds={selectedAddonIds}
           selectedIds={selectedServices.map(s => s.id)}
           onSelect={handleServicesChange}
+          onToggleAddon={handleToggleAddon}
           onContinue={handleServicesContinue}
         />
       )}
@@ -740,6 +863,9 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
           {!noStaffForCombo && (
             <div className="bellure-btn-group">
               <button className="bellure-btn bellure-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>
+              <button className="bellure-btn bellure-btn-primary" onClick={() => goToStep(3)} disabled={!staffConfirmed}>
+                Verder <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="5 12 19 12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
             </div>
           )}
         </div>
@@ -775,8 +901,10 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
 
       {step === 4 && (
         <div>
-          <h2 className="bellure-step-title">Jouw afspraak</h2>
-          <p className="bellure-step-subtitle">Controleer je gegevens en bevestig</p>
+          <div className="bellure-step4-header">
+            <h2 className="bellure-step-title">Jouw afspraak</h2>
+            <p className="bellure-step-subtitle">Controleer je gegevens en bevestig</p>
+          </div>
 
           <div className="bellure-step4-layout">
             {/* Left: customer form */}
@@ -806,6 +934,7 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
                       phone: customerProfile?.phone || customerData?.phone || '',
                     }}
                     lockEmail={!!customerSession}
+                    onBack={handleBack}
                   />
                 ) : (
                   <div className="bellure-login-required">
@@ -818,15 +947,35 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
             {/* Right: summary */}
             {selectedServices.length > 0 && selectedSlot && (
               <div className="bellure-step4-summary">
-                <div className="bellure-section-card bellure-section-card--summary">
-                  <div className="bellure-section-title">Overzicht</div>
-                  <div className="bellure-brief">
+                <div className="bellure-brief">
+                    <div className="bellure-brief-header">
+                      <div className="bellure-brief-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="3" />
+                          <path d="M16 2v4M8 2v4" />
+                          <path d="M3 10h18" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="bellure-brief-title">Overzicht</div>
+                        <div className="bellure-brief-subtitle">Jouw afspraak in één blik</div>
+                      </div>
+                    </div>
                     <div className="bellure-brief-body">
                       <div className="bellure-brief-item">
                         <span className="bellure-brief-label">Behandeling{selectedServices.length > 1 ? 'en' : ''}</span>
                         <span className="bellure-brief-value">{combinedServiceName}</span>
                       </div>
                       <div className="bellure-brief-divider" />
+                      {selectedAddons.length > 0 && (
+                        <>
+                          <div className="bellure-brief-item">
+                            <span className="bellure-brief-label">Extra's</span>
+                            <span className="bellure-brief-value">{selectedAddons.map(a => a.name).join(', ')}</span>
+                          </div>
+                          <div className="bellure-brief-divider" />
+                        </>
+                      )}
                       <div className="bellure-brief-item">
                         <span className="bellure-brief-label">Stylist</span>
                         <span className="bellure-brief-value">{staff.find(s => s.id === selectedSlot.staffId)?.name || 'Geen voorkeur'}</span>
@@ -834,10 +983,13 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
                       <div className="bellure-brief-divider" />
                       <div className="bellure-brief-item">
                         <span className="bellure-brief-label">Wanneer</span>
-                        <span className="bellure-brief-value">
-                          {new Date(selectedSlot.time).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })}
-                          <br />
-                          {new Date(selectedSlot.time).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone })} &middot; {totalDuration} min
+                        <span className="bellure-brief-value bellure-brief-value--chips">
+                          <span className="bellure-brief-chip">
+                            {new Date(selectedSlot.time).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })}
+                          </span>
+                          <span className="bellure-brief-chip">
+                            {new Date(selectedSlot.time).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: timezone })} &middot; {totalDuration} min
+                          </span>
                         </span>
                       </div>
                       <div className="bellure-brief-divider" />
@@ -845,7 +997,15 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
                         <span className="bellure-brief-total-label">Totaal</span>
                         <span className="bellure-brief-total-price">{formatCents(totalPriceCents)}</span>
                       </div>
-                      {needsPayment && (
+                      {needsPayment && salon?.payment_mode === 'optional' && (
+                        <div className="bellure-brief-pay">
+                          <div className="bellure-brief-pay-row">
+                            <span>Betalen is optioneel</span>
+                            <strong>Kies in volgende stap</strong>
+                          </div>
+                        </div>
+                      )}
+                      {needsPayment && salon?.payment_mode !== 'optional' && (
                         <div className="bellure-brief-pay">
                           <div className="bellure-brief-pay-row">
                             <span>Nu te betalen</span>
@@ -861,14 +1021,10 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
                       )}
                     </div>
                   </div>
-                </div>
               </div>
             )}
           </div>
 
-          <div className="bellure-btn-group" style={{ marginTop: 8 }}>
-            <button className="bellure-btn bellure-btn-secondary" onClick={handleBack}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign: "-3px"}}><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg> Terug</button>
-          </div>
         </div>
       )}
 
@@ -884,6 +1040,8 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
             customerName={customerName}
             timezone={timezone}
             onPay={handlePayment}
+            onPayLater={handlePayLater}
+            allowPayLater={salon.payment_mode === 'optional'}
             loading={paymentLoading}
             error={paymentError}
           />
@@ -903,6 +1061,8 @@ export function BookingWidget({ salonSlug, showSalonHeader = false }: BookingWid
           endAt={confirmedEndAt}
           customerName={customerName}
           timezone={timezone}
+          addons={selectedAddons}
+          totalCents={totalPriceCents}
           depositPaidCents={depositPaidCents}
           paymentMode={salon?.payment_mode || 'none'}
         />

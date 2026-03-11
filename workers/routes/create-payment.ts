@@ -11,7 +11,7 @@ function formatMollieAmount(cents: number): string {
 
 function calculateDepositCents(paymentMode: string, depositType: string, depositValue: number, totalCents: number): number {
   if (paymentMode === 'none') return 0;
-  if (paymentMode === 'full') return totalCents;
+  if (paymentMode === 'full' || paymentMode === 'optional') return totalCents;
   if (depositType === 'percentage') return Math.round(totalCents * (Math.min(Math.max(depositValue, 0), 100) / 100));
   return Math.min(Math.round(depositValue * 100), totalCents);
 }

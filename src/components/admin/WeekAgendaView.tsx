@@ -18,13 +18,13 @@ interface Props {
 
 const HOUR_START = 7;
 const HOUR_END = 21;
-const BASE_SLOT_HEIGHT = 24;
+const BASE_SLOT_HEIGHT = 22;
 const TIME_COL_W = 44;
 const DAY_MIN_W = 100;
 
 // Staff-based colors for bookings
 const STAFF_COLORS = [
-  { bg: 'rgba(139,92,246,0.15)', border: '#8B5CF6', text: '#5B21B6' },
+  { bg: 'rgba(59,78,108,0.18)', border: '#3B4E6C', text: '#22324A' },
   { bg: 'rgba(59,130,246,0.15)', border: '#3B82F6', text: '#1E40AF' },
   { bg: 'rgba(16,185,129,0.15)', border: '#10B981', text: '#065F46' },
   { bg: 'rgba(245,158,11,0.15)', border: '#F59E0B', text: '#92400E' },
@@ -47,6 +47,8 @@ export function WeekAgendaView({
   const stepMinutes = slotStepMinutes;
   const { getReadableStaffIds } = useAuth();
   const containerRef = useRef<HTMLDivElement>(null);
+  const initialScrollDone = useRef(false);
+  const [containerWidth, setContainerWidth] = useState(0);
   const [filterStaffId, setFilterStaffId] = useState<string | 'all'>('all');
   const [hoverCard, setHoverCard] = useState<null | {
     customerName: string;
@@ -63,6 +65,16 @@ export function WeekAgendaView({
     if (readableIds === null) return active;
     return active.filter(s => readableIds.includes(s.id));
   }, [allStaff, getReadableStaffIds]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => setContainerWidth(el.clientWidth || 0);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const hours = useMemo(() => Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i), []);
   const totalMinutes = (HOUR_END - HOUR_START) * 60;
@@ -118,7 +130,7 @@ export function WeekAgendaView({
           return {
             booking: b,
             topPx: (startMin / 60) * hourHeight,
-            heightPx: Math.max((durationMin / 60) * hourHeight, 20),
+            heightPx: Math.max((durationMin / 60) * hourHeight, 22),
             timeLabel: `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`,
             serviceName: svc?.name || '',
             customerName: b.customer_name,
@@ -138,15 +150,30 @@ export function WeekAgendaView({
   const nowLocal = toZonedTime(now, timezone);
   const nowMin = nowLocal.getHours() * 60 + nowLocal.getMinutes() - HOUR_START * 60;
 
-  const totalGridWidth = TIME_COL_W + 7 * DAY_MIN_W;
+  const availableWidth = Math.max(containerWidth - TIME_COL_W, 0);
+  const computedDayWidth = weekDays.length > 0 && availableWidth > 0
+    ? Math.floor(availableWidth / weekDays.length)
+    : DAY_MIN_W;
+  const dayColWidth = Math.max(DAY_MIN_W, computedDayWidth);
+  const totalGridWidth = TIME_COL_W + weekDays.length * dayColWidth;
+
+  useEffect(() => {
+    if (initialScrollDone.current) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const targetHour = 9;
+    const target = Math.max(0, (targetHour - HOUR_START) * hourHeight - 24);
+    el.scrollTop = target;
+    initialScrollDone.current = true;
+  }, [hourHeight]);
 
   return (
     <div>
       {/* Staff filter */}
-      <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-1">
+      <div className="flex items-center gap-2 mb-2.5 overflow-x-auto pb-1">
         <button
           onClick={() => setFilterStaffId('all')}
-          className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-all ${
+          className={`px-2.5 py-1 text-[11px] font-semibold rounded-full whitespace-nowrap transition-all ${
             filterStaffId === 'all'
               ? 'bg-gray-900 text-white'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -161,7 +188,7 @@ export function WeekAgendaView({
             <button
               key={s.id}
               onClick={() => setFilterStaffId(s.id)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-all ${
+              className={`px-2.5 py-1 text-[11px] font-semibold rounded-full whitespace-nowrap transition-all ${
                 isActive ? 'text-white' : 'hover:opacity-80'
               }`}
               style={{
@@ -180,27 +207,27 @@ export function WeekAgendaView({
         ref={containerRef}
         onScroll={() => hoverCard && setHoverCard(null)}
         className="bg-white rounded-2xl border border-gray-200/70 overflow-auto overscroll-none shadow-[0_12px_32px_rgba(15,23,42,0.06)]"
-        style={{ height: 'calc(100dvh - 200px)' }}
+        style={{ height: 'calc(100dvh - 170px)' }}
       >
         <div style={{ minWidth: totalGridWidth }}>
           {/* Sticky header: day names */}
           <div className="flex border-b border-gray-200/70 bg-white sticky top-0 z-20">
             <div className="border-r border-gray-100 flex-shrink-0" style={{ width: TIME_COL_W }} />
-            {weekDays.map(day => {
+            {weekDays.map((day, idx) => {
               const isToday = isSameDay(day, toZonedTime(now, timezone));
               const dayBookings = positionedByDay.get(format(day, 'yyyy-MM-dd')) || [];
               return (
                 <div
                   key={day.toISOString()}
-                  className={`flex-1 px-1.5 py-2.5 text-center border-r border-gray-200/70 last:border-r-0 min-w-0 ${
-                    isToday ? 'bg-violet-50/50' : ''
+                  className={`flex-1 px-1.5 py-2 text-center border-r border-gray-200/70 last:border-r-0 min-w-0 ${
+                    isToday ? 'bg-[#EEF2F7]/80' : idx % 2 === 1 ? 'bg-gray-50/60' : ''
                   }`}
                   style={{ minWidth: DAY_MIN_W }}
                 >
-                  <p className="text-[11px] font-semibold text-gray-500 uppercase">{format(day, 'EEE', { locale: nl })}</p>
-                  <p className={`text-sm font-semibold ${
+                  <p className="text-[10px] font-semibold text-gray-500 uppercase">{format(day, 'EEE', { locale: nl })}</p>
+                  <p className={`text-[13px] font-semibold ${
                     isToday
-                      ? 'bg-violet-600 text-white w-7 h-7 rounded-full flex items-center justify-center mx-auto'
+                      ? 'bg-[#3B4E6C] text-white w-7 h-7 rounded-full flex items-center justify-center mx-auto'
                       : 'text-gray-900'
                   }`}>
                     {format(day, 'd')}
@@ -223,7 +250,7 @@ export function WeekAgendaView({
             </div>
 
             {/* Day columns */}
-            {weekDays.map(day => {
+            {weekDays.map((day, idx) => {
               const key = format(day, 'yyyy-MM-dd');
               const dayItems = positionedByDay.get(key) || [];
               const isToday = isSameDay(day, toZonedTime(now, timezone));
@@ -232,7 +259,7 @@ export function WeekAgendaView({
                 <div
                   key={key}
                   className={`relative flex-1 border-r border-gray-200/70 last:border-r-0 cursor-pointer ${
-                    isToday ? 'bg-violet-50/20' : ''
+                    isToday ? 'bg-[#EEF2F7]/50' : idx % 2 === 1 ? 'bg-gray-50/40' : ''
                   }`}
                   style={{ height: gridHeight, minWidth: DAY_MIN_W }}
                   onClick={(e) => {
@@ -286,7 +313,7 @@ export function WeekAgendaView({
                       }}
                       onMouseLeave={() => setHoverCard(null)}
                       onClick={(e) => { e.stopPropagation(); onSelectBooking(booking); }}
-                      className="absolute left-0.5 right-0.5 rounded-lg border border-black/5 border-l-[4px] px-1 py-0.5 cursor-pointer overflow-hidden transition-shadow shadow-[0_6px_16px_rgba(15,23,42,0.08)] hover:shadow-[0_10px_22px_rgba(15,23,42,0.12)] z-10"
+                      className="absolute left-0.5 right-0.5 rounded-[10px] border border-black/10 border-l-[5px] px-2 py-1 cursor-pointer overflow-hidden transition-shadow shadow-[0_8px_20px_rgba(15,23,42,0.12)] hover:shadow-[0_12px_28px_rgba(15,23,42,0.18)] z-10"
                       style={{
                         top: topPx,
                         height: heightPx,
@@ -295,11 +322,11 @@ export function WeekAgendaView({
                         color: color.text,
                       }}
                     >
-                      <p className="text-[9px] font-semibold truncate leading-tight">{customerName}</p>
-                      {heightPx > 28 && <p className="text-[8px] opacity-75 truncate">{serviceName}</p>}
-                      {heightPx > 42 && <p className="text-[8px] opacity-60">{timeLabel}</p>}
+                      <p className="text-[10px] font-semibold truncate leading-tight">{customerName}</p>
+                      {heightPx > 28 && <p className="text-[9px] opacity-80 truncate">{serviceName}</p>}
+                      {heightPx > 42 && <p className="text-[9px] opacity-70">{timeLabel}</p>}
                       {heightPx > 56 && filterStaffId === 'all' && (
-                        <p className="text-[8px] opacity-50 truncate">{staffName}</p>
+                        <p className="text-[8px] opacity-55 truncate">{staffName}</p>
                       )}
                     </div>
                   ))}
@@ -308,10 +335,10 @@ export function WeekAgendaView({
                   {isToday && nowMin >= 0 && nowMin < totalMinutes && (
                     <div
                       id="admin-now-line"
-                      className="absolute left-0 right-0 h-0.5 bg-rose-500 z-[15] pointer-events-none"
+                      className="absolute left-0 right-0 h-[3px] bg-rose-500 z-[15] pointer-events-none shadow-[0_0_10px_rgba(244,63,94,0.45)]"
                       style={{ top: (nowMin / 60) * hourHeight }}
                     >
-                      <div className="absolute -left-1 -top-1 w-2.5 h-2.5 rounded-full bg-rose-500" />
+                      <div className="absolute -left-1.5 -top-1.5 w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.45)]" />
                     </div>
                   )}
                 </div>

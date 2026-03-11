@@ -12,6 +12,8 @@ interface PaymentStepProps {
   customerName: string;
   timezone: string;
   onPay: () => void;
+  onPayLater?: () => void;
+  allowPayLater?: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -26,10 +28,13 @@ export function PaymentStep({
   customerName,
   timezone,
   onPay,
+  onPayLater,
+  allowPayLater = false,
   loading,
   error,
 }: PaymentStepProps) {
   const isDeposit = salon.payment_mode === 'deposit';
+  const isOptional = salon.payment_mode === 'optional';
   const remainingCents = totalCents - depositCents;
 
   const startDate = new Date(slot.time);
@@ -56,12 +61,14 @@ export function PaymentStep({
         </div>
 
         <h2 className="bellure-step-title">
-          {isDeposit ? 'Aanbetaling voldoen' : 'Betaling voldoen'}
+          {isOptional ? 'Betalen (optioneel)' : isDeposit ? 'Aanbetaling voldoen' : 'Betaling voldoen'}
         </h2>
         <p className="bellure-step-subtitle">
-          {isDeposit
-            ? `Betaal ${formatCents(depositCents)} als aanbetaling om je afspraak te bevestigen.`
-            : `Betaal ${formatCents(totalCents)} om je afspraak te bevestigen.`}
+          {isOptional
+            ? `Betalen is optioneel. Kies of je nu ${formatCents(totalCents)} wilt betalen of in de salon.`
+            : isDeposit
+              ? `Betaal ${formatCents(depositCents)} als aanbetaling om je afspraak te bevestigen.`
+              : `Betaal ${formatCents(totalCents)} om je afspraak te bevestigen.`}
         </p>
 
         <div className="bellure-payment-breakdown">
@@ -111,25 +118,36 @@ export function PaymentStep({
           </div>
         )}
 
-        <button
-          className="bellure-btn bellure-btn-primary bellure-btn-pay"
-          onClick={onPay}
-          disabled={loading}
-        >
-          {loading ? (
-            <span className="bellure-btn-loading">
-              <span className="bellure-btn-spinner" />
-              Even geduld...
-            </span>
-          ) : (
-            <>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-3px', marginRight: 8 }}>
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-              {isDeposit ? `Betaal ${formatCents(depositCents)}` : `Betaal ${formatCents(totalCents)}`}
-            </>
+        <div className={allowPayLater ? 'bellure-btn-group' : ''}>
+          <button
+            className="bellure-btn bellure-btn-primary bellure-btn-pay"
+            onClick={onPay}
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="bellure-btn-loading">
+                <span className="bellure-btn-spinner" />
+                Even geduld...
+              </span>
+            ) : (
+              <>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-3px', marginRight: 8 }}>
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                {isDeposit ? `Betaal ${formatCents(depositCents)}` : `Betaal ${formatCents(totalCents)}`}
+              </>
+            )}
+          </button>
+          {allowPayLater && (
+            <button
+              className="bellure-btn bellure-btn-secondary"
+              onClick={onPayLater}
+              disabled={loading}
+            >
+              Betaal in de salon
+            </button>
           )}
-        </button>
+        </div>
 
         <p className="bellure-payment-secure">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-2px', marginRight: 4 }}>
@@ -142,6 +160,11 @@ export function PaymentStep({
         {isDeposit && (
           <p className="bellure-payment-note">
             Het restbedrag van {formatCents(remainingCents)} betaal je bij je bezoek aan de salon.
+          </p>
+        )}
+        {isOptional && (
+          <p className="bellure-payment-note">
+            Je afspraak is bevestigd, ook als je nu niet betaalt.
           </p>
         )}
       </div>

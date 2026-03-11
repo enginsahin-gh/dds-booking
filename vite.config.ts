@@ -7,5 +7,17 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('react')) return 'react';
+          if (id.includes('react-router')) return 'router';
+          if (id.includes('supabase')) return 'supabase';
+          if (id.includes('date-fns')) return 'date-fns';
+          return 'vendor';
+        },
+      },
+    },
   },
 });

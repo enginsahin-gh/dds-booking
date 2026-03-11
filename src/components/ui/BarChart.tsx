@@ -14,7 +14,7 @@ interface BarChartProps {
 
 const defaultFormat = (v: number) => String(v);
 
-export function BarChart({ data, color = '#8B5CF6', height = 200, formatValue = defaultFormat }: BarChartProps) {
+export function BarChart({ data, color = '#3B4E6C', height = 200, formatValue = defaultFormat }: BarChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);

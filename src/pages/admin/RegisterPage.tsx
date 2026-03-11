@@ -12,7 +12,6 @@ export function RegisterPage() {
   const [ownerName, setOwnerName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,11 +24,6 @@ export function RegisterPage() {
 
     if (password.length < 10 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
       setError('Wachtwoord moet minimaal 10 tekens bevatten, met een hoofdletter, kleine letter en cijfer');
-      return;
-    }
-
-    if (password !== passwordConfirm) {
-      setError('Wachtwoorden komen niet overeen');
       return;
     }
 
@@ -152,18 +146,6 @@ export function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
                 placeholder="Minimaal 10 tekens, hoofdletter + cijfer"
-                required
-                minLength={10}
-              />
-            </div>
-            <div>
-              <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Wachtwoord bevestigen</label>
-              <input
-                type="password"
-                value={passwordConfirm}
-                onChange={(e) => setPasswordConfirm(e.target.value)}
-                className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
-                placeholder="Herhaal je wachtwoord"
                 required
                 minLength={10}
               />

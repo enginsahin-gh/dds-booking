@@ -13,7 +13,7 @@ import { DashboardSkeleton } from '../../components/ui/Skeleton';
 import type { Salon, Booking } from '../../lib/types';
 
 /** Tiny sparkline component — 7-day revenue mini-graph */
-function Sparkline({ data, color = '#8B5CF6', height = 40 }: { data: number[]; color?: string; height?: number }) {
+function Sparkline({ data, color = '#3B4E6C', height = 40 }: { data: number[]; color?: string; height?: number }) {
   if (data.length < 2) return null;
   const max = Math.max(...data, 1);
   const width = 160;

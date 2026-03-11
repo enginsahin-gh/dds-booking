@@ -153,9 +153,6 @@ export function OnboardingWizard() {
     setServices(prev => prev.filter((_, i) => i !== idx));
   };
 
-    setStaffList(prev => prev.filter((_, i) => i !== idx));
-  };
-
   const updateScheduleDay = (idx: number, patch: Partial<DaySchedule>) => {
     setSchedule(prev => prev.map((d, i) => i === idx ? { ...d, ...patch } : d));
   };

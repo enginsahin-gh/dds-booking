@@ -14,6 +14,13 @@ interface ServiceInput {
   name: string;
 }
 
+interface AddonInput {
+  id: string;
+  priceCents: number;
+  durationMin: number;
+  name: string;
+}
+
 export async function createBooking(c: Context<{ Bindings: Env }>) {
   const supabase = getSupabase(c.env);
   const body = await c.req.json();
@@ -21,6 +28,7 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
     salonId, staffId, startAt, endAt, name, email, phone, hp,
     // Multi-service: array of { id, priceCents, durationMin, name }
     services: servicesInput,
+    addons: addonsInput,
     // Legacy single-service (backward compat)
     serviceId,
     // Payment fields
@@ -38,6 +46,8 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
   const services: ServiceInput[] = servicesInput && Array.isArray(servicesInput) && servicesInput.length > 0
     ? servicesInput
     : serviceId ? [{ id: serviceId, priceCents: 0, durationMin: 0, name: '' }] : [];
+
+  const addons: AddonInput[] = addonsInput && Array.isArray(addonsInput) ? addonsInput : [];
 
   if (!salonId || services.length === 0 || !staffId || !startAt || !endAt || !name || !email || !phone) {
     return c.json({ error: 'Missing required fields' }, 400);
@@ -102,9 +112,41 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
     return c.json({ error: 'SERVICE_INACTIVE' }, 400);
   }
 
+  // Validate add-ons (optional)
+  let dbAddons: Array<{ id: string; service_id: string; price_cents: number; duration_min: number; name: string; is_active: boolean }> = [];
+  if (addons.length > 0) {
+    const addonIds = addons.map(a => a.id);
+    const { data: addonRows } = await supabase
+      .from('service_addons')
+      .select('id, service_id, price_cents, duration_min, name, is_active')
+      .eq('salon_id', salonId)
+      .in('id', addonIds);
+
+    if (!addonRows || addonRows.length !== addonIds.length) {
+      return c.json({ error: 'Invalid addons' }, 400);
+    }
+
+    const inactiveAddon = addonRows.find(a => !a.is_active);
+    if (inactiveAddon) {
+      return c.json({ error: 'ADDON_INACTIVE' }, 400);
+    }
+
+    const serviceIdSet = new Set(serviceIds);
+    const invalidAddon = addonRows.find(a => !serviceIdSet.has(a.service_id));
+    if (invalidAddon) {
+      return c.json({ error: 'ADDON_INVALID_SERVICE' }, 400);
+    }
+
+    dbAddons = addonRows;
+  }
+
   // Calculate server-side totals (never trust client)
-  const serverTotalCents = dbServices.reduce((sum, s) => sum + s.price_cents, 0);
-  const serverTotalDuration = dbServices.reduce((sum, s) => sum + s.duration_min, 0);
+  const serverTotalCents = dbServices.reduce((sum, s) => sum + s.price_cents, 0)
+    + dbAddons.reduce((sum, a) => sum + a.price_cents, 0);
+  const serverTotalDuration = dbServices.reduce((sum, s) => sum + s.duration_min, 0)
+    + dbAddons.reduce((sum, a) => sum + a.duration_min, 0);
+
+  const serverEndAt = new Date(new Date(startAt).getTime() + serverTotalDuration * 60000).toISOString();
 
   // Use the first service as the primary (for RPC compatibility)
   const primaryService = dbServices[0];
@@ -140,8 +182,8 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
     ? new Date(new Date(startAt).getTime() - bufferMin * 60000).toISOString()
     : startAt;
   const checkEnd = bufferMin > 0
-    ? new Date(new Date(endAt).getTime() + bufferMin * 60000).toISOString()
-    : endAt;
+    ? new Date(new Date(serverEndAt).getTime() + bufferMin * 60000).toISOString()
+    : serverEndAt;
 
   const { data: overlapping } = await supabase
     .from('bookings')
@@ -162,7 +204,7 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
     p_service_id: primaryService.id,
     p_staff_id: staffId,
     p_start_at: startAt,
-    p_end_at: endAt,
+    p_end_at: serverEndAt,
     p_name: name,
     p_email: email,
     p_phone: phone,
@@ -188,7 +230,7 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
 
   // Determine payment status (use server-side salon config, not client input)
   const serverPaymentMode = salon.payment_mode || 'none';
-  const needsPayment = serverPaymentMode !== 'none';
+  const needsPayment = serverPaymentMode === 'deposit' || serverPaymentMode === 'full';
   const bookingStatus = needsPayment ? 'pending_payment' : 'confirmed';
   const paymentType = serverPaymentMode;
 
@@ -217,6 +259,26 @@ export async function createBooking(c: Context<{ Bindings: Env }>) {
   if (bsErr) {
     logError(c, 'booking_services insert error', { message: bsErr.message });
     // Non-fatal: booking still created, just missing service breakdown
+  }
+
+  if (dbAddons.length > 0) {
+    const addonMap = new Map(dbAddons.map(a => [a.id, a]));
+    const bookingAddons = addons.map((addon, idx) => {
+      const row = addonMap.get(addon.id);
+      return row ? {
+        booking_id: bookingId,
+        addon_id: row.id,
+        name: row.name,
+        price_cents: row.price_cents,
+        duration_min: row.duration_min,
+        sort_order: idx,
+      } : null;
+    }).filter(Boolean) as any[];
+
+    const { error: baErr } = await supabase.from('booking_addons').insert(bookingAddons);
+    if (baErr) {
+      logError(c, 'booking_addons insert error', { message: baErr.message });
+    }
   }
 
   // Insert in-app notification (non-blocking)

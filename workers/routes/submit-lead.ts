@@ -5,11 +5,12 @@ import { rateLimit } from '../lib/rate-limit';
 import { logError } from '../lib/logger';
 
 interface LeadPayload {
-  salon_name: string;
-  contact_person: string;
+  salon_name?: string;
+  contact_person?: string;
   contact_method: string;
   current_website?: string;
   message?: string;
+  capture_type?: 'popup' | 'form';
 }
 
 export const submitLead = async (c: Context<{ Bindings: Env }>) => {
@@ -17,7 +18,11 @@ export const submitLead = async (c: Context<{ Bindings: Env }>) => {
     const body = await c.req.json<LeadPayload>();
 
     // Validation
-    if (!body.salon_name?.trim() || !body.contact_person?.trim() || !body.contact_method?.trim()) {
+    if (!body.contact_method?.trim()) {
+      return c.json({ error: 'Vul een e-mailadres of telefoonnummer in.' }, 400);
+    }
+    const isPopup = body.capture_type === 'popup';
+    if (!isPopup && (!body.salon_name?.trim() || !body.contact_person?.trim())) {
       return c.json({ error: 'Vul alle verplichte velden in.' }, 400);
     }
 
@@ -39,12 +44,12 @@ export const submitLead = async (c: Context<{ Bindings: Env }>) => {
     const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY);
 
     const { data, error } = await supabase.from('leads').insert({
-      salon_name: body.salon_name.trim(),
-      contact_person: body.contact_person.trim(),
+      salon_name: body.salon_name?.trim() || (isPopup ? 'Popup lead' : null),
+      contact_person: body.contact_person?.trim() || (isPopup ? 'Onbekend' : null),
       contact_method: method,
       current_website: body.current_website?.trim() || null,
-      message: body.message?.trim() || null,
-      source: 'bellure-site',
+      message: body.message?.trim() || (isPopup ? 'Exit intent popup' : null),
+      source: isPopup ? 'bellure-popup' : 'bellure-site',
     }).select('id').single();
 
     if (error) {

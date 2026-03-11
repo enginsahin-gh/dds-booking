@@ -81,6 +81,20 @@ export function Sidebar({ salonId, role }: { salonId?: string; role?: UserRole |
   const bookingsCount = useNewBookingsCount(salonId);
   const waitlistCount = useWaitlistCount(salonId);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    const stored = typeof window !== 'undefined' ? window.localStorage.getItem('admin_sidebar_collapsed') : null;
+    if (stored !== null) setCollapsed(stored === 'true');
+  }, []);
+
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('admin_sidebar_collapsed', String(next));
+    }
+  };
 
   const getBadgeCount = (badge?: 'bookings' | 'waitlist') => {
     if (badge === 'bookings') return bookingsCount;
@@ -95,35 +109,45 @@ export function Sidebar({ salonId, role }: { salonId?: string; role?: UserRole |
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-[240px] bg-white border-r border-gray-200/80">
+      <aside className={`hidden lg:flex lg:flex-col ${collapsed ? 'lg:w-[72px]' : 'lg:w-[240px]'} bg-white border-r border-gray-200/80 transition-all duration-200 relative overflow-visible`}>
         {/* Logo */}
-        <div className="px-5 h-14 flex items-center border-b border-gray-100">
+        <div className={`h-14 flex items-center border-b border-gray-100 ${collapsed ? 'px-3 justify-center' : 'px-5'}`}>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-[10px] bg-violet-600 flex items-center justify-center text-[13px] font-bold text-white shadow-[0_2px_8px_rgba(124,58,237,0.25)]">
-              B
+            <div className="w-8 h-8 rounded-[10px] bg-white border border-gray-200/70 flex items-center justify-center shadow-[0_2px_8px_rgba(59,78,108,0.25)]">
+              <img src="/logo-mark-blue.png" alt="Bellure" className="w-5 h-5 object-contain" />
             </div>
-            <span className="text-[15px] font-bold text-gray-900 tracking-tight">Bellure</span>
+            {!collapsed && <span className="text-[15px] font-bold text-gray-900 tracking-tight">Bellure</span>}
           </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-3 space-y-0.5">
+        <nav className={`flex-1 py-3 space-y-0.5 ${collapsed ? 'px-2' : 'px-3'}`}>
           {visibleItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
+              title={collapsed ? item.label : undefined}
               className={({ isActive }) =>
-                `flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-[13px] font-medium transition-all duration-150 ${
+                `flex items-center rounded-[10px] text-[13px] font-medium transition-all duration-150 ${
+                  collapsed ? 'justify-center px-2 py-2.5' : 'gap-2.5 px-3 py-2'
+                } ${
                   isActive
                     ? 'bg-violet-50 text-violet-700'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`
               }
             >
-              <NavIcon d={item.icon} className="w-[18px] h-[18px]" />
-              <span className="flex-1">{item.label}</span>
-              {item.badge && getBadgeCount(item.badge) > 0 && (
+              <span className="relative">
+                <NavIcon d={item.icon} className="w-[18px] h-[18px]" />
+                {collapsed && item.badge && getBadgeCount(item.badge) > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-violet-600 text-white text-[9px] font-bold px-1 py-0.5 rounded-full min-w-[16px] text-center leading-none">
+                    {getBadgeCount(item.badge) > 99 ? '99+' : getBadgeCount(item.badge)}
+                  </span>
+                )}
+              </span>
+              {!collapsed && <span className="flex-1">{item.label}</span>}
+              {!collapsed && item.badge && getBadgeCount(item.badge) > 0 && (
                 <span className="bg-violet-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-tight">
                   {getBadgeCount(item.badge) > 99 ? '99+' : getBadgeCount(item.badge)}
                 </span>
@@ -132,9 +156,22 @@ export function Sidebar({ salonId, role }: { salonId?: string; role?: UserRole |
           ))}
         </nav>
 
-        <div className="px-5 py-4 border-t border-gray-100">
-          <p className="text-[11px] text-gray-400 font-medium">Bellure v1.0</p>
-        </div>
+        {!collapsed && (
+          <div className="px-5 py-4 border-t border-gray-100">
+            <p className="text-[11px] text-gray-400 font-medium">Bellure v1.0</p>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          title={collapsed ? 'Menu uitklappen' : 'Menu inklappen'}
+          className="absolute bottom-5 right-0 translate-x-1/2 w-10 h-10 rounded-full bg-white border border-gray-200/80 shadow-[0_10px_24px_rgba(59,78,108,0.2)] flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors z-20"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            {collapsed ? <polyline points="9 18 15 12 9 6" /> : <polyline points="15 18 9 12 15 6" />}
+          </svg>
+        </button>
       </aside>
 
       {/* Mobile bottom navigation */}

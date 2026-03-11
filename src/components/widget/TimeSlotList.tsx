@@ -1,4 +1,4 @@
-import { format, parseISO, startOfDay, addDays, isSameDay } from 'date-fns';
+import { format, parseISO, startOfDay, addDays, isSameDay, differenceInCalendarDays } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import type { TimeSlot } from '../../lib/types';
 
@@ -56,11 +56,14 @@ export function TimeSlotList({ slots, selectedSlot, onSelect, loading, timezone,
   const today = startOfDay(new Date());
   const tomorrow = addDays(today, 1);
   const labelDate = selectedDate ? startOfDay(selectedDate) : null;
-  const dayLabel = labelDate && isSameDay(labelDate, today)
-    ? 'Vandaag'
-    : labelDate && isSameDay(labelDate, tomorrow)
-      ? 'Morgen'
-      : null;
+  const dayDiff = labelDate ? differenceInCalendarDays(labelDate, today) : null;
+  const dayLabel = labelDate
+    ? dayDiff === 0
+      ? 'Vandaag'
+      : dayDiff === 1
+        ? 'Morgen'
+        : `Over ${dayDiff} dagen`
+    : null;
   const dateText = labelDate
     ? labelDate.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })
     : '';
@@ -68,10 +71,12 @@ export function TimeSlotList({ slots, selectedSlot, onSelect, loading, timezone,
   return (
     <div className="bellure-slots bellure-animate-in">
       <div className="bellure-slots-header">
-        <div className="bellure-slots-label">Beschikbare tijden</div>
+        <div className="bellure-slots-header-left">
+          <div className="bellure-slots-label">Beschikbare tijden</div>
+          {dateText && <div className="bellure-slots-date">{dateText}</div>}
+        </div>
         {dayLabel && <div className="bellure-slots-pill">{dayLabel}</div>}
       </div>
-      {dateText && <div className="bellure-slots-date">{dateText}</div>}
 
       {groups.map((group) => (
         group.items.length > 0 ? (

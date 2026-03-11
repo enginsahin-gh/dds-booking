@@ -5,7 +5,7 @@ import type { Salon } from './types';
  */
 export function calculateDepositCents(salon: Salon, totalCents: number): number {
   if (salon.payment_mode === 'none') return 0;
-  if (salon.payment_mode === 'full') return totalCents;
+  if (salon.payment_mode === 'full' || salon.payment_mode === 'optional') return totalCents;
 
   // deposit mode
   if (salon.deposit_type === 'percentage') {

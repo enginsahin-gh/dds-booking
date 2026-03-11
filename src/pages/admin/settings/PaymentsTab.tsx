@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Card, CardSection } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Toggle } from '../../../components/ui/Toggle';
 import { useToast } from '../../../components/ui/Toast';
 import { supabase } from '../../../lib/supabase';
 import { API_BASE } from '../../../lib/config';
@@ -66,42 +65,94 @@ export function PaymentsTab({
   };
 
   const previewTotal = 5000;
-  const previewDeposit = paymentMode === 'full' ? previewTotal
+  const previewDeposit = paymentMode === 'full' || paymentMode === 'optional' ? previewTotal
     : paymentMode === 'deposit' ? (depositType === 'percentage' ? Math.round(previewTotal * (depositValue / 100)) : Math.min(Math.round(depositValue * 100), previewTotal))
     : 0;
   const fmt = (cents: number) => `€${(cents / 100).toFixed(2).replace('.', ',')}`;
 
   return (
     <div className="space-y-5">
-      {/* Online payment toggle */}
+      {/* Online payment options */}
       <Card padding="lg">
-        <CardSection title="Online betalen" description="Laat klanten vooraf betalen bij het boeken via iDEAL, creditcard of andere methodes.">
-          <div className="space-y-4">
-            <Toggle
-              checked={paymentMode !== 'none'}
-              onChange={(enabled) => setPaymentMode(enabled ? 'deposit' : 'none')}
-              label="Online betalen inschakelen"
-              description={paymentMode === 'none'
-                ? 'Klanten betalen nu alleen in de salon.'
-                : 'Klanten betalen (deels) vooraf bij het boeken.'}
-            />
-
-            {paymentMode === 'none' && (
-              <div className="ml-0 sm:ml-[52px] p-4 rounded-xl bg-amber-50 border border-amber-200/60">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        <CardSection title="Online betalen" description="Kies hoe klanten betalen bij online boekingen.">
+          <div className="space-y-3">
+            {([
+              {
+                value: 'none' as PaymentMode,
+                label: 'Uit',
+                desc: 'Klanten betalen in de salon. Geen online betalingen.',
+                icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4" y1="4" x2="20" y2="20"/></svg>,
+                tag: null,
+              },
+              {
+                value: 'optional' as PaymentMode,
+                label: 'Optioneel',
+                desc: 'Klant kiest: nu online betalen of in de salon.',
+                icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"/><path d="M5 9h14"/><path d="M5 15h14"/></svg>,
+                tag: 'Flexibel',
+              },
+              {
+                value: 'deposit' as PaymentMode,
+                label: 'Aanbetaling',
+                desc: 'Klant betaalt een deel vooraf, rest in de salon.',
+                icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
+                tag: 'Aanbevolen',
+              },
+              {
+                value: 'full' as PaymentMode,
+                label: 'Volledige betaling',
+                desc: 'Klant betaalt het volledige bedrag vooraf online.',
+                icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+                tag: null,
+              },
+            ]).map(opt => (
+              <div
+                key={opt.value}
+                onClick={() => setPaymentMode(opt.value)}
+                className={`flex items-start gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                  paymentMode === opt.value
+                    ? 'border-violet-500 bg-violet-50/50 shadow-[0_0_0_1px_rgba(59,78,108,0.12)]'
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                  paymentMode === opt.value ? 'bg-violet-100 text-violet-600' : 'bg-gray-100 text-gray-400'
+                }`}>
+                  {opt.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <div className="text-[14px] font-semibold text-gray-900">{opt.label}</div>
+                    {opt.tag && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">{opt.tag}</span>
+                    )}
                   </div>
-                  <div>
-                    <div className="text-[13px] font-semibold text-amber-900 mb-1">Wist je dat?</div>
-                    <p className="text-[12px] text-amber-800 leading-relaxed">
-                      Salons met online betaling zien tot 60% minder no-shows. Een kleine aanbetaling motiveert klanten om op te komen dagen.
-                    </p>
-                  </div>
+                  <div className="text-[13px] text-gray-500 mt-0.5">{opt.desc}</div>
+                </div>
+                <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-colors ${
+                  paymentMode === opt.value ? 'border-violet-600 bg-violet-600' : 'border-gray-300'
+                }`}>
+                  {paymentMode === opt.value && <div className="w-2 h-2 rounded-full bg-white" />}
                 </div>
               </div>
-            )}
+            ))}
           </div>
+
+          {paymentMode === 'none' && (
+            <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200/60">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                </div>
+                <div>
+                  <div className="text-[13px] font-semibold text-amber-900 mb-1">Wist je dat?</div>
+                  <p className="text-[12px] text-amber-800 leading-relaxed">
+                    Salons met online betaling zien tot 60% minder no-shows. Een kleine aanbetaling motiveert klanten om op te komen dagen.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </CardSection>
       </Card>
 
@@ -224,69 +275,6 @@ export function PaymentsTab({
               )}
             </CardSection>
           </Card>
-
-          {/* Payment mode when Mollie connected */}
-          {isMollieConnected && (
-            <Card padding="lg">
-              <CardSection title="Betaalmethode" description="Kies hoeveel klanten vooraf betalen.">
-                <div className="space-y-3">
-                  {([
-                    {
-                      value: 'deposit' as PaymentMode,
-                      label: 'Aanbetaling',
-                      desc: 'Klant betaalt een deel vooraf, de rest in de salon.',
-                      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
-                      tag: 'Aanbevolen',
-                    },
-                    {
-                      value: 'full' as PaymentMode,
-                      label: 'Volledige betaling',
-                      desc: 'Klant betaalt het volledige bedrag online vooraf.',
-                      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
-                      tag: null,
-                    },
-                  ]).map(opt => (
-                    <div
-                      key={opt.value}
-                      onClick={() => setPaymentMode(opt.value)}
-                      className={`flex items-start gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                        paymentMode === opt.value
-                          ? 'border-violet-500 bg-violet-50/50 shadow-[0_0_0_1px_rgba(139,92,246,0.1)]'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
-                      }`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                        paymentMode === opt.value ? 'bg-violet-100 text-violet-600' : 'bg-gray-100 text-gray-400'
-                      }`}>
-                        {opt.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <div className="text-[14px] font-semibold text-gray-900">{opt.label}</div>
-                          {opt.tag && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">{opt.tag}</span>
-                          )}
-                        </div>
-                        <div className="text-[13px] text-gray-500 mt-0.5">{opt.desc}</div>
-                      </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-colors ${
-                        paymentMode === opt.value ? 'border-violet-600 bg-violet-600' : 'border-gray-300'
-                      }`}>
-                        {paymentMode === opt.value && <div className="w-2 h-2 rounded-full bg-white" />}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {paymentMode === 'full' && (
-                  <div className="mt-3 flex items-center gap-1.5 text-[12px] text-gray-400">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                    Mollie transactiekosten: &euro;0,29 per iDEAL-betaling (automatisch verrekend door Mollie)
-                  </div>
-                )}
-              </CardSection>
-            </Card>
-          )}
 
           {/* Deposit settings */}
           {isMollieConnected && paymentMode === 'deposit' && (

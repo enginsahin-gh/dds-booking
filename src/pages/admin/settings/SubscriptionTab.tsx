@@ -239,7 +239,7 @@ export function SubscriptionTab({ salon }: SubscriptionTabProps) {
                   onClick={() => setSelectedPlan(plan.id)}
                   className={`flex items-start gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                     selectedPlan === plan.id
-                      ? 'border-violet-500 bg-violet-50/50 shadow-[0_0_0_1px_rgba(139,92,246,0.1)]'
+                      ? 'border-violet-500 bg-violet-50/50 shadow-[0_0_0_1px_rgba(59,78,108,0.12)]'
                       : 'border-gray-200 hover:border-gray-300 bg-white'
                   }`}
                 >

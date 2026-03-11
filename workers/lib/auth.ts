@@ -62,3 +62,40 @@ export async function verifyUser(
     return null;
   }
 }
+
+/**
+ * Verify authenticated platform admin.
+ * Returns { userId, email } or null if unauthorized.
+ */
+export async function verifyPlatformAdmin(
+  c: Context<{ Bindings: Env }>
+): Promise<{ userId: string; email: string | null } | null> {
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return null;
+
+  const token = authHeader.slice(7);
+
+  try {
+    const supabase = getSupabase(c.env);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) return null;
+
+    const { data: admin } = await supabase
+      .from('platform_admins')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!admin) {
+      const email = (user.email || '').toLowerCase();
+      if (email === 'engin@ensalabs.nl') {
+        return { userId: user.id, email: user.email || null };
+      }
+      return null;
+    }
+
+    return { userId: user.id, email: user.email || null };
+  } catch {
+    return null;
+  }
+}

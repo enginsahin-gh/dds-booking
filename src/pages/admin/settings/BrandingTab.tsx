@@ -64,7 +64,7 @@ export function BrandingTab({
             <div className="flex items-center gap-3">
               <input type="color" value={brandColor} onChange={(e) => { setBrandColor(e.target.value); setBrandColorText(suggestTextColor(e.target.value)); if (!gradientEnabled) setGradientFrom(e.target.value); }} className="w-12 h-12 rounded-xl border border-gray-200 cursor-pointer p-0.5" />
               <div className="flex-1">
-                <Input value={brandColor} onChange={(e) => setBrandColor(e.target.value)} placeholder="#8B5CF6" />
+                <Input value={brandColor} onChange={(e) => setBrandColor(e.target.value)} placeholder="#3B4E6C" />
               </div>
             </div>
             {brandColor && (

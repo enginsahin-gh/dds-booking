@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks, format, isSameDay } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -9,8 +9,8 @@ import { useStaff } from '../../hooks/useStaff';
 import { DateNavigator } from '../../components/admin/DateNavigator';
 import { BookingList } from '../../components/admin/BookingList';
 import { BookingDetailModal } from '../../components/admin/BookingDetailModal';
-import { AgendaView } from '../../components/admin/AgendaView';
-import { WeekAgendaView } from '../../components/admin/WeekAgendaView';
+const AgendaView = lazy(() => import('../../components/admin/AgendaView').then(m => ({ default: m.AgendaView })));
+const WeekAgendaView = lazy(() => import('../../components/admin/WeekAgendaView').then(m => ({ default: m.WeekAgendaView })));
 import { CreateBookingModal } from '../../components/admin/CreateBookingModal';
 import { AdminFab } from '../../components/admin/AdminFab';
 import { Spinner } from '../../components/ui/Spinner';
@@ -99,6 +99,14 @@ export function BookingsPage() {
 
   const selectedCount = selectedIds.length;
 
+  const statusLegend = [
+    { label: 'Bezet', className: 'bg-[#EEF2F7] text-[#22324A] border border-[#3B4E6C]/40' },
+    { label: 'Pending', className: 'bg-amber-50 text-amber-800 border border-amber-200' },
+    { label: 'No-show', className: 'bg-rose-50 text-rose-700 border border-rose-200' },
+    { label: 'Geannuleerd', className: 'bg-gray-50 text-gray-500 border border-gray-200' },
+    { label: 'Vrij', className: 'bg-white text-gray-400 border border-dashed border-gray-200' },
+  ];
+
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
   };
@@ -151,17 +159,17 @@ export function BookingsPage() {
   return (
     <div>
       {/* Combined Header & Controls */}
-      <div className="sticky top-4 z-30 mb-3">
-        <div className="bg-white/95 backdrop-blur border border-gray-200/70 rounded-2xl px-3 py-3 shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
+      <div className="sticky top-3 z-30 mb-2">
+        <div className="bg-white/95 backdrop-blur border border-gray-200/70 rounded-2xl px-3 py-2 shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
           {/* Top row */}
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-1.5">
             <div className="flex items-center justify-between lg:justify-start w-full lg:w-auto gap-2">
-              <h2 className="text-base lg:text-lg font-bold text-gray-900 tracking-tight whitespace-nowrap">Boekingen</h2>
+              <h2 className="text-[15px] lg:text-[17px] font-bold text-gray-900 tracking-tight whitespace-nowrap">Boekingen</h2>
               <div className="hidden sm:flex rounded-xl bg-gray-100/70 p-0.5">
                 {(['agenda', 'day', 'week'] as ViewMode[]).map(mode => (
                   <button
                     key={mode}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-[10px] transition-all ${
+                    className={`px-2.5 py-1 text-[11px] font-medium rounded-[10px] transition-all ${
                       viewMode === mode ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                     }`}
                     onClick={() => setViewMode(mode)}
@@ -174,7 +182,7 @@ export function BookingsPage() {
                 <select
                   value={viewMode}
                   onChange={(e) => setViewMode(e.target.value as ViewMode)}
-                  className="px-3 py-2 text-[12px] font-semibold rounded-xl border border-gray-200 bg-white"
+                  className="px-2.5 py-1.5 text-[11px] font-semibold rounded-xl border border-gray-200 bg-white"
                 >
                   <option value="agenda">Agenda</option>
                   <option value="day">Lijst</option>
@@ -183,29 +191,29 @@ export function BookingsPage() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between lg:justify-end w-full lg:w-auto gap-2 mt-0">
+            <div className="flex flex-col sm:flex-row items-center justify-between lg:justify-end w-full lg:w-auto gap-1.5 mt-0">
               {viewMode === 'week' ? (
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setDate(d => subWeeks(d, 1))} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => setDate(d => subWeeks(d, 1))} className="p-1 rounded-md hover:bg-gray-100 text-gray-500">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                   </button>
-                  <span className="text-xs font-medium text-gray-700 min-w-[120px] text-center">
+                  <span className="text-[11px] font-medium text-gray-700 min-w-[112px] text-center">
                     {format(startOfWeek(date, { weekStartsOn: 1 }), 'd MMM', { locale: nl })} – {format(endOfWeek(date, { weekStartsOn: 1 }), 'd MMM', { locale: nl })}
                   </span>
-                  <button onClick={() => setDate(d => addWeeks(d, 1))} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+                  <button onClick={() => setDate(d => addWeeks(d, 1))} className="p-1 rounded-md hover:bg-gray-100 text-gray-500">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                   </button>
-                  <button onClick={handleNow} className="px-2.5 py-1 text-[10px] font-medium text-gray-900 bg-gray-100 rounded-lg">Nu</button>
+                  <button onClick={handleNow} className="px-2 py-0.5 text-[10px] font-medium text-gray-900 bg-gray-100 rounded-md">Nu</button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <DateNavigator date={date} onChange={setDate} />
-                  <button onClick={handleNow} className="px-2.5 py-1 text-[10px] font-medium text-gray-900 bg-gray-100 rounded-lg">Nu</button>
+                  <button onClick={handleNow} className="px-2 py-0.5 text-[10px] font-medium text-gray-900 bg-gray-100 rounded-md">Nu</button>
                 </div>
               )}
               <button
                 onClick={() => { setCreatePrefill({}); setShowCreateModal(true); }}
-                className="hidden lg:inline-flex items-center gap-2 px-3.5 py-2 lg:px-4 text-sm font-medium bg-gray-900 text-white rounded-xl hover:bg-black transition-colors shadow-[0_10px_20px_rgba(15,23,42,0.18)] whitespace-nowrap"
+                className="hidden lg:inline-flex items-center gap-2 px-3 py-1.5 text-[12px] font-semibold bg-gray-900 text-white rounded-xl hover:bg-black transition-colors shadow-[0_10px_20px_rgba(15,23,42,0.18)] whitespace-nowrap"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -215,6 +223,15 @@ export function BookingsPage() {
             </div>
           </div>
 
+          {(viewMode === 'agenda' || viewMode === 'week') && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {statusLegend.map(item => (
+                <span key={item.label} className={`px-2.5 py-1 text-[10px] font-semibold rounded-full ${item.className}`}>
+                  {item.label}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Bulk actions */}
           {viewMode === 'day' && selectedCount > 0 && (
@@ -259,17 +276,19 @@ export function BookingsPage() {
         <Spinner className="py-12" />
       ) : viewMode === 'agenda' ? (
         salon && (
-          <AgendaView
-            date={date}
-            bookings={filteredBookings}
-            services={services}
-            staff={staff}
-            timezone={salon.timezone}
-            slotStepMinutes={slotStepMinutes}
-            onSelectBooking={setSelectedBooking}
-            onSlotClick={handleSlotClick}
-            onBookingMoved={() => { addToast('success', 'Afspraak verplaatst'); refetch(); }}
-          />
+          <Suspense fallback={<Spinner className="py-12" />}>
+            <AgendaView
+              date={date}
+              bookings={filteredBookings}
+              services={services}
+              staff={staff}
+              timezone={salon.timezone}
+              slotStepMinutes={slotStepMinutes}
+              onSelectBooking={setSelectedBooking}
+              onSlotClick={handleSlotClick}
+              onBookingMoved={() => { addToast('success', 'Afspraak verplaatst'); refetch(); }}
+            />
+          </Suspense>
         )
       ) : viewMode === 'day' ? (
         <BookingList
@@ -282,16 +301,18 @@ export function BookingsPage() {
           onToggleAll={toggleSelectAll}
         />
       ) : salon ? (
-        <WeekAgendaView
-          date={date}
-          bookings={filteredBookings}
-          services={services}
-          staff={staff}
-          timezone={salon.timezone}
-          slotStepMinutes={slotStepMinutes}
-          onSelectBooking={setSelectedBooking}
-          onSlotClick={handleSlotClick}
-        />
+        <Suspense fallback={<Spinner className="py-12" />}>
+          <WeekAgendaView
+            date={date}
+            bookings={filteredBookings}
+            services={services}
+            staff={staff}
+            timezone={salon.timezone}
+            slotStepMinutes={slotStepMinutes}
+            onSelectBooking={setSelectedBooking}
+            onSlotClick={handleSlotClick}
+          />
+        </Suspense>
       ) : null}
 
       <BookingDetailModal

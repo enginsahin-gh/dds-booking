@@ -38,5 +38,14 @@ export function useCategories(salonId: string | undefined) {
     await fetch();
   };
 
-  return { categories, loading, refetch: fetch, upsertCategory, deleteCategory };
+  const updateCategoryOrder = async (orderedIds: string[]) => {
+    await Promise.all(
+      orderedIds.map((id, idx) => (
+        supabase.from('service_categories').update({ sort_order: idx }).eq('id', id)
+      ))
+    );
+    await fetch();
+  };
+
+  return { categories, loading, refetch: fetch, upsertCategory, deleteCategory, updateCategoryOrder };
 }

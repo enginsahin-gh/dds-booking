@@ -78,7 +78,7 @@ export function NotificationCenter({
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 z-50 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-100 w-[340px] sm:w-[380px] max-h-[480px] flex flex-col">
+        <div className="absolute right-0 top-full mt-1.5 z-[70] bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-100 w-[340px] sm:w-[380px] max-h-[480px] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <h3 className="text-[14px] font-bold text-gray-900">Meldingen</h3>

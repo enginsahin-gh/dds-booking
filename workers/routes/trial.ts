@@ -159,9 +159,11 @@ export async function trialRegister(c: Context<{ Bindings: Env }>) {
       body: JSON.stringify({
         salon_id: salon.id,
         user_id: userId,
-        email: ownerEmail.trim(),
-        name: ownerName.trim(),
         role: 'owner',
+        display_name: ownerName.trim(),
+        can_see_revenue: true,
+        read_scope: 'all',
+        edit_scope: 'all',
       }),
     });
 

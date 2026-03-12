@@ -15,8 +15,26 @@ export function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const applicationToken = new URLSearchParams(window.location.search).get('token');
+
   if (authLoading) return null;
   if (user) return <Navigate to="/admin" replace />;
+
+  if (!applicationToken) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-gray-50/50 p-6">
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 max-w-md w-full text-center">
+          <div className="w-14 h-14 rounded-2xl bg-violet-50 flex items-center justify-center mx-auto mb-5">
+            <img src="/logo-mark-blue.png" alt="Bellure" className="w-7 h-7 object-contain" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 mb-2">Toegang op aanvraag</h1>
+          <p className="text-gray-500 text-[14px] leading-relaxed mb-6">Registratie is alleen mogelijk na goedkeuring. Vraag toegang aan via Bellure Booking.</p>
+          <a href="https://bellure.nl/boekingen#aanvraag" className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-violet-600 text-white text-[14px] font-medium">Vraag toegang</a>
+          <p className="text-[12px] text-gray-400 mt-4">Heb je al een account? <a className="underline" href="/admin/login">Inloggen</a></p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +50,7 @@ export function RegisterPage() {
       const res = await fetch(`${API_URL}/api/trial/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ salonName, ownerName, ownerEmail: email, password }),
+        body: JSON.stringify({ salonName, ownerName, ownerEmail: email, password, applicationToken }),
       });
       const data = await res.json();
       if (!res.ok) {

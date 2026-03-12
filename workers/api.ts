@@ -10,7 +10,7 @@ import { submitLead } from './routes/submit-lead';
 import { customerCancel } from './routes/customer-cancel';
 import { mollieConnect, mollieCallback, mollieDisconnect } from './routes/mollie-connect';
 import { inviteUser, removeUser, updateUserRole, updateUserPermissions, listUsers } from './routes/admin-users';
-import { trialRegister, trialStatus } from './routes/trial';
+import { trialApply, trialApprove, trialRegister, trialStatus } from './routes/trial';
 import { subscriptionActivate, subscriptionWebhook, subscriptionPaymentWebhook, subscriptionStatus, subscriptionCancel } from './routes/subscription';
 import { googleConnect, googleCallback, googleDisconnect, googleStatus, googleSyncToggle, googleWebhook } from './routes/google-calendar';
 import { handleScheduled } from './scheduled';
@@ -102,6 +102,8 @@ app.get('/api/mollie/callback', mollieCallback);
 app.post('/api/mollie/disconnect', mollieDisconnect);
 
 // Trial / onboarding
+app.post('/api/trial/apply', trialApply);
+app.get('/api/trial/approve', trialApprove);
 app.post('/api/trial/register', trialRegister);
 app.get('/api/trial/status', trialStatus);
 

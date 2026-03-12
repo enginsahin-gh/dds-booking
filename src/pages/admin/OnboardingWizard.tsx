@@ -22,6 +22,7 @@ interface ServiceEntry {
   name: string;
   price: string;
   duration: string;
+  category?: string;
 }
 
 interface DaySchedule {
@@ -87,12 +88,13 @@ export function OnboardingWizard() {
 
   // Step 1
   const [salon, setSalon] = useState<SalonData>({ name: '', address: '', postal_code: '', city: '', phone: '', slug: '' });
+  const [phoneLocal, setPhoneLocal] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   // Step 2
   const [services, setServices] = useState<ServiceEntry[]>([]);
-  const [newService, setNewService] = useState<ServiceEntry>({ name: '', price: '', duration: '30' });
+  const [newService, setNewService] = useState<ServiceEntry>({ name: '', price: '', duration: '30', category: '' });
 
   // Step 3
   const [schedule, setSchedule] = useState<DaySchedule[]>(defaultSchedule());
@@ -129,7 +131,13 @@ export function OnboardingWizard() {
     if (!salonId) return;
     supabase.from('salons').select('name, address, postal_code, city, phone, slug').eq('id', salonId).single().then(({ data }) => {
       if (data) {
-        setSalon(s => ({ ...s, name: data.name || '', address: data.address || '', postal_code: data.postal_code || '', city: data.city || '', phone: data.phone || '', slug: data.slug || '' }));
+        const nextPhone = data.phone || '';
+        setSalon(s => ({ ...s, name: data.name || '', address: data.address || '', postal_code: data.postal_code || '', city: data.city || '', phone: nextPhone, slug: data.slug || '' }));
+        if (nextPhone.startsWith('+31')) {
+          setPhoneLocal(nextPhone.replace('+31', '').trim());
+        } else {
+          setPhoneLocal(nextPhone);
+        }
       }
     });
   }, [salonId]);
@@ -146,7 +154,7 @@ export function OnboardingWizard() {
   const addService = () => {
     if (!newService.name.trim() || !newService.price.trim()) return;
     setServices(prev => [...prev, { ...newService }]);
-    setNewService({ name: '', price: '', duration: '30' });
+    setNewService({ name: '', price: '', duration: '30', category: '' });
   };
 
   const removeService = (idx: number) => {
@@ -175,12 +183,16 @@ export function OnboardingWizard() {
         logoUrl = urlData.publicUrl;
       }
 
+      const cleanedPhone = phoneLocal.replace(/\s+/g, '');
+      const phoneDigits = cleanedPhone.replace(/[^0-9]/g, '').replace(/^0/, '');
+      const phoneValue = phoneDigits ? `+31${phoneDigits}` : null;
+
       const update: Record<string, unknown> = {
         name: salon.name,
         address: salon.address || null,
         postal_code: salon.postal_code || null,
         city: salon.city || null,
-        phone: salon.phone || null,
+        phone: phoneValue,
       };
       if (logoUrl) update.logo_url = logoUrl;
 
@@ -192,7 +204,7 @@ export function OnboardingWizard() {
       setError(err instanceof Error ? err.message : 'Kon salongegevens niet opslaan');
     }
     setSaving(false);
-  }, [salonId, salon, logoFile]);
+  }, [salonId, salon, logoFile, phoneLocal]);
 
   const saveStep2 = useCallback(async () => {
     if (!salonId) return;
@@ -204,6 +216,31 @@ export function OnboardingWizard() {
     setSaving(true);
 
     try {
+      const { data: existingCats } = await supabase
+        .from('service_categories')
+        .select('id, name')
+        .eq('salon_id', salonId);
+
+      const categoryMap = new Map((existingCats || []).map(c => [c.name.toLowerCase(), c.id]));
+      const uniqueCategories = Array.from(new Set(
+        services
+          .map(s => s.category?.trim())
+          .filter(Boolean)
+          .map((c) => c!.toLowerCase())
+      ));
+
+      let sortOrder = (existingCats || []).length;
+      for (const cat of uniqueCategories) {
+        if (categoryMap.has(cat)) continue;
+        const { data: inserted, error: catErr } = await supabase
+          .from('service_categories')
+          .insert({ salon_id: salonId, name: cat, sort_order: sortOrder++ })
+          .select('id')
+          .single();
+        if (catErr) throw catErr;
+        categoryMap.set(cat, inserted.id);
+      }
+
       const rows = services.filter(s => !s.id).map((s, i) => ({
         salon_id: salonId,
         name: s.name,
@@ -211,6 +248,7 @@ export function OnboardingWizard() {
         duration_min: parseInt(s.duration) || 30,
         is_active: true,
         sort_order: i,
+        category_id: s.category?.trim() ? categoryMap.get(s.category.trim().toLowerCase()) || null : null,
       }));
 
       if (rows.length) {
@@ -326,7 +364,23 @@ export function OnboardingWizard() {
                 <Input label="Postcode" value={salon.postal_code} onChange={e => setSalon(s => ({ ...s, postal_code: e.target.value }))} placeholder="1234 AB" />
                 <Input label="Stad" value={salon.city} onChange={e => setSalon(s => ({ ...s, city: e.target.value }))} />
               </div>
-              <Input label="Telefoonnummer" value={salon.phone} onChange={e => setSalon(s => ({ ...s, phone: e.target.value }))} type="tel" placeholder="06-12345678" />
+              <div className="space-y-1.5">
+                <label className="block text-[13px] font-semibold text-gray-700 tracking-tight">Telefoonnummer</label>
+                <div className="flex items-center rounded-xl border border-gray-200 bg-white px-3 py-2.5 focus-within:border-violet-500 focus-within:ring-[3px] focus-within:ring-violet-500/10">
+                  <div className="flex items-center gap-2 pr-3 border-r border-gray-200 text-[14px] text-gray-700 font-medium">
+                    <span className="text-[15px]">🇳🇱</span>
+                    <span>+31</span>
+                  </div>
+                  <input
+                    type="tel"
+                    value={phoneLocal}
+                    onChange={(e) => setPhoneLocal(e.target.value)}
+                    className="flex-1 px-3 text-[14px] text-gray-900 placeholder:text-gray-400 outline-none"
+                    placeholder="6 12345678"
+                  />
+                </div>
+                <p className="text-[12px] text-gray-500">We gebruiken dit nummer voor bevestigingen en herinneringen.</p>
+              </div>
 
               {/* Logo upload */}
               <div className="space-y-1.5">
@@ -402,6 +456,7 @@ export function OnboardingWizard() {
                       <div>
                         <span className="text-[14px] font-medium text-gray-900">{s.name}</span>
                         <span className="text-[13px] text-gray-500 ml-2">€{s.price} · {s.duration} min</span>
+                        {s.category && <span className="text-[12px] text-gray-400 ml-2">• {s.category}</span>}
                       </div>
                       <button onClick={() => removeService(i)} className="text-gray-400 hover:text-red-500 transition-colors p-1">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -414,6 +469,8 @@ export function OnboardingWizard() {
               {/* Add new service form */}
               <div className="space-y-3 pt-2 border-t border-gray-100">
                 <Input label="Dienstnaam" value={newService.name} onChange={e => setNewService(s => ({ ...s, name: e.target.value }))} placeholder="Bijv. Knippen dames" />
+                <Input label="Categorie (optioneel)" value={newService.category || ''} onChange={e => setNewService(s => ({ ...s, category: e.target.value }))} placeholder="Bijv. Knippen" />
+                <p className="text-[12px] text-gray-500">Meer categorieën kun je later beheren via Instellingen → Diensten.</p>
                 <div className="grid grid-cols-2 gap-3">
                   <Input label="Prijs (€)" value={newService.price} onChange={e => setNewService(s => ({ ...s, price: e.target.value }))} type="number" min="0" step="0.50" placeholder="25.00" />
                   <Input label="Duur (minuten)" value={newService.duration} onChange={e => setNewService(s => ({ ...s, duration: e.target.value }))} type="number" min="5" step="5" placeholder="30" />

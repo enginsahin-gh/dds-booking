@@ -64,7 +64,12 @@ app.use('/api/*', cors({
       'https://salon-amara.bellure.nl',
     ];
     // Widget can be embedded on any salon domain
-    if (origin && (allowed.includes(origin) || origin.endsWith('.bellure.nl') || origin.endsWith('.netlify.app'))) {
+    if (origin && (allowed.includes(origin)
+      || origin.endsWith('.bellure.nl')
+      || origin.endsWith('.netlify.app')
+      || origin.endsWith('.bellure.pages.dev')
+      || origin.endsWith('.dds-booking.pages.dev'))
+    ) {
       return origin;
     }
     return 'https://mijn.bellure.nl'; // default
